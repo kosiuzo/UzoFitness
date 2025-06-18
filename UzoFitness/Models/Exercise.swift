@@ -12,6 +12,7 @@ final class Exercise: Identified {
     
     // MARK: Relationships
     @Relationship var completedSets: [CompletedSet]
+    @Relationship var performedRecords: [PerformedExercise] = []
 
     // MARK: Init
     init(

@@ -32,7 +32,8 @@ class PersistenceController: ObservableObject {
             WorkoutSession.self,
             SessionExercise.self,
             CompletedSet.self,
-            ProgressPhoto.self
+            ProgressPhoto.self,
+            PerformedExercise.self
         ])
         
         let modelConfiguration = ModelConfiguration(
@@ -198,6 +199,7 @@ class PersistenceController: ObservableObject {
         delete(fetch(WorkoutPlan.self))
         delete(fetch(WorkoutTemplate.self))
         delete(fetch(ProgressPhoto.self))
+        delete(fetch(PerformedExercise.self))
         delete(fetch(Exercise.self))
     }
     
