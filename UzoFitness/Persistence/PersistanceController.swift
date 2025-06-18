@@ -96,8 +96,34 @@ class PersistenceController: ObservableObject {
         }
     }
     
-    /// Delete a model
+    /// Delete a model (cascade-safe)
     func delete<T: PersistentModel & Identified>(_ model: T) {
+        switch model {
+        case let session as WorkoutSession:
+            for exercise in session.sessionExercises {
+                for set in exercise.completedSets {
+                    context.delete(set)
+                }
+                context.delete(exercise)
+            }
+
+        case let template as WorkoutTemplate:
+            for day in template.dayTemplates {
+                for ex in day.exerciseTemplates {
+                    context.delete(ex)
+                }
+                context.delete(day)
+            }
+
+        case let exercise as SessionExercise:
+            for set in exercise.completedSets {
+                context.delete(set)
+            }
+
+        default:
+            break
+        }
+
         context.delete(model)
         save()
     }
@@ -191,16 +217,16 @@ class PersistenceController: ObservableObject {
         create(template)
         
         // Create sample day template
-        var dayTemplate = DayTemplate(weekday: .monday, notes: "Chest and arms day")
+        let dayTemplate = DayTemplate(weekday: .monday, notes: "Chest and arms day")
         dayTemplate.workoutTemplate = template
         create(dayTemplate)
         
         // Create sample exercise templates
-        var pushupTemplate = ExerciseTemplate(exercise: pushup, setCount: 3, reps: 10, position: 1.0)
+        let pushupTemplate = ExerciseTemplate(exercise: pushup, setCount: 3, reps: 10, position: 1.0)
         pushupTemplate.dayTemplate = dayTemplate
         create(pushupTemplate)
         
-        var plankTemplate = ExerciseTemplate(exercise: plank, setCount: 3, reps: 1, weight: nil, position: 2.0)
+        let plankTemplate = ExerciseTemplate(exercise: plank, setCount: 3, reps: 1, weight: nil, position: 2.0)
         plankTemplate.dayTemplate = dayTemplate
         create(plankTemplate)
         
@@ -213,7 +239,7 @@ class PersistenceController: ObservableObject {
         create(session)
         
         // Create sample session exercise
-        var sessionExercise = SessionExercise(
+        let sessionExercise = SessionExercise(
             exercise: pushup,
             plannedSets: 3,
             plannedReps: 10,
@@ -224,8 +250,8 @@ class PersistenceController: ObservableObject {
         create(sessionExercise)
         
         // Create sample completed sets
-        var set1 = CompletedSet(reps: 10, weight: 0)
-        var set2 = CompletedSet(reps: 8, weight: 0)
+        let set1 = CompletedSet(reps: 10, weight: 0)
+        let set2 = CompletedSet(reps: 8, weight: 0)
         set1.sessionExercise = sessionExercise
         set2.sessionExercise = sessionExercise
         create(set1)

@@ -16,3 +16,42 @@ enum PhotoAngle: String, Codable, CaseIterable {
   case side = "side"
   case back = "back"
 }
+
+// MARK: - Validation Error Types
+enum ValidationError: Error, LocalizedError {
+    case duplicateWorkoutTemplateName(String)
+    case emptyWorkoutTemplateName
+    case workoutTemplateNameTooLong(Int)
+    case negativeReps(Int)
+    case negativeSetCount(Int)
+    case negativeWeight(Double)
+    case invalidPosition(Double)
+    case zeroReps
+    case zeroSets
+    case custom(String)
+    
+    var errorDescription: String? {
+        switch self {
+        case .duplicateWorkoutTemplateName(let name):
+            return "A workout template with name '\(name)' already exists"
+        case .emptyWorkoutTemplateName:
+            return "Workout template name cannot be empty"
+        case .workoutTemplateNameTooLong(let length):
+            return "Workout template name is too long (\(length) characters). Maximum is 100 characters."
+        case .negativeReps(let reps):
+                    return "Reps cannot be negative: \(reps)"
+                case .negativeSetCount(let setCount):
+                    return "Set count cannot be negative: \(setCount)"
+                case .negativeWeight(let weight):
+                    return "Weight cannot be negative: \(weight)"
+                case .invalidPosition(let position):
+                    return "Position must be positive: \(position)"
+                case .zeroReps:
+                    return "Reps must be at least 1"
+                case .zeroSets:
+                    return "Set count must be at least 1"
+                case .custom(let message):
+                    return message
+        }
+    }
+}

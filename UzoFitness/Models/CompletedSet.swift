@@ -22,5 +22,6 @@ final class CompletedSet: Identified {
         self.weight = weight
         self.externalSampleUUID = externalSampleUUID
         self.sessionExercise = sessionExercise
+        sessionExercise?.completedSets.append(self)
     }
 }

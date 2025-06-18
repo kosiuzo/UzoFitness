@@ -11,8 +11,6 @@ final class ProgressPhoto: Identified, Timestamped {
     @Attribute var notes: String
     @Attribute var createdAt: Date
 
-    // Composite uniqueness: (date + angle) enforced via custom code/migrations later.
-
     init(
         id: UUID = UUID(),
         date: Date,
