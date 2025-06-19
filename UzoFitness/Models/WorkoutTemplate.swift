@@ -9,6 +9,7 @@ final class WorkoutTemplate: Identified, Timestamped {
     @Attribute var createdAt: Date
     
     @Relationship var dayTemplates: [DayTemplate]
+    @Relationship(inverse: \WorkoutPlan.template) var plans: [WorkoutPlan] = []
 
     init(
         id: UUID = UUID(),
@@ -21,11 +22,7 @@ final class WorkoutTemplate: Identified, Timestamped {
         self.summary = summary
         self.createdAt = createdAt
         self.dayTemplates = []
+        self.plans = []
     }
 }
 
-
-
-// MARK: - WorkoutTemplate + Validation
-
-// MARK: - Usage Examples and Helper Methods

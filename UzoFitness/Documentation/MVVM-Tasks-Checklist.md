@@ -38,16 +38,16 @@ Here’s a production-oriented task list (parent tasks ➜ sub-tasks) you can dr
 
 * [ ] **1.0 Models & Services**
 
-  * [ ] 1.1 Define core data models (`Workout`, `Exercise`, `WorkoutExercise`, `WorkoutSession`, `ProgressPhoto`).
-  * [ ] 1.2 Embed validation (e.g. `sets > 0`, `reps ≥ 1`, weight non-negative) via computed properties / `@Model` lifecycle hooks.
-  * [ ] 1.3 Build `HealthKitManager` (authorize, read body-mass, write workout samples).
-  * [ ] 1.4 Build `PhotoService` (image picker, file cache path, SwiftData link).
-  * [ ] 1.5 Seed `PreviewSampleData` helper for SwiftUI previews.
-  * [ ] 1.6 **Tests:**
+  * [x] 1.1 Define core data models (`Workout`, `Exercise`, `WorkoutExercise`, `WorkoutSession`, `ProgressPhoto`).
+  * [x] 1.2 Embed validation (e.g. `sets > 0`, `reps ≥ 1`, weight non-negative) via computed properties / `@Model` lifecycle hooks.
+  * [x] 1.3 Build `HealthKitManager` (authorize, read body-mass, write workout samples).
+  * [x] 1.4 Build `PhotoService` (image picker, file cache path, SwiftData link).
+  * [x] 1.5 Seed `PreviewSampleData` helper for SwiftUI previews.
+  * [x] 1.6 **Tests:**
     \- 1.6.1 `WorkoutExerciseTests` – invalid reps throws assertion.
     \- 1.6.2 `HealthKitManagerTests` – mock HK store read/write.
     \- 1.6.3 `PhotoServiceTests` – temp-directory save & load.
-  * [ ] 1.7 **Gate:** All model/service tests pass.
+  * [x] 1.7 **Gate:** All model/service tests pass.
 
 * [ ] **2.0 ViewModels (Business Logic)**
 

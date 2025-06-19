@@ -1,0 +1,419 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+project:
+  name: UzoFitness
+  language: Swift
+  architecture: MVVM
+  target: iOS 18.0+
+  device: iphone 15+
+  xcode_version: 16.0+
+
+# Folder structure convention
+guidelines:
+  - id: folder-structure
+    description: |
+      Use a clear MVVM-aligned folder structure:
+        ├── Models/          # Data entities and SwiftData models
+        ├── ViewModels/      # ObservableObjects for view logic
+        ├── Views/           # SwiftUI Views
+        │   ├── Components/  # Reusable UI components
+        │   └── Screens/     # Main app screens
+        ├── Services/        # Business-logic layers (e.g., HealthKit, photo)
+        ├── Resources/       # Assets, Info.plist, localization files
+        ├── Utilities/       # Extensions, helpers, formatters
+        └── Tests/           # Unit and UI tests
+    appliesTo:
+      - "*"
+
+  - id: naming-conventions
+    description: |
+      • Types (struct, class, enum) use UpperCamelCase.
+      • Properties & methods use lowerCamelCase.
+      • Constants use UPPER_SNAKE_CASE for static let values.
+      • Protocol names end with "Protocol" (e.g., HealthStoreProtocol).
+      • View files end with "View" (e.g., WorkoutListView).
+      • ViewModel files end with "ViewModel" (e.g., WorkoutListViewModel).
+      • Service files end with "Service" or "Manager" (e.g., HealthKitManager).
+    appliesTo:
+      - "*.swift"
+
+  - id: code-style
+    description: |
+      • Follow SwiftLint default rules (indent: 4 spaces, max line length: 100).
+      • Prefer `guard` over deep nesting.
+      • Mark immutable values with `let`.
+      • Use trailing closures for single-parameter closures.
+      • Prefer computed properties over functions when no parameters needed.
+      • Use `@MainActor` for UI-related classes and methods.
+    links:
+      - https://realm.github.io/SwiftLint/
+    appliesTo:
+      - "*.swift"
+
+  - id: swiftui-best-practices
+    description: |
+      • Use @State for local view state, @StateObject for owned ViewModels.
+      • Prefer @ObservedObject for injected ViewModels.
+      • Use @Environment for shared app-wide dependencies.
+      • Extract complex views into separate components when body exceeds 10-15 lines.
+      • Use ViewBuilder for conditional view logic.
+      • Prefer .task{} over .onAppear{} for async operations.
+    appliesTo:
+      - "Views/*.swift"
+
+  - id: async-await-patterns
+    description: |
+      • Prefer async/await over Combine for new code.
+      • Use @MainActor for UI updates from background tasks.
+      • Handle cancellation with Task.isCancelled checks in long operations.
+      • Use TaskGroup for concurrent operations.
+    appliesTo:
+      - "*.swift"
+
+  - id: error-handling
+    description: |
+      • Create custom error types conforming to LocalizedError.
+      • Use Result<Success, Failure> for operations that can fail.
+      • Provide user-friendly error messages.
+      • Log errors appropriately (avoid logging sensitive data).
+    appliesTo:
+      - "*.swift"
+
+  - id: documentation
+    description: |
+      • Use triple-slash `///` comments for public types and methods.
+      • Document parameters and return values.
+      • Include code examples when behavior isn't obvious.
+      • Use `// MARK: -` to organize code sections.
+    links:
+      - https://developer.apple.com/documentation/swift/documenting_your_code
+    appliesTo:
+      - "*.swift"
+
+  - id: minimalist-ui
+    description: |
+      • Embrace whitespace: 16–24pt padding around elements.
+      • Use system fonts (San Francisco) and semantic colors.
+      • Default to neutral palette (white, gray), use accent sparingly.
+      • Rely on SwiftUI's built-in components; minimize custom subviews.
+      • Use SF Symbols for icons, sized appropriately (.font(.title2), etc.).
+      • Implement dark mode support using semantic colors.
+    links:
+      - https://developer.apple.com/design/human-interface-guidelines/ios/overview/themes/
+
+  - id: logging-guidelines
+    description: |
+      • Use print() or os.log for development debugging.
+      • Log method entry/exit for ViewModels and Services: "🔄 [ClassName.methodName] Starting..."
+      • Log success states: "✅ [ClassName.methodName] Success: description"
+      • Log error states: "❌ [ClassName.methodName] Error: \(error.localizedDescription)"
+      • Log data flow: "📊 [ClassName] State changed to: \(newState)"
+      • Avoid logging sensitive health data - use generic descriptions instead.
+      • Use consistent prefixes: 🔄 (process), ✅ (success), ❌ (error), 📊 (data), 🏃‍♂️ (fitness-specific)
+    appliesTo:
+      - "*.swift"
+
+  - id: dependency-injection
+    description: |
+      • Inject services into ViewModels via initializers for testability.
+      • Avoid global singletons; pass environment objects explicitly.
+      • Use protocols for all injected dependencies.
+      • Provide mock implementations for testing.
+    appliesTo:
+      - "ViewModels/*.swift"
+
+  - id: healthkit-service
+    description: |
+      • Wrap HKHealthStore in a protocol (HealthStoreProtocol) and a concrete HealthKitManager.
+      • Service methods must return async/await or Combine publishers.
+      • Handle HealthKit authorization states properly.
+      • Request minimal necessary permissions.
+      • Cache frequently accessed data appropriately.
+    appliesTo:
+      - "Services/HealthKitManager.swift"
+
+  - id: model-protocols
+    description: |
+      • All models must conform to Identified protocol for UUID id and Identifiable/Hashable.
+      • Use Timestamped protocol for models requiring creation tracking.
+      • Leverage entityName computed property from Identified extension.
+      • Example: struct User: Identified, Timestamped { var id = UUID(); var createdAt = Date() }
+    appliesTo:
+      - "Models/*.swift"
+    description: |
+      • Encapsulate SwiftData operations in PersistenceController.
+      • Use @Model for SwiftData entities.
+      • Provide preview sample data for SwiftUI Previews.
+      • Handle migration scenarios gracefully.
+      • Use background contexts for heavy data operations.
+    appliesTo:
+      - "Services/PersistenceController.swift"
+
+  - id: testing-guidelines
+    description: |
+      • Write unit tests for ViewModels and Services.
+      • Use dependency injection for testable code.
+      • Mock external dependencies (HealthKit, network calls).
+      • Test both success and failure scenarios.
+      • Use XCTest and SwiftUI test utilities.
+    appliesTo:
+      - "Tests/*.swift"
+
+  - id: performance
+    description: |
+      • Use @State and @StateObject judiciously to avoid unnecessary re-renders.
+      • Implement lazy loading for large datasets.
+      • Cache expensive computations when appropriate.
+      • Profile memory usage with Instruments.
+    appliesTo:
+      - "*.swift"
+
+# Templates for new files
+templates:
+  - id: viewmodel-template
+    description: "Basic ViewModel with @Published properties and initializer."
+    content: |-
+      import Foundation
+      import Combine
+
+      @MainActor
+      class {{Name}}ViewModel: ObservableObject {
+          @Published var state: ViewState<{{Name}}Data> = .idle
+          
+          private let service: {{Name}}ServiceProtocol
+          private var cancellables = Set<AnyCancellable>()
+
+          init(service: {{Name}}ServiceProtocol) {
+              self.service = service
+              print("🔄 [{{Name}}ViewModel.init] Initialized with service")
+          }
+
+          func loadData() async {
+              print("🔄 [{{Name}}ViewModel.loadData] Starting data load")
+              state = .loading
+              do {
+                  let data = try await service.fetch{{Name}}Data()
+                  print("✅ [{{Name}}ViewModel.loadData] Successfully loaded data")
+                  print("📊 [{{Name}}ViewModel] State changed to: loaded")
+                  state = .loaded(data)
+              } catch {
+                  print("❌ [{{Name}}ViewModel.loadData] Error: \(error.localizedDescription)")
+                  print("📊 [{{Name}}ViewModel] State changed to: error")
+                  state = .error(error)
+              }
+          }
+      }
+
+      // MARK: - Supporting Types
+      enum ViewState<T> {
+          case idle
+          case loading
+          case loaded(T)
+          case error(Error)
+      }
+
+  - id: view-template
+    description: "SwiftUI View with proper ViewModel injection and state handling."
+    content: |-
+      import SwiftUI
+
+      struct {{Name}}View: View {
+          @StateObject private var viewModel: {{Name}}ViewModel
+          
+          init(service: {{Name}}ServiceProtocol) {
+              print("🔄 [{{Name}}View.init] Initializing view with service")
+              self._viewModel = StateObject(wrappedValue: {{Name}}ViewModel(service: service))
+          }
+
+          var body: some View {
+              NavigationView {
+                  contentView
+                      .navigationTitle("{{Name}}")
+                      .task {
+                          print("🔄 [{{Name}}View] Task started - loading data")
+                          await viewModel.loadData()
+                      }
+              }
+          }
+          
+          @ViewBuilder
+          private var contentView: some View {
+              switch viewModel.state {
+              case .idle, .loading:
+                  ProgressView("Loading...")
+                      .frame(maxWidth: .infinity, maxHeight: .infinity)
+                  
+              case .loaded(let data):
+                  loadedView(data: data)
+                  
+              case .error(let error):
+                  ErrorView(error: error) {
+                      print("🔄 [{{Name}}View] Retry button tapped")
+                      Task {
+                          await viewModel.loadData()
+                      }
+                  }
+              }
+          }
+          
+          private func loadedView(data: {{Name}}Data) -> some View {
+              VStack(spacing: 16) {
+                  Text("Data loaded successfully")
+                  // Add your content here
+              }
+              .padding()
+          }
+      }
+
+      // MARK: - Supporting Views
+      struct ErrorView: View {
+          let error: Error
+          let retry: () -> Void
+          
+          var body: some View {
+              VStack(spacing: 16) {
+                  Image(systemName: "exclamationmark.triangle")
+                      .font(.largeTitle)
+                      .foregroundColor(.orange)
+                  
+                  Text("Something went wrong")
+                      .font(.headline)
+                  
+                  Text(error.localizedDescription)
+                      .font(.body)
+                      .multilineTextAlignment(.center)
+                      .foregroundColor(.secondary)
+                  
+                  Button("Try Again", action: retry)
+                      .buttonStyle(.borderedProminent)
+              }
+              .padding()
+          }
+      }
+
+  - id: service-protocol-template
+    description: "Service protocol with async methods."
+    content: |-
+      import Foundation
+
+      protocol {{Name}}ServiceProtocol {
+          func fetch{{Name}}Data() async throws -> {{Name}}Data
+          func save{{Name}}Data(_ data: {{Name}}Data) async throws
+          func delete{{Name}}Data(id: UUID) async throws
+      }
+
+      // MARK: - Mock Implementation
+      class Mock{{Name}}Service: {{Name}}ServiceProtocol {
+          var shouldThrowError = false
+          var mockData: {{Name}}Data?
+          
+          func fetch{{Name}}Data() async throws -> {{Name}}Data {
+              print("🔄 [Mock{{Name}}Service.fetch{{Name}}Data] Starting fetch")
+              if shouldThrowError {
+                  print("❌ [Mock{{Name}}Service.fetch{{Name}}Data] Throwing mock error")
+                  throw {{Name}}Error.fetchFailed
+              }
+              print("✅ [Mock{{Name}}Service.fetch{{Name}}Data] Returning mock data")
+              return mockData ?? {{Name}}Data.preview
+          }
+          
+          func save{{Name}}Data(_ data: {{Name}}Data) async throws {
+              print("🔄 [Mock{{Name}}Service.save{{Name}}Data] Starting save")
+              if shouldThrowError {
+                  print("❌ [Mock{{Name}}Service.save{{Name}}Data] Throwing mock error")
+                  throw {{Name}}Error.saveFailed
+              }
+              print("✅ [Mock{{Name}}Service.save{{Name}}Data] Save completed")
+          }
+          
+          func delete{{Name}}Data(id: UUID) async throws {
+              print("🔄 [Mock{{Name}}Service.delete{{Name}}Data] Starting delete for id: \(id)")
+              if shouldThrowError {
+                  print("❌ [Mock{{Name}}Service.delete{{Name}}Data] Throwing mock error")
+                  throw {{Name}}Error.deleteFailed
+              }
+              print("✅ [Mock{{Name}}Service.delete{{Name}}Data] Delete completed")
+          }
+      }
+
+  - id: model-template
+    description: "SwiftData model with proper attributes."
+    content: |-
+      import Foundation
+      import SwiftData
+
+      @Model
+      class {{Name}}: Identified, Timestamped {
+          var id: UUID
+          var createdAt: Date
+          var updatedAt: Date
+          
+          // Add your properties here
+          
+          init() {
+              self.id = UUID()
+              self.createdAt = Date()
+              self.updatedAt = Date()
+              print("🔄 [{{Name}}.init] Created new instance with id: \(id)")
+          }
+      }
+
+      // MARK: - Preview Data
+      extension {{Name}} {
+          static var preview: {{Name}} {
+              print("🔄 [{{Name}}.preview] Creating preview instance")
+              let item = {{Name}}()
+              // Configure preview data
+              return item
+          }
+      }
+
+      // MARK: - Protocol Definitions
+      /// Gives every model a UUID `id` + native Identifiable/Hashable conformance.
+      protocol Identified: Identifiable, Hashable {
+        var id: UUID { get set }
+      }
+
+      /// Gives any model a creation timestamp.
+      protocol Timestamped {
+        var createdAt: Date { get set }
+      }
+
+      /// Convenience to avoid hard-coding your entity names.
+      extension Identified {
+        static var entityName: String {
+          String(describing: Self.self)
+        }
+      }
+
+# Continuous Integration
+ci:
+  steps:
+    - id: build-app
+      description: |
+        Build the app for device (iphoneos) without launching any simulator unless needed for debugging.
+      script: |
+        xcodebuild \
+          -project UzoFitness.xcodeproj \
+          -scheme UzoFitness \
+          -configuration Debug \
+          -sdk iphoneos \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          BUILD_DIR=build \
+          build
+
+    - id: run-unit-tests
+      description: |
+        Execute all unit tests on the iOS simulator (iPhone 15, iOS 18.0) when you make major developments
+      script: |
+        xcodebuild \
+          -project UzoFitness.xcodeproj \
+          -scheme UzoFitness \
+          -configuration Debug \
+          -sdk iphonesimulator \
+          -destination 'platform=iOS Simulator,name=iPhone 15,OS=18.0' \
+          test
