@@ -1,2 +1,26 @@
-UzoFitness.xcodeproj/project.pbxproj
-UzoFitness.xcodeproj/xcuserdata/kosiuzodinma.xcuserdatad/xcdebugger/Breakpoints_v2.xcbkptlist
+# Xcode build artifacts
+build/
+*.build/
+DerivedData/
+
+# User-specific settings
+xcuserdata/
+*.xcuserdatad/
+**/xcdebugger/**/*.xcbkptlist
+
+# Workspace
+*.xcworkspace
+
+# Swift Package Manager
+.build/
+
+# CocoaPods
+Pods/
+
+# Carthage
+Carthage/
+Carthage/Build/
+
+# Keep project file and shared data under version control
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
