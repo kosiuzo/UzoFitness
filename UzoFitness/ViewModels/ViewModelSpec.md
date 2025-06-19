@@ -43,7 +43,7 @@ Copy any section directly into Cursor to scaffold code, or tweak bullet points f
 
 ---
 
-# 3. `HistoryViewModel`
+# 3. `HistoryViewModel` - Completed
 
 | Section              | Details                                                                                                                                                                       |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -56,7 +56,7 @@ Copy any section directly into Cursor to scaffold code, or tweak bullet points f
 
 ---
 
-# 4. `ProgressViewModel`
+# 4. `ProgressViewModel` - Completed
 
 | Section              | Stats Tab                                                                    | Photos Tab                                                                                   |
 | -------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
