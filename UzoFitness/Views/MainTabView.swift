@@ -20,7 +20,10 @@ struct MainTabView: View {
                 .tabItem {
                     Label("Library", systemImage: "book")
                 }
-
+            HistoryView()
+                .tabItem {
+                    Label("History", systemImage: "clock")
+                }
             ProgressView()
                 .tabItem {
                     Label("Progress", systemImage: "photo")
@@ -30,7 +33,18 @@ struct MainTabView: View {
                 .tabItem {
                     Label("Settings", systemImage: "gear")
                 }
+
+            
         }
         .modelContainer(PersistenceController.shared.container)
     }
 }
+
+#if DEBUG
+struct MainTabView_Previews: PreviewProvider {
+    static var previews: some View {
+        MainTabView()
+            .modelContainer(PersistenceController.shared.container)
+    }
+}
+#endif
