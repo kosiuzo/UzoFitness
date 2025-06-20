@@ -11,6 +11,32 @@ enum Weekday: Int, Codable, CaseIterable {
   case sunday = 1, monday, tuesday, wednesday, thursday, friday, saturday
 }
 
+extension Weekday {
+    var abbreviation: String {
+        switch self {
+        case .sunday: return "SUN"
+        case .monday: return "MON"
+        case .tuesday: return "TUE"
+        case .wednesday: return "WED"
+        case .thursday: return "THU"
+        case .friday: return "FRI"
+        case .saturday: return "SAT"
+        }
+    }
+    
+    var fullName: String {
+        switch self {
+        case .sunday: return "Sunday"
+        case .monday: return "Monday"
+        case .tuesday: return "Tuesday"
+        case .wednesday: return "Wednesday"
+        case .thursday: return "Thursday"
+        case .friday: return "Friday"
+        case .saturday: return "Saturday"
+        }
+    }
+}
+
 enum PhotoAngle: String, Codable, CaseIterable {
   case front = "front"
   case side = "side"

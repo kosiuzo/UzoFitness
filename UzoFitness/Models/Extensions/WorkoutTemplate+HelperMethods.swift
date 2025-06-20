@@ -39,4 +39,23 @@ extension WorkoutTemplate {
         formatter.dateFormat = "MMdd-HHmm"
         return "\(trimmedBaseName) \(formatter.string(from: Date()))"
     }
+    
+    /// Returns the DayTemplate for a specific weekday, creating one if it doesn't exist
+    func dayTemplateFor(_ weekday: Weekday) -> DayTemplate {
+        if let existingTemplate = dayTemplates.first(where: { $0.weekday == weekday }) {
+            return existingTemplate
+        }
+        
+        // Create a new DayTemplate if one doesn't exist
+        let newTemplate = DayTemplate(weekday: weekday, workoutTemplate: self)
+        dayTemplates.append(newTemplate)
+        return newTemplate
+    }
+    
+    /// Ensures all 7 days have DayTemplates
+    func ensureAllDaysExist() {
+        for weekday in Weekday.allCases {
+            _ = dayTemplateFor(weekday)
+        }
+    }
 }

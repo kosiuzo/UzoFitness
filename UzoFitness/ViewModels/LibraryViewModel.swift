@@ -12,6 +12,8 @@ class LibraryViewModel: ObservableObject {
     @Published var showExerciseSheet: Bool = false
     @Published var error: Error?
     @Published var state: LoadingState = .idle
+    @Published var selectedSegment: LibrarySegment = .exercises
+    @Published var importErrorMessage: String?
     
     // MARK: - Computed Properties
     var activePlan: WorkoutPlan? {
@@ -29,6 +31,27 @@ class LibraryViewModel: ObservableObject {
     
     var sortedExercises: [Exercise] {
         exerciseCatalog.sorted { $0.name < $1.name }
+    }
+    
+    // Convenience properties for the UI
+    var exercises: [Exercise] {
+        sortedExercises
+    }
+    
+    var workoutTemplates: [WorkoutTemplate] {
+        sortedTemplates
+    }
+    
+    var workoutPlans: [WorkoutPlan] {
+        do {
+            let descriptor = FetchDescriptor<WorkoutPlan>(
+                sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+            )
+            return try modelContext.fetch(descriptor)
+        } catch {
+            print("❌ [LibraryViewModel.workoutPlans] Error: \(error.localizedDescription)")
+            return []
+        }
     }
     
     // MARK: - Private Properties
@@ -443,9 +466,120 @@ class LibraryViewModel: ObservableObject {
         
         return candidateName
     }
+    
+    // MARK: - Import Methods (Temporarily Disabled)
+    // TODO: Implement JSON import once Exercise model supports Codable
+    
+    func createWorkoutTemplate(name: String) {
+        print("🔄 [LibraryViewModel.createWorkoutTemplate] Creating template: \(name)")
+        handleIntent(.createTemplate(name: name, summary: ""))
+    }
+    
+    func createPlan(from template: WorkoutTemplate) {
+        print("🔄 [LibraryViewModel.createPlan] Creating plan from template: \(template.name)")
+        let planName = "\(template.name) Plan"
+        handleIntent(.activatePlan(templateID: template.id, customName: planName, startDate: Date()))
+    }
+    
+    func deleteExercise(_ exercise: Exercise) {
+        print("🔄 [LibraryViewModel.deleteExercise] Deleting exercise: \(exercise.name)")
+        handleIntent(.deleteExercise(id: exercise.id))
+    }
+    
+    func createExercise(name: String, category: ExerciseCategory, instructions: String) throws {
+        print("🔄 [LibraryViewModel.createExercise] Creating exercise: \(name)")
+        let newExercise = Exercise(
+            name: name.trimmingCharacters(in: .whitespacesAndNewlines),
+            category: category,
+            instructions: instructions
+        )
+        
+        modelContext.insert(newExercise)
+        try modelContext.save()
+        exerciseCatalog.append(newExercise)
+        exerciseCatalog.sort { $0.name < $1.name }
+        print("✅ [LibraryViewModel.createExercise] Successfully created exercise")
+    }
+    
+    func updateExercise(_ exercise: Exercise, name: String, category: ExerciseCategory, instructions: String) throws {
+        print("🔄 [LibraryViewModel.updateExercise] Updating exercise: \(exercise.name)")
+        exercise.name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        exercise.category = category
+        exercise.instructions = instructions
+        
+        try modelContext.save()
+        exerciseCatalog.sort { $0.name < $1.name }
+        print("✅ [LibraryViewModel.updateExercise] Successfully updated exercise")
+    }
+    
+    // MARK: - Template Detail Methods
+    func toggleRestDay(for dayTemplate: DayTemplate) {
+        print("🔄 [LibraryViewModel.toggleRestDay] Toggling rest day for \(dayTemplate.weekday)")
+        do {
+            dayTemplate.isRest.toggle()
+            try modelContext.save()
+            print("✅ [LibraryViewModel.toggleRestDay] Successfully toggled rest day")
+        } catch {
+            print("❌ [LibraryViewModel.toggleRestDay] Error: \(error.localizedDescription)")
+            self.error = error
+        }
+    }
+    
+    func addExercises(_ exercises: [Exercise], to dayTemplate: DayTemplate) {
+        print("🔄 [LibraryViewModel.addExercises] Adding \(exercises.count) exercises to \(dayTemplate.weekday)")
+        do {
+            for exercise in exercises {
+                let exerciseTemplate = ExerciseTemplate(
+                    exercise: exercise,
+                    setCount: 3, // Default values
+                    reps: 10,
+                    weight: nil,
+                    position: Double(dayTemplate.exerciseTemplates.count + 1),
+                    dayTemplate: dayTemplate
+                )
+                modelContext.insert(exerciseTemplate)
+                dayTemplate.exerciseTemplates.append(exerciseTemplate)
+            }
+            try modelContext.save()
+            print("✅ [LibraryViewModel.addExercises] Successfully added exercises")
+        } catch {
+            print("❌ [LibraryViewModel.addExercises] Error: \(error.localizedDescription)")
+            self.error = error
+        }
+    }
+    
+    func updateExerciseTemplate(_ exerciseTemplate: ExerciseTemplate, setCount: Int, reps: Int, weight: Double?, rest: TimeInterval, supersetID: UUID?) {
+        print("🔄 [LibraryViewModel.updateExerciseTemplate] Updating exercise template for \(exerciseTemplate.exercise.name)")
+        do {
+            exerciseTemplate.setCount = setCount
+            exerciseTemplate.reps = reps
+            exerciseTemplate.weight = weight
+            exerciseTemplate.supersetID = supersetID
+            // Note: rest duration would need to be added to ExerciseTemplate model
+            try modelContext.save()
+            print("✅ [LibraryViewModel.updateExerciseTemplate] Successfully updated exercise template")
+        } catch {
+            print("❌ [LibraryViewModel.updateExerciseTemplate] Error: \(error.localizedDescription)")
+            self.error = error
+        }
+    }
 }
 
 // MARK: - Supporting Types
+
+enum LibrarySegment: CaseIterable {
+    case exercises
+    case workouts
+    
+    var title: String {
+        switch self {
+        case .exercises:
+            return "Exercises"
+        case .workouts:
+            return "Workouts"
+        }
+    }
+}
 
 enum LoadingState {
     case idle

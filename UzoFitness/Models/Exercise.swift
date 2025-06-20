@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 @Model
-final class Exercise: Identified {
+final class Exercise: Identified, Codable {
     // MARK: Stored
     @Attribute(.unique) var id: UUID
     @Attribute(.unique) var name: String
@@ -28,5 +28,30 @@ final class Exercise: Identified {
         self.instructions = instructions
         self.mediaAssetID = mediaAssetID
         self.completedSets = []
+    }
+    
+    // MARK: - Codable Implementation
+    enum CodingKeys: CodingKey {
+        case id, name, category, instructions, mediaAssetID
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(category, forKey: .category)
+        try container.encode(instructions, forKey: .instructions)
+        try container.encodeIfPresent(mediaAssetID, forKey: .mediaAssetID)
+    }
+    
+    required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(UUID.self, forKey: .id)
+        self.name = try container.decode(String.self, forKey: .name)
+        self.category = try container.decode(ExerciseCategory.self, forKey: .category)
+        self.instructions = try container.decode(String.self, forKey: .instructions)
+        self.mediaAssetID = try container.decodeIfPresent(String.self, forKey: .mediaAssetID)
+        self.completedSets = []
+        self.performedRecords = []
     }
 }
