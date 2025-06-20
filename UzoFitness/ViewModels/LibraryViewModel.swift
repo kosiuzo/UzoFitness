@@ -605,6 +605,47 @@ class LibraryViewModel: ObservableObject {
             self.error = error
         }
     }
+    
+    // MARK: - Workout Plan Editing Methods
+    func updateWorkoutPlan(_ plan: WorkoutPlan, customName: String, durationWeeks: Int, isActive: Bool) throws {
+        print("🔄 [LibraryViewModel.updateWorkoutPlan] Updating plan: \(plan.customName)")
+        
+        // If setting this plan to active, deactivate all other plans first
+        if isActive && !plan.isActive {
+            let activeDescriptor = FetchDescriptor<WorkoutPlan>(
+                predicate: #Predicate<WorkoutPlan> { existingPlan in
+                    existingPlan.isActive == true
+                }
+            )
+            
+            do {
+                let activePlans = try modelContext.fetch(activeDescriptor)
+                for activePlan in activePlans {
+                    activePlan.isActive = false
+                }
+            } catch {
+                print("❌ [LibraryViewModel.updateWorkoutPlan] Error deactivating existing plans: \(error.localizedDescription)")
+                throw error
+            }
+        }
+        
+        plan.customName = customName.trimmingCharacters(in: .whitespacesAndNewlines)
+        plan.durationWeeks = max(durationWeeks, 1) // Ensure minimum 1 week
+        plan.isActive = isActive
+        
+        try modelContext.save()
+        print("✅ [LibraryViewModel.updateWorkoutPlan] Successfully updated plan")
+        print("📊 [LibraryViewModel] Plan updated: \(plan.customName) - Active: \(plan.isActive) - Duration: \(plan.durationWeeks) weeks")
+    }
+    
+    func deleteWorkoutPlan(_ plan: WorkoutPlan) throws {
+        print("🔄 [LibraryViewModel.deleteWorkoutPlan] Deleting plan: \(plan.customName)")
+        
+        modelContext.delete(plan)
+        try modelContext.save()
+        
+        print("✅ [LibraryViewModel.deleteWorkoutPlan] Successfully deleted plan")
+    }
 }
 
 // MARK: - Supporting Types

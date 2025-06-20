@@ -157,30 +157,7 @@ struct WorkoutsTabView: View {
                         .italic()
                 } else {
                     ForEach(viewModel.workoutPlans) { plan in
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(plan.customName)
-                                    .font(.headline)
-                                if let template = plan.template {
-                                    Text("Based on: \(template.name)")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                            
-                            Spacer()
-                            
-                            if plan.isActive {
-                                Text("ACTIVE")
-                                    .font(.caption)
-                                    .fontWeight(.bold)
-                                    .foregroundStyle(.blue)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(.blue.opacity(0.1))
-                                    .clipShape(Capsule())
-                            }
-                        }
+                        WorkoutPlanRowView(plan: plan, viewModel: viewModel)
                     }
                 }
                 
@@ -956,6 +933,62 @@ struct SupersetRowView: View {
             }
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - WorkoutPlanRowView
+struct WorkoutPlanRowView: View {
+    let plan: WorkoutPlan
+    @ObservedObject var viewModel: LibraryViewModel
+    @State private var showingEditor = false
+    
+    var body: some View {
+        Button {
+            showingEditor = true
+        } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(plan.customName)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    
+                    HStack(spacing: 12) {
+                        if let template = plan.template {
+                            Text("Based on: \(template.name)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        Text("\(plan.durationWeeks) weeks")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                
+                Spacer()
+                
+                VStack(alignment: .trailing, spacing: 4) {
+                    if plan.isActive {
+                        Text("ACTIVE")
+                            .font(.caption)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.blue)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(.blue.opacity(0.1))
+                            .clipShape(Capsule())
+                    }
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .sheet(isPresented: $showingEditor) {
+            WorkoutPlanEditorView(plan: plan, viewModel: viewModel)
+        }
     }
 }
 
