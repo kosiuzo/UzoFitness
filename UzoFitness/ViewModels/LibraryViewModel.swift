@@ -467,8 +467,50 @@ class LibraryViewModel: ObservableObject {
         return candidateName
     }
     
-    // MARK: - Import Methods (Temporarily Disabled)
-    // TODO: Implement JSON import once Exercise model supports Codable
+    // MARK: - JSON Import Methods
+    func importExercises(from jsonData: Data) throws {
+        print("🔄 [LibraryViewModel.importExercises] Starting JSON import")
+        importErrorMessage = nil
+        
+        do {
+            let decoder = JSONDecoder()
+            let exercises = try decoder.decode([Exercise].self, from: jsonData)
+            
+            var importedCount = 0
+            for exercise in exercises {
+                // Check for duplicates by name
+                if !exerciseCatalog.contains(where: { $0.name.lowercased() == exercise.name.lowercased() }) {
+                    let newExercise = Exercise(
+                        name: exercise.name,
+                        category: exercise.category,
+                        instructions: exercise.instructions,
+                        mediaAssetID: exercise.mediaAssetID
+                    )
+                    modelContext.insert(newExercise)
+                    exerciseCatalog.append(newExercise)
+                    importedCount += 1
+                } else {
+                    print("📊 [LibraryViewModel.importExercises] Skipping duplicate exercise: \(exercise.name)")
+                }
+            }
+            
+            try modelContext.save()
+            exerciseCatalog.sort { $0.name < $1.name }
+            
+            print("✅ [LibraryViewModel.importExercises] Successfully imported \(importedCount) exercises (skipped \(exercises.count - importedCount) duplicates)")
+            
+        } catch let decodingError as DecodingError {
+            let errorMessage = "JSON format error: \(decodingError.localizedDescription)"
+            print("❌ [LibraryViewModel.importExercises] Decoding error: \(errorMessage)")
+            importErrorMessage = errorMessage
+            throw decodingError
+        } catch {
+            let errorMessage = "Import failed: \(error.localizedDescription)"
+            print("❌ [LibraryViewModel.importExercises] Error: \(errorMessage)")
+            importErrorMessage = errorMessage
+            throw error
+        }
+    }
     
     func createWorkoutTemplate(name: String) {
         print("🔄 [LibraryViewModel.createWorkoutTemplate] Creating template: \(name)")

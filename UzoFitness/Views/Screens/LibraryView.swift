@@ -48,16 +48,24 @@ struct LibraryView: View {
 struct ExercisesTabView: View {
     @ObservedObject var viewModel: LibraryViewModel
     @State private var showingExerciseEditor = false
+    @State private var showingJSONImport = false
     
     var body: some View {
         VStack(spacing: 0) {
             // List of exercises
             if viewModel.exercises.isEmpty {
-                ContentUnavailableView(
-                    "No Exercises",
-                    systemImage: "dumbbell",
-                    description: Text("Add exercises to get started")
-                )
+                VStack(spacing: 16) {
+                    ContentUnavailableView(
+                        "No Exercises",
+                        systemImage: "dumbbell",
+                        description: Text("Add exercises to get started")
+                    )
+                    
+                    Button("Import from JSON") {
+                        showingJSONImport = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
             } else {
                 List {
                     ForEach(viewModel.exercises) { exercise in
@@ -69,8 +77,18 @@ struct ExercisesTabView: View {
         }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    showingExerciseEditor = true
+                Menu {
+                    Button {
+                        showingExerciseEditor = true
+                    } label: {
+                        Label("Create Exercise", systemImage: "plus")
+                    }
+                    
+                    Button {
+                        showingJSONImport = true
+                    } label: {
+                        Label("Import from JSON", systemImage: "doc.text")
+                    }
                 } label: {
                     Image(systemName: "plus")
                 }
@@ -78,6 +96,14 @@ struct ExercisesTabView: View {
         }
         .sheet(isPresented: $showingExerciseEditor) {
             ExerciseEditorView(viewModel: viewModel)
+        }
+        .sheet(isPresented: $showingJSONImport) {
+            JSONImportView(
+                importAction: { jsonData in
+                    try viewModel.importExercises(from: jsonData)
+                },
+                errorMessage: viewModel.importErrorMessage
+            )
         }
     }
     
@@ -315,65 +341,7 @@ struct ExerciseEditorView: View {
     }
 }
 
-struct JSONImportView: View {
-    let importAction: (Data) throws -> Void
-    @State private var jsonText = ""
-    @State private var errorMessage: String?
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationView {
-            VStack(spacing: 16) {
-                Text("Paste JSON data for exercises")
-                    .font(.headline)
-                    .padding(.top)
-                
-                TextEditor(text: $jsonText)
-                    .border(Color.gray.opacity(0.3))
-                    .frame(minHeight: 200)
-                
-                if let errorMessage = errorMessage {
-                    Text(errorMessage)
-                        .foregroundStyle(.red)
-                        .font(.caption)
-                }
-                
-                Spacer()
-            }
-            .padding()
-            .navigationTitle("Import Exercises")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Import") {
-                        importJSON()
-                    }
-                    .disabled(jsonText.isEmpty)
-                }
-            }
-        }
-    }
-    
-    private func importJSON() {
-        guard let data = jsonText.data(using: .utf8) else {
-            errorMessage = "Invalid text format"
-            return
-        }
-        
-        do {
-            try importAction(data)
-            dismiss()
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-    }
-}
+
 
 struct TemplateDetailView: View {
     let template: WorkoutTemplate

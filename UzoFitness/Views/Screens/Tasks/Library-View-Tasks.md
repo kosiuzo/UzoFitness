@@ -17,10 +17,10 @@
 - [x] Build list of exercises bound to `viewModel.exercises`  
 - [x] Add "+" toolbar button → presents `ExerciseEditorView` (create mode)  
 - [x] Enable swipe-to-delete → calls `viewModel.deleteExercise(_:)`  
-- [ ] Add "Import from JSON" button → presents `JSONImportView(importAction: viewModel.importExercises)`  
-- [ ] In `JSONImportView`, bind a `TextEditor` for JSON input and "Import" button to call import, displaying `viewModel.importErrorMessage` on failure  
+- [x] Add "Import from JSON" button → presents `JSONImportView(importAction: viewModel.importExercises)`  
+- [x] In `JSONImportView`, bind a `TextEditor` for JSON input and "Import" button to call import, displaying `viewModel.importErrorMessage` on failure  
 
-**Status**: 🔄 **NEARLY COMPLETE** - Basic structure done, JSON import feature remaining (saved for last)
+**Status**: ✅ **COMPLETED** - Full JSON import functionality implemented and working
 
 ---
 
@@ -73,7 +73,7 @@
 - [x] Accept an import closure parameter (`(Data) throws -> Void`)  
 - [x] On success, dismiss automatically  
 
-**Status**: ⏳ **READY** - Implementation exists but disabled, will be re-enabled last
+**Status**: ✅ **COMPLETED** - Full JSON import functionality implemented with sample data for testing
 
 ---
 
@@ -108,7 +108,6 @@
 - **State Management**: @Published properties with proper UI binding
 
 ### ⏳ Remaining:
-- **JSON Import**: Feature ready, just needs re-enablement
 - **Accessibility**: Labels and Dynamic Type support
 - **Comprehensive Testing**: End-to-end flow validation
 

@@ -46,7 +46,8 @@ final class Exercise: Identified, Codable {
     
     required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.id = try container.decode(UUID.self, forKey: .id)
+        // Handle missing ID by generating a new UUID
+        self.id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
         self.name = try container.decode(String.self, forKey: .name)
         self.category = try container.decode(ExerciseCategory.self, forKey: .category)
         self.instructions = try container.decode(String.self, forKey: .instructions)
