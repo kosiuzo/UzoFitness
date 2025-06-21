@@ -16,7 +16,7 @@ struct LibraryView: View {
             VStack(spacing: 0) {
                 // Segmented Picker
                 Picker("Library Section", selection: $viewModel.selectedSegment) {
-                    ForEach(LibrarySegment.allCases, id: \.self) { segment in
+                    ForEach([LibrarySegment.workouts, LibrarySegment.exercises], id: \.self) { segment in
                         Text(segment.title).tag(segment)
                     }
                 }
@@ -27,10 +27,10 @@ struct LibraryView: View {
                 // Content Views
                 Group {
                     switch viewModel.selectedSegment {
-                    case .exercises:
-                        ExercisesTabView(viewModel: viewModel)
                     case .workouts:
                         WorkoutsTabView(viewModel: viewModel)
+                    case .exercises:
+                        ExercisesTabView(viewModel: viewModel)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -515,20 +515,6 @@ struct DayDetailView: View {
     }
 }
 
-// MARK: - DayTemplate Superset Extension
-extension DayTemplate {
-    func getSupersetNumber(for supersetID: UUID) -> Int? {
-        // Get all unique superset IDs in this day template, sorted consistently
-        let allSupersetIDs = Set(exerciseTemplates.compactMap { $0.supersetID })
-        let sortedSupersetIDs = allSupersetIDs.sorted { $0.uuidString < $1.uuidString }
-        
-        // Find the index (1-based) of this superset ID
-        if let index = sortedSupersetIDs.firstIndex(of: supersetID) {
-            return index + 1
-        }
-        return nil
-    }
-}
 
 // MARK: - ExerciseTemplateRowView
 struct ExerciseTemplateRowView: View {
@@ -737,7 +723,7 @@ struct ExerciseTemplateEditorView: View {
                         Text("Superset")
                         Spacer()
                         
-                        if let supersetID = supersetID {
+                        if supersetID != nil {
                             Button("Remove") {
                                 self.supersetID = nil
                             }
