@@ -70,26 +70,23 @@ struct ExercisesTabView: View {
             } else {
                 List {
                     ForEach(viewModel.exercises) { exercise in
-                        HStack {
-                            Button {
-                                selectedExerciseForEdit = exercise
-                                showingExerciseEditor = true
-                            } label: {
-                                ExerciseRowView(exercise: exercise)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        .swipeActions(edge: .trailing) {
-                            Button("Delete", role: .destructive) {
-                                viewModel.deleteExercise(exercise)
-                            }
-                            
-                            Button("Edit") {
+                        ExerciseRowView(exercise: exercise)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
                                 selectedExerciseForEdit = exercise
                                 showingExerciseEditor = true
                             }
-                            .tint(.blue)
-                        }
+                            .swipeActions(edge: .trailing) {
+                                Button("Delete", role: .destructive) {
+                                    viewModel.deleteExercise(exercise)
+                                }
+                                
+                                Button("Edit") {
+                                    selectedExerciseForEdit = exercise
+                                    showingExerciseEditor = true
+                                }
+                                .tint(.blue)
+                            }
                     }
                     .onDelete(perform: deleteExercises)
                 }
@@ -124,6 +121,15 @@ struct ExercisesTabView: View {
                 },
                 errorMessage: viewModel.importErrorMessage
             )
+        }
+        .alert("Error", isPresented: .constant(viewModel.error != nil)) {
+            Button("OK") {
+                viewModel.error = nil
+            }
+        } message: {
+            if let error = viewModel.error {
+                Text(error.localizedDescription)
+            }
         }
     }
     
@@ -227,6 +233,15 @@ struct WorkoutsTabView: View {
     }
     .sheet(isPresented: $showingJSONImport) {
         WorkoutTemplateJSONImportView(viewModel: viewModel)
+    }
+    .alert("Error", isPresented: .constant(viewModel.error != nil)) {
+        Button("OK") {
+            viewModel.error = nil
+        }
+    } message: {
+        if let error = viewModel.error {
+            Text(error.localizedDescription)
+        }
     }
 
 }
@@ -472,6 +487,15 @@ struct TemplateDetailView: View {
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("Are you sure you want to delete this workout template? This action cannot be undone.")
+        }
+        .alert("Error", isPresented: .constant(viewModel.error != nil)) {
+            Button("OK") {
+                viewModel.error = nil
+            }
+        } message: {
+            if let error = viewModel.error {
+                Text(error.localizedDescription)
+            }
         }
     }
     
@@ -1280,6 +1304,15 @@ struct WorkoutPlanEditorView: View {
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("Are you sure you want to delete this workout plan? This action cannot be undone.")
+        }
+        .alert("Error", isPresented: .constant(viewModel.error != nil)) {
+            Button("OK") {
+                viewModel.error = nil
+            }
+        } message: {
+            if let error = viewModel.error {
+                Text(error.localizedDescription)
+            }
         }
     }
     
