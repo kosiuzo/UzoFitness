@@ -1,0 +1,108 @@
+{
+  "name": "Simple Push/Pull/Legs",
+  "summary": "A basic 3-day push/pull/legs split for beginners. Easy to follow with fundamental compound and isolation movements.",
+  "days": [
+    {
+      "dayIndex": 1,
+      "name": "Push Day",
+      "exercises": [
+        {
+          "name": "Bench Press",
+          "sets": 3,
+          "reps": 8,
+          "weight": 135.0,
+          "supersetGroup": null
+        },
+        {
+          "name": "Overhead Press",
+          "sets": 3,
+          "reps": 10,
+          "weight": 95.0,
+          "supersetGroup": null
+        },
+        {
+          "name": "Tricep Dips",
+          "sets": 3,
+          "reps": 12,
+          "weight": null,
+          "supersetGroup": 1
+        },
+        {
+          "name": "Push-ups",
+          "sets": 3,
+          "reps": 15,
+          "weight": null,
+          "supersetGroup": 1
+        }
+      ]
+    },
+    {
+      "dayIndex": 3,
+      "name": "Pull Day",
+      "exercises": [
+        {
+          "name": "Pull-ups",
+          "sets": 3,
+          "reps": 8,
+          "weight": null,
+          "supersetGroup": null
+        },
+        {
+          "name": "Barbell Row",
+          "sets": 3,
+          "reps": 10,
+          "weight": 115.0,
+          "supersetGroup": null
+        },
+        {
+          "name": "Bicep Curls",
+          "sets": 3,
+          "reps": 12,
+          "weight": 30.0,
+          "supersetGroup": 2
+        },
+        {
+          "name": "Face Pulls",
+          "sets": 3,
+          "reps": 15,
+          "weight": 25.0,
+          "supersetGroup": 2
+        }
+      ]
+    },
+    {
+      "dayIndex": 5,
+      "name": "Leg Day",
+      "exercises": [
+        {
+          "name": "Squats",
+          "sets": 3,
+          "reps": 8,
+          "weight": 185.0,
+          "supersetGroup": null
+        },
+        {
+          "name": "Romanian Deadlifts",
+          "sets": 3,
+          "reps": 10,
+          "weight": 155.0,
+          "supersetGroup": null
+        },
+        {
+          "name": "Lunges",
+          "sets": 3,
+          "reps": 12,
+          "weight": 25.0,
+          "supersetGroup": 3
+        },
+        {
+          "name": "Calf Raises",
+          "sets": 3,
+          "reps": 20,
+          "weight": 45.0,
+          "supersetGroup": 3
+        }
+      ]
+    }
+  ]
+} 

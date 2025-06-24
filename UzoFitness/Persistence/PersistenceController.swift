@@ -99,9 +99,13 @@ class PersistenceController: ObservableObject {
     
     /// Delete a model (cascade-safe)
     func delete<T: PersistentModel & Identified>(_ model: T) {
+        print("🔄 [PersistenceController.delete] Deleting \(T.entityName)")
+        
         switch model {
         case let session as WorkoutSession:
+            print("🗑️ [PersistenceController.delete] Cascading deletion for WorkoutSession with \(session.sessionExercises.count) exercises")
             for exercise in session.sessionExercises {
+                print("🗑️ [PersistenceController.delete] Deleting SessionExercise with \(exercise.completedSets.count) sets")
                 for set in exercise.completedSets {
                     context.delete(set)
                 }
@@ -109,14 +113,17 @@ class PersistenceController: ObservableObject {
             }
 
         case let template as WorkoutTemplate:
+            print("🗑️ [PersistenceController.delete] Cascading deletion for WorkoutTemplate '\(template.name)' with \(template.dayTemplates.count) days")
             for day in template.dayTemplates {
-                for ex in day.exerciseTemplates {
-                    context.delete(ex)
+                print("🗑️ [PersistenceController.delete] Deleting DayTemplate for \(day.weekday) with \(day.exerciseTemplates.count) exercises")
+                for exerciseTemplate in day.exerciseTemplates {
+                    context.delete(exerciseTemplate)
                 }
                 context.delete(day)
             }
 
         case let exercise as SessionExercise:
+            print("🗑️ [PersistenceController.delete] Cascading deletion for SessionExercise with \(exercise.completedSets.count) sets")
             for set in exercise.completedSets {
                 context.delete(set)
             }
@@ -127,12 +134,15 @@ class PersistenceController: ObservableObject {
 
         context.delete(model)
         save()
+        print("✅ [PersistenceController.delete] Successfully deleted \(T.entityName)")
     }
     
     /// Delete multiple models
     func delete<T: PersistentModel & Identified>(_ models: [T]) {
+        print("🔄 [PersistenceController.delete] Batch deleting \(models.count) \(T.entityName) models")
         models.forEach { context.delete($0) }
         save()
+        print("✅ [PersistenceController.delete] Successfully deleted \(models.count) \(T.entityName) models")
     }
     
     // MARK: - Specific Helper Methods
@@ -190,17 +200,51 @@ class PersistenceController: ObservableObject {
     
     /// Delete all data (useful for testing/reset)
     func deleteAllData() {
+        print("🔄 [PersistenceController.deleteAllData] Starting deletion of all data")
+        
         // Delete in order to respect relationships
-        delete(fetch(CompletedSet.self))
-        delete(fetch(SessionExercise.self))
-        delete(fetch(WorkoutSession.self))
-        delete(fetch(ExerciseTemplate.self))
-        delete(fetch(DayTemplate.self))
-        delete(fetch(WorkoutPlan.self))
-        delete(fetch(WorkoutTemplate.self))
-        delete(fetch(ProgressPhoto.self))
-        delete(fetch(PerformedExercise.self))
-        delete(fetch(Exercise.self))
+        let completedSets = fetch(CompletedSet.self)
+        let sessionExercises = fetch(SessionExercise.self)
+        let workoutSessions = fetch(WorkoutSession.self)
+        let exerciseTemplates = fetch(ExerciseTemplate.self)
+        let dayTemplates = fetch(DayTemplate.self)
+        let workoutPlans = fetch(WorkoutPlan.self)
+        let workoutTemplates = fetch(WorkoutTemplate.self)
+        let progressPhotos = fetch(ProgressPhoto.self)
+        let performedExercises = fetch(PerformedExercise.self)
+        let exercises = fetch(Exercise.self)
+        
+        print("🗑️ [PersistenceController.deleteAllData] Deleting \(completedSets.count) CompletedSets")
+        delete(completedSets)
+        
+        print("🗑️ [PersistenceController.deleteAllData] Deleting \(sessionExercises.count) SessionExercises")
+        delete(sessionExercises)
+        
+        print("🗑️ [PersistenceController.deleteAllData] Deleting \(workoutSessions.count) WorkoutSessions")
+        delete(workoutSessions)
+        
+        print("🗑️ [PersistenceController.deleteAllData] Deleting \(exerciseTemplates.count) ExerciseTemplates")
+        delete(exerciseTemplates)
+        
+        print("🗑️ [PersistenceController.deleteAllData] Deleting \(dayTemplates.count) DayTemplates")
+        delete(dayTemplates)
+        
+        print("🗑️ [PersistenceController.deleteAllData] Deleting \(workoutPlans.count) WorkoutPlans")
+        delete(workoutPlans)
+        
+        print("🗑️ [PersistenceController.deleteAllData] Deleting \(workoutTemplates.count) WorkoutTemplates")
+        delete(workoutTemplates)
+        
+        print("🗑️ [PersistenceController.deleteAllData] Deleting \(progressPhotos.count) ProgressPhotos")
+        delete(progressPhotos)
+        
+        print("🗑️ [PersistenceController.deleteAllData] Deleting \(performedExercises.count) PerformedExercises")
+        delete(performedExercises)
+        
+        print("🗑️ [PersistenceController.deleteAllData] Deleting \(exercises.count) Exercises")
+        delete(exercises)
+        
+        print("✅ [PersistenceController.deleteAllData] Successfully deleted all data")
     }
     
     // MARK: - Sample Data for Previews

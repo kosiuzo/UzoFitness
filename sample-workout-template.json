@@ -1,0 +1,165 @@
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "Push/Pull/Legs Split",
+  "summary": "Classic 3-day split focusing on push movements (chest, shoulders, triceps), pull movements (back, biceps), and leg movements (quads, hamstrings, glutes, calves)",
+  "createdAt": "2024-01-15T08:00:00Z",
+  "days": [
+    {
+      "dayIndex": 1,
+      "name": "Push Day",
+      "exercises": [
+        {
+          "id": "650e8400-e29b-41d4-a716-446655440001",
+          "name": "Bench Press",
+          "sets": 4,
+          "reps": 8,
+          "weight": 185.0,
+          "supersetGroup": null
+        },
+        {
+          "id": "650e8400-e29b-41d4-a716-446655440002",
+          "name": "Incline Dumbbell Press",
+          "sets": 3,
+          "reps": 10,
+          "weight": 75.0,
+          "supersetGroup": null
+        },
+        {
+          "id": "650e8400-e29b-41d4-a716-446655440003",
+          "name": "Shoulder Press",
+          "sets": 3,
+          "reps": 12,
+          "weight": 135.0,
+          "supersetGroup": 1
+        },
+        {
+          "id": "650e8400-e29b-41d4-a716-446655440004",
+          "name": "Lateral Raises",
+          "sets": 3,
+          "reps": 15,
+          "weight": 20.0,
+          "supersetGroup": 1
+        },
+        {
+          "id": "650e8400-e29b-41d4-a716-446655440005",
+          "name": "Tricep Dips",
+          "sets": 3,
+          "reps": 12,
+          "weight": null,
+          "supersetGroup": 2
+        },
+        {
+          "id": "650e8400-e29b-41d4-a716-446655440006",
+          "name": "Overhead Tricep Extension",
+          "sets": 3,
+          "reps": 12,
+          "weight": 50.0,
+          "supersetGroup": 2
+        }
+      ]
+    },
+    {
+      "dayIndex": 2,
+      "name": "Pull Day",
+      "exercises": [
+        {
+          "name": "Deadlifts",
+          "sets": 4,
+          "reps": 6,
+          "weight": 275.0,
+          "supersetGroup": null
+        },
+        {
+          "name": "Pull-ups",
+          "sets": 4,
+          "reps": 10,
+          "weight": null,
+          "supersetGroup": null
+        },
+        {
+          "name": "Barbell Rows",
+          "sets": 3,
+          "reps": 8,
+          "weight": 155.0,
+          "supersetGroup": null
+        },
+        {
+          "name": "Lat Pulldowns",
+          "sets": 3,
+          "reps": 12,
+          "weight": 140.0,
+          "supersetGroup": 3
+        },
+        {
+          "name": "Cable Rows",
+          "sets": 3,
+          "reps": 12,
+          "weight": 120.0,
+          "supersetGroup": 3
+        },
+        {
+          "name": "Bicep Curls",
+          "sets": 3,
+          "reps": 15,
+          "weight": 35.0,
+          "supersetGroup": 4
+        },
+        {
+          "name": "Hammer Curls",
+          "sets": 3,
+          "reps": 12,
+          "weight": 30.0,
+          "supersetGroup": 4
+        }
+      ]
+    },
+    {
+      "dayIndex": 3,
+      "name": "Leg Day",
+      "exercises": [
+        {
+          "name": "Squats",
+          "sets": 4,
+          "reps": 8,
+          "weight": 225.0,
+          "supersetGroup": null
+        },
+        {
+          "name": "Romanian Deadlifts",
+          "sets": 4,
+          "reps": 10,
+          "weight": 185.0,
+          "supersetGroup": null
+        },
+        {
+          "name": "Bulgarian Split Squats",
+          "sets": 3,
+          "reps": 12,
+          "weight": 35.0,
+          "supersetGroup": 5
+        },
+        {
+          "name": "Walking Lunges",
+          "sets": 3,
+          "reps": 20,
+          "weight": 25.0,
+          "supersetGroup": 5
+        },
+        {
+          "name": "Leg Curls",
+          "sets": 3,
+          "reps": 15,
+          "weight": 80.0,
+          "supersetGroup": 6
+        },
+        {
+          "name": "Calf Raises",
+          "sets": 4,
+          "reps": 20,
+          "weight": 45.0,
+          "supersetGroup": 6
+        }
+      ]
+    }
+  ]
+} 

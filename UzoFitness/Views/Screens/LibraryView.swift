@@ -49,6 +49,7 @@ struct ExercisesTabView: View {
     @ObservedObject var viewModel: LibraryViewModel
     @State private var showingExerciseEditor = false
     @State private var showingJSONImport = false
+    @State private var selectedExerciseForEdit: Exercise?
     
     var body: some View {
         VStack(spacing: 0) {
@@ -69,7 +70,26 @@ struct ExercisesTabView: View {
             } else {
                 List {
                     ForEach(viewModel.exercises) { exercise in
-                        ExerciseRowView(exercise: exercise)
+                        HStack {
+                            Button {
+                                selectedExerciseForEdit = exercise
+                                showingExerciseEditor = true
+                            } label: {
+                                ExerciseRowView(exercise: exercise)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .swipeActions(edge: .trailing) {
+                            Button("Delete", role: .destructive) {
+                                viewModel.deleteExercise(exercise)
+                            }
+                            
+                            Button("Edit") {
+                                selectedExerciseForEdit = exercise
+                                showingExerciseEditor = true
+                            }
+                            .tint(.blue)
+                        }
                     }
                     .onDelete(perform: deleteExercises)
                 }
@@ -95,7 +115,7 @@ struct ExercisesTabView: View {
             }
         }
         .sheet(isPresented: $showingExerciseEditor) {
-            ExerciseEditorView(viewModel: viewModel)
+            ExerciseEditorView(exercise: selectedExerciseForEdit, viewModel: viewModel)
         }
         .sheet(isPresented: $showingJSONImport) {
             JSONImportView(
@@ -120,13 +140,16 @@ struct WorkoutsTabView: View {
     @ObservedObject var viewModel: LibraryViewModel
     @State private var showingTemplateCreator = false
     @State private var showingPlanCreator = false
+    @State private var showingJSONImport = false
+
+
     
     var body: some View {
         List {
             // Workout Templates Section
-            Section("Workout Templates") {
+            Section("My Workouts") {
                 if viewModel.workoutTemplates.isEmpty {
-                    Text("No workout templates")
+                    Text("No workouts")
                         .foregroundStyle(.secondary)
                         .italic()
                 } else {
@@ -143,16 +166,16 @@ struct WorkoutsTabView: View {
                     }
                 }
                 
-                Button("Create Template") {
+                Button("Add Workout") {
                     showingTemplateCreator = true
                 }
                 .foregroundStyle(.blue)
             }
             
             // Workout Plans Section
-            Section("Workout Plans") {
+            Section("My Schedule") {
                 if viewModel.workoutPlans.isEmpty {
-                    Text("No workout plans")
+                    Text("No schedules")
                         .foregroundStyle(.secondary)
                         .italic()
                 } else {
@@ -161,10 +184,30 @@ struct WorkoutsTabView: View {
                     }
                 }
                 
-                Button("Create Plan") {
+                Button("Schedule Workout") {
                     showingPlanCreator = true
                 }
                 .foregroundStyle(.blue)
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    Button {
+                        showingTemplateCreator = true
+                    } label: {
+                        Label("Create Template", systemImage: "plus")
+                    }
+                    
+                    Button {
+                        showingJSONImport = true
+                    } label: {
+                        Label("Import Template from JSON", systemImage: "doc.text")
+                    }
+                } label: {
+                    Image(systemName: "plus")
+                        .foregroundColor(.accentColor)
+                }
             }
         }
         .alert("Create Template", isPresented: $showingTemplateCreator) {
@@ -176,13 +219,17 @@ struct WorkoutsTabView: View {
             ActionSheet(
                 title: Text("Create Plan From Template"),
                 buttons: viewModel.workoutTemplates.map { template in
-                    .default(Text(template.name)) {
-                        viewModel.createPlan(from: template)
-                    }
-                } + [.cancel()]
-            )
-        }
+                .default(Text(template.name)) {
+                    viewModel.createPlan(from: template)
+                }
+            } + [.cancel()]
+        )
     }
+    .sheet(isPresented: $showingJSONImport) {
+        WorkoutTemplateJSONImportView(viewModel: viewModel)
+    }
+
+}
 }
 
 // MARK: - Supporting Views
@@ -324,9 +371,16 @@ struct TemplateDetailView: View {
     let template: WorkoutTemplate
     @ObservedObject var viewModel: LibraryViewModel
     
+    @State private var name: String
+    @State private var summary: String
+    @State private var showingDeleteConfirmation = false
+    @State private var isEditing = false
+    
     init(template: WorkoutTemplate, viewModel: LibraryViewModel) {
         self.template = template
         self.viewModel = viewModel
+        self._name = State(initialValue: template.name)
+        self._summary = State(initialValue: template.summary)
     }
     
     private var orderedWeekdays: [Weekday] {
@@ -337,14 +391,26 @@ struct TemplateDetailView: View {
         List {
             // Template Info Section
             Section("Template Info") {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(template.name)
-                        .font(.headline)
-                    
-                    if !template.summary.isEmpty {
-                        Text(template.summary)
+                VStack(alignment: .leading, spacing: 12) {
+                    if isEditing {
+                        TextField("Template Name", text: $name)
+                            .font(.headline)
+                            .autocapitalization(.words)
+                            .textFieldStyle(.roundedBorder)
+                        
+                        TextField("Summary", text: $summary, axis: .vertical)
                             .font(.body)
-                            .foregroundStyle(.secondary)
+                            .lineLimit(3...6)
+                            .textFieldStyle(.roundedBorder)
+                    } else {
+                        Text(template.name)
+                            .font(.headline)
+                        
+                        if !template.summary.isEmpty {
+                            Text(template.summary)
+                                .font(.body)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                     
                     Text("Created: \(template.createdAt.formatted(date: .abbreviated, time: .omitted))")
@@ -364,9 +430,66 @@ struct TemplateDetailView: View {
                     )
                 }
             }
+            
+            // Delete Template Section
+            Section {
+                Button("Delete Template", role: .destructive) {
+                    showingDeleteConfirmation = true
+                }
+                .frame(maxWidth: .infinity)
+            }
         }
-        .navigationTitle(template.name)
+        .navigationTitle(isEditing ? "Edit Template" : template.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                if isEditing {
+                    HStack {
+                        Button("Cancel") {
+                            // Reset values
+                            name = template.name
+                            summary = template.summary
+                            isEditing = false
+                        }
+                        
+                        Button("Save") {
+                            saveTemplate()
+                        }
+                        .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .fontWeight(.semibold)
+                    }
+                } else {
+                    Button("Edit") {
+                        isEditing = true
+                    }
+                }
+            }
+        }
+        .alert("Delete Template", isPresented: $showingDeleteConfirmation) {
+            Button("Delete", role: .destructive) {
+                viewModel.deleteTemplate(template)
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Are you sure you want to delete this workout template? This action cannot be undone.")
+        }
+    }
+    
+    private func saveTemplate() {
+        print("🔄 [TemplateDetailView.saveTemplate] Saving template changes")
+        
+        do {
+            try viewModel.updateTemplate(
+                template,
+                name: name.trimmingCharacters(in: .whitespacesAndNewlines),
+                summary: summary.trimmingCharacters(in: .whitespacesAndNewlines)
+            )
+            print("✅ [TemplateDetailView.saveTemplate] Successfully saved template")
+            isEditing = false
+        } catch {
+            print("❌ [TemplateDetailView.saveTemplate] Error: \(error.localizedDescription)")
+            viewModel.error = error
+        }
     }
 }
 
@@ -402,12 +525,11 @@ struct DayRowView: View {
                 
                 Spacer()
                 
-                // Rest day toggle
-                Toggle("Rest Day", isOn: Binding(
-                    get: { dayTemplate?.isRest ?? false },
-                    set: { _ in toggleRestDay() }
-                ))
-                .labelsHidden()
+                // Rest/Workout capsule button
+                RestWorkoutCapsuleButton(
+                    isRest: dayTemplate?.isRest ?? false,
+                    onToggle: toggleRestDay
+                )
             }
         }
     }
@@ -430,6 +552,41 @@ struct DayRowView: View {
         if let dayTemplate = dayTemplate {
             viewModel.toggleRestDay(for: dayTemplate)
         }
+    }
+}
+
+// MARK: - RestWorkoutCapsuleButton
+struct RestWorkoutCapsuleButton: View {
+    let isRest: Bool
+    let onToggle: () -> Void
+    
+    var body: some View {
+        Button(action: onToggle) {
+            HStack(spacing: 0) {
+                // Rest option
+                Text("Rest")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundStyle(isRest ? .white : .secondary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(isRest ? .blue : .clear)
+                    .clipShape(Capsule())
+                
+                // Workout option
+                Text("Workout")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundStyle(!isRest ? .white : .secondary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(!isRest ? .blue : .clear)
+                    .clipShape(Capsule())
+            }
+            .background(.quaternary)
+            .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -478,6 +635,8 @@ struct DayDetailView: View {
                                 ExerciseTemplateRowView(exerciseTemplate: exerciseTemplate)
                             }
                         }
+                        .onMove(perform: moveExercises)
+                        .onDelete(perform: deleteExercises)
                     }
                 }
             }
@@ -495,10 +654,13 @@ struct DayDetailView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 if !dayTemplate.isRest {
-                    Button {
-                        showingExercisePicker = true
-                    } label: {
-                        Label("Add Exercise", systemImage: "plus")
+                    HStack {
+                        EditButton()
+                        Button {
+                            showingExercisePicker = true
+                        } label: {
+                            Label("Add Exercise", systemImage: "plus")
+                        }
                     }
                 }
             }
@@ -512,6 +674,20 @@ struct DayDetailView: View {
     
     private var dayName: String {
         dayTemplate.weekday.fullName
+    }
+    
+    private func moveExercises(from source: IndexSet, to destination: Int) {
+        viewModel.reorderExerciseTemplates(in: dayTemplate, from: source, to: destination)
+    }
+    
+    private func deleteExercises(offsets: IndexSet) {
+        print("🔄 [DayDetailView.deleteExercises] Deleting exercises at offsets: \(offsets)")
+        
+        let sortedExercises = dayTemplate.exerciseTemplates.sorted(by: { $0.position < $1.position })
+        for index in offsets {
+            let exerciseTemplate = sortedExercises[index]
+            viewModel.deleteExerciseTemplate(exerciseTemplate)
+        }
     }
 }
 
@@ -926,17 +1102,13 @@ struct SupersetRowView: View {
 struct WorkoutPlanRowView: View {
     let plan: WorkoutPlan
     @ObservedObject var viewModel: LibraryViewModel
-    @State private var showingEditor = false
     
     var body: some View {
-        Button {
-            showingEditor = true
-        } label: {
+        NavigationLink(destination: WorkoutPlanEditorView(plan: plan, viewModel: viewModel)) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(plan.customName)
                         .font(.headline)
-                        .foregroundStyle(.primary)
                     
                     HStack(spacing: 12) {
                         if let template = plan.template {
@@ -964,16 +1136,181 @@ struct WorkoutPlanRowView: View {
                             .background(.blue.opacity(0.1))
                             .clipShape(Capsule())
                     }
-                    
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
                 }
             }
         }
         .buttonStyle(.plain)
-        .sheet(isPresented: $showingEditor) {
-            WorkoutPlanEditorView(plan: plan, viewModel: viewModel)
+    }
+}
+
+// MARK: - WorkoutPlanEditorView
+struct WorkoutPlanEditorView: View {
+    let plan: WorkoutPlan
+    @ObservedObject var viewModel: LibraryViewModel
+    @Environment(\.dismiss) private var dismiss
+    
+    @State private var customName: String
+    @State private var durationWeeks: Int
+    @State private var isActive: Bool
+    @State private var showingDeleteConfirmation = false
+    @State private var isEditing = false
+    
+    init(plan: WorkoutPlan, viewModel: LibraryViewModel) {
+        self.plan = plan
+        self.viewModel = viewModel
+        self._customName = State(initialValue: plan.customName)
+        self._durationWeeks = State(initialValue: plan.durationWeeks)
+        self._isActive = State(initialValue: plan.isActive)
+    }
+    
+    var body: some View {
+        List {
+            // Plan Info Section
+            Section("Plan Details") {
+                VStack(alignment: .leading, spacing: 12) {
+                    if isEditing {
+                        TextField("Plan Name", text: $customName)
+                            .font(.headline)
+                            .textFieldStyle(.roundedBorder)
+                        
+                        HStack {
+                            Text("Duration (weeks)")
+                                .font(.body)
+                            Spacer()
+                            Stepper(value: $durationWeeks, in: 1...52) {
+                                Text("\(durationWeeks)")
+                                    .fontWeight(.medium)
+                            }
+                        }
+                        
+                        Toggle("Active Plan", isOn: $isActive)
+                            .font(.body)
+                    } else {
+                        Text(plan.customName)
+                            .font(.headline)
+                        
+                        HStack {
+                            Text("Duration:")
+                                .font(.body)
+                                .foregroundStyle(.secondary)
+                            Text("\(plan.durationWeeks) weeks")
+                                .font(.body)
+                            Spacer()
+                        }
+                        
+                        HStack {
+                            Text("Status:")
+                                .font(.body)
+                                .foregroundStyle(.secondary)
+                            Text(plan.isActive ? "Active" : "Inactive")
+                                .font(.body)
+                                .fontWeight(plan.isActive ? .semibold : .regular)
+                                .foregroundStyle(plan.isActive ? .blue : .primary)
+                            Spacer()
+                        }
+                    }
+                    
+                    Text("Created: \(plan.createdAt.formatted(date: .abbreviated, time: .omitted))")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.vertical, 4)
+            }
+            
+            // Template Info Section
+            if let template = plan.template {
+                Section("Based on Template") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(template.name)
+                            .font(.headline)
+                        
+                        if !template.summary.isEmpty {
+                            Text(template.summary)
+                                .font(.body)
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        Text("Template created: \(template.createdAt.formatted(date: .abbreviated, time: .omitted))")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+            
+            // Delete Plan Section
+            Section {
+                Button("Delete Plan", role: .destructive) {
+                    showingDeleteConfirmation = true
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .navigationTitle(isEditing ? "Edit Plan" : plan.customName)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                if isEditing {
+                    HStack {
+                        Button("Cancel") {
+                            // Reset values
+                            customName = plan.customName
+                            durationWeeks = plan.durationWeeks
+                            isActive = plan.isActive
+                            isEditing = false
+                        }
+                        
+                        Button("Save") {
+                            savePlan()
+                        }
+                        .disabled(customName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .fontWeight(.semibold)
+                    }
+                } else {
+                    Button("Edit") {
+                        isEditing = true
+                    }
+                }
+            }
+        }
+        .alert("Delete Plan", isPresented: $showingDeleteConfirmation) {
+            Button("Delete", role: .destructive) {
+                deletePlan()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Are you sure you want to delete this workout plan? This action cannot be undone.")
+        }
+    }
+    
+    private func savePlan() {
+        print("🔄 [WorkoutPlanEditorView.savePlan] Saving plan changes")
+        
+        do {
+            try viewModel.updateWorkoutPlan(
+                plan,
+                customName: customName.trimmingCharacters(in: .whitespacesAndNewlines),
+                durationWeeks: durationWeeks,
+                isActive: isActive
+            )
+            print("✅ [WorkoutPlanEditorView.savePlan] Successfully saved plan")
+            isEditing = false
+        } catch {
+            print("❌ [WorkoutPlanEditorView.savePlan] Error: \(error.localizedDescription)")
+            viewModel.error = error
+        }
+    }
+    
+    private func deletePlan() {
+        print("🔄 [WorkoutPlanEditorView.deletePlan] Deleting plan")
+        
+        do {
+            try viewModel.deleteWorkoutPlan(plan)
+            print("✅ [WorkoutPlanEditorView.deletePlan] Successfully deleted plan")
+            dismiss()
+        } catch {
+            print("❌ [WorkoutPlanEditorView.deletePlan] Error: \(error.localizedDescription)")
+            viewModel.error = error
         }
     }
 }

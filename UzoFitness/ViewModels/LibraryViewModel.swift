@@ -58,6 +58,46 @@ class LibraryViewModel: ObservableObject {
     private let modelContext: ModelContext
     private var cancellables = Set<AnyCancellable>()
     
+    // MARK: - Public Methods for View Access
+    func deleteExerciseTemplate(_ exerciseTemplate: ExerciseTemplate) {
+        print("🔄 [LibraryViewModel.deleteExerciseTemplate] Deleting exercise template for \(exerciseTemplate.exercise.name)")
+        
+        // Remove from day template
+        exerciseTemplate.dayTemplate?.exerciseTemplates.removeAll { $0.id == exerciseTemplate.id }
+        
+        // Delete from context
+        modelContext.delete(exerciseTemplate)
+        
+        do {
+            try modelContext.save()
+            print("✅ [LibraryViewModel.deleteExerciseTemplate] Successfully deleted exercise template")
+        } catch {
+            print("❌ [LibraryViewModel.deleteExerciseTemplate] Error: \(error.localizedDescription)")
+            self.error = error
+        }
+    }
+    
+    func reorderExerciseTemplates(in dayTemplate: DayTemplate, from source: IndexSet, to destination: Int) {
+        print("🔄 [LibraryViewModel.reorderExerciseTemplates] Reordering exercises in \(dayTemplate.weekday)")
+        
+        let sortedExercises = dayTemplate.exerciseTemplates.sorted(by: { $0.position < $1.position })
+        var reorderedExercises = sortedExercises
+        reorderedExercises.move(fromOffsets: source, toOffset: destination)
+        
+        // Update positions
+        for (index, exerciseTemplate) in reorderedExercises.enumerated() {
+            exerciseTemplate.position = Double(index + 1)
+        }
+        
+        do {
+            try modelContext.save()
+            print("✅ [LibraryViewModel.reorderExerciseTemplates] Successfully reordered exercises")
+        } catch {
+            print("❌ [LibraryViewModel.reorderExerciseTemplates] Error: \(error.localizedDescription)")
+            self.error = error
+        }
+    }
+    
     // MARK: - Initialization
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
@@ -528,6 +568,22 @@ class LibraryViewModel: ObservableObject {
         handleIntent(.deleteExercise(id: exercise.id))
     }
     
+    func deleteTemplate(_ template: WorkoutTemplate) {
+        print("🔄 [LibraryViewModel.deleteTemplate] Deleting template: \(template.name)")
+        handleIntent(.deleteTemplate(id: template.id))
+    }
+    
+    func updateTemplate(_ template: WorkoutTemplate, name: String, summary: String) throws {
+        print("🔄 [LibraryViewModel.updateTemplate] Updating template: \(template.name)")
+        
+        template.name = name
+        template.summary = summary
+        
+        try modelContext.save()
+        print("✅ [LibraryViewModel.updateTemplate] Successfully updated template")
+        print("📊 [LibraryViewModel] Template updated: \(template.name)")
+    }
+    
     func createExercise(name: String, category: ExerciseCategory, instructions: String) throws {
         print("🔄 [LibraryViewModel.createExercise] Creating exercise: \(name)")
         let newExercise = Exercise(
@@ -645,6 +701,103 @@ class LibraryViewModel: ObservableObject {
         try modelContext.save()
         
         print("✅ [LibraryViewModel.deleteWorkoutPlan] Successfully deleted plan")
+    }
+    
+    // MARK: - JSON Import Methods
+    func importWorkoutTemplate(from dto: WorkoutTemplateImportDTO) throws -> Int {
+        print("🔄 [LibraryViewModel.importWorkoutTemplate] Starting import of template: \(dto.name)")
+        
+        // Check for existing template with same name
+        if workoutTemplates.contains(where: { $0.name == dto.name }) {
+            throw ImportError.duplicateTemplate(dto.name)
+        }
+        
+        // Create the workout template with auto-generated UUID
+        let template = WorkoutTemplate(
+            id: UUID(), // Always auto-generate new UUID
+            name: dto.name,
+            summary: dto.summary,
+            createdAt: dto.createdAt ?? Date()
+        )
+        
+        modelContext.insert(template)
+        
+        // Process days
+        for dayDTO in dto.days {
+            print("🔄 [LibraryViewModel.importWorkoutTemplate] Processing day: \(dayDTO.name)")
+            
+            // Map dayIndex to Weekday enum
+            guard let weekday = Weekday(rawValue: dayDTO.dayIndex) else {
+                throw ImportError.invalidDayIndex(dayDTO.dayIndex)
+            }
+            
+            let dayTemplate = DayTemplate(
+                weekday: weekday,
+                isRest: false,
+                notes: "",
+                workoutTemplate: template
+            )
+            
+            modelContext.insert(dayTemplate)
+            template.dayTemplates.append(dayTemplate)
+            
+            // Process exercises for this day
+            for (index, exerciseDTO) in dayDTO.exercises.enumerated() {
+                print("🔄 [LibraryViewModel.importWorkoutTemplate] Processing exercise: \(exerciseDTO.name)")
+                
+                // Find or create the exercise
+                let exercise = try findOrCreateExercise(name: exerciseDTO.name)
+                
+                // Create exercise template with auto-generated UUID
+                let exerciseTemplate = ExerciseTemplate(
+                    id: UUID(), // Always auto-generate new UUID
+                    exercise: exercise,
+                    setCount: exerciseDTO.sets,
+                    reps: exerciseDTO.reps,
+                    weight: exerciseDTO.weight,
+                    position: Double(index + 1),
+                    supersetID: exerciseDTO.supersetGroup.map { _ in UUID() }, // Convert superset group to UUID
+                    dayTemplate: dayTemplate
+                )
+                
+                modelContext.insert(exerciseTemplate)
+                dayTemplate.exerciseTemplates.append(exerciseTemplate)
+            }
+        }
+        
+        // Save everything
+        try modelContext.save()
+        
+        // Update local state
+        templates.insert(template, at: 0)
+        
+        print("✅ [LibraryViewModel.importWorkoutTemplate] Successfully imported template: \(dto.name)")
+        return 1
+    }
+    
+    private func findOrCreateExercise(name: String) throws -> Exercise {
+        print("🔄 [LibraryViewModel.findOrCreateExercise] Looking for exercise: \(name)")
+        
+        // First, try to find existing exercise
+        if let existingExercise = exerciseCatalog.first(where: { $0.name.lowercased() == name.lowercased() }) {
+            print("✅ [LibraryViewModel.findOrCreateExercise] Found existing exercise: \(name)")
+            return existingExercise
+        }
+        
+        // Create new exercise with default category
+        print("🔄 [LibraryViewModel.findOrCreateExercise] Creating new exercise: \(name)")
+        let newExercise = Exercise(
+            name: name,
+            category: .strength, // Default category
+            instructions: "Exercise imported from JSON template"
+        )
+        
+        modelContext.insert(newExercise)
+        exerciseCatalog.append(newExercise)
+        exerciseCatalog.sort { $0.name < $1.name }
+        
+        print("✅ [LibraryViewModel.findOrCreateExercise] Created new exercise: \(name)")
+        return newExercise
     }
 }
 

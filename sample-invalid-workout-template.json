@@ -1,0 +1,19 @@
+{
+  "name": "",
+  "summary": "This template has several validation errors to test error handling",
+  "days": [
+    {
+      "dayIndex": 8,
+      "name": "",
+      "exercises": [
+        {
+          "name": "",
+          "sets": 0,
+          "reps": -5,
+          "weight": -10.0,
+          "supersetGroup": -1
+        }
+      ]
+    }
+  ]
+} 

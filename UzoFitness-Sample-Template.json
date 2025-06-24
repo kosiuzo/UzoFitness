@@ -1,0 +1,241 @@
+{
+  "name": "Upper/Lower Split - Manual Test",
+  "summary": "4-day upper/lower body split perfect for intermediate lifters. Focuses on compound movements with accessory work for balanced muscle development.",
+  "createdAt": "2024-06-21T14:00:00Z",
+  "days": [
+    {
+      "dayIndex": 1,
+      "name": "Upper Body - Day 1",
+      "exercises": [
+        {
+          "name": "Bench Press",
+          "sets": 4,
+          "reps": 6,
+          "weight": 185.0,
+          "supersetGroup": null
+        },
+        {
+          "name": "Barbell Row",
+          "sets": 4,
+          "reps": 6,
+          "weight": 165.0,
+          "supersetGroup": null
+        },
+        {
+          "name": "Overhead Press",
+          "sets": 3,
+          "reps": 8,
+          "weight": 115.0,
+          "supersetGroup": 1
+        },
+        {
+          "name": "Lat Pulldown",
+          "sets": 3,
+          "reps": 8,
+          "weight": 140.0,
+          "supersetGroup": 1
+        },
+        {
+          "name": "Dumbbell Flyes",
+          "sets": 3,
+          "reps": 12,
+          "weight": 30.0,
+          "supersetGroup": 2
+        },
+        {
+          "name": "Face Pulls",
+          "sets": 3,
+          "reps": 15,
+          "weight": 40.0,
+          "supersetGroup": 2
+        },
+        {
+          "name": "Barbell Curls",
+          "sets": 3,
+          "reps": 10,
+          "weight": 65.0,
+          "supersetGroup": 3
+        },
+        {
+          "name": "Close-Grip Bench Press",
+          "sets": 3,
+          "reps": 10,
+          "weight": 135.0,
+          "supersetGroup": 3
+        }
+      ]
+    },
+    {
+      "dayIndex": 2,
+      "name": "Lower Body - Day 1",
+      "exercises": [
+        {
+          "name": "Squats",
+          "sets": 4,
+          "reps": 6,
+          "weight": 225.0,
+          "supersetGroup": null
+        },
+        {
+          "name": "Romanian Deadlifts",
+          "sets": 4,
+          "reps": 8,
+          "weight": 185.0,
+          "supersetGroup": null
+        },
+        {
+          "name": "Bulgarian Split Squats",
+          "sets": 3,
+          "reps": 10,
+          "weight": 40.0,
+          "supersetGroup": 4
+        },
+        {
+          "name": "Nordic Hamstring Curls",
+          "sets": 3,
+          "reps": 6,
+          "weight": null,
+          "supersetGroup": 4
+        },
+        {
+          "name": "Walking Lunges",
+          "sets": 3,
+          "reps": 20,
+          "weight": 25.0,
+          "supersetGroup": 5
+        },
+        {
+          "name": "Calf Raises",
+          "sets": 4,
+          "reps": 15,
+          "weight": 90.0,
+          "supersetGroup": 5
+        },
+        {
+          "name": "Plank",
+          "sets": 3,
+          "reps": 60,
+          "weight": null,
+          "supersetGroup": null
+        }
+      ]
+    },
+    {
+      "dayIndex": 4,
+      "name": "Upper Body - Day 2",
+      "exercises": [
+        {
+          "name": "Incline Dumbbell Press",
+          "sets": 4,
+          "reps": 8,
+          "weight": 70.0,
+          "supersetGroup": null
+        },
+        {
+          "name": "T-Bar Row",
+          "sets": 4,
+          "reps": 8,
+          "weight": 90.0,
+          "supersetGroup": null
+        },
+        {
+          "name": "Dumbbell Shoulder Press",
+          "sets": 3,
+          "reps": 10,
+          "weight": 50.0,
+          "supersetGroup": 6
+        },
+        {
+          "name": "Cable Row",
+          "sets": 3,
+          "reps": 10,
+          "weight": 120.0,
+          "supersetGroup": 6
+        },
+        {
+          "name": "Lateral Raises",
+          "sets": 3,
+          "reps": 15,
+          "weight": 20.0,
+          "supersetGroup": 7
+        },
+        {
+          "name": "Rear Delt Flyes",
+          "sets": 3,
+          "reps": 15,
+          "weight": 15.0,
+          "supersetGroup": 7
+        },
+        {
+          "name": "Hammer Curls",
+          "sets": 3,
+          "reps": 12,
+          "weight": 35.0,
+          "supersetGroup": 8
+        },
+        {
+          "name": "Tricep Pushdowns",
+          "sets": 3,
+          "reps": 12,
+          "weight": 60.0,
+          "supersetGroup": 8
+        }
+      ]
+    },
+    {
+      "dayIndex": 5,
+      "name": "Lower Body - Day 2",
+      "exercises": [
+        {
+          "name": "Deadlifts",
+          "sets": 4,
+          "reps": 5,
+          "weight": 275.0,
+          "supersetGroup": null
+        },
+        {
+          "name": "Front Squats",
+          "sets": 3,
+          "reps": 8,
+          "weight": 155.0,
+          "supersetGroup": null
+        },
+        {
+          "name": "Leg Curls",
+          "sets": 3,
+          "reps": 12,
+          "weight": 80.0,
+          "supersetGroup": 9
+        },
+        {
+          "name": "Leg Extensions",
+          "sets": 3,
+          "reps": 12,
+          "weight": 110.0,
+          "supersetGroup": 9
+        },
+        {
+          "name": "Hip Thrusts",
+          "sets": 3,
+          "reps": 15,
+          "weight": 135.0,
+          "supersetGroup": 10
+        },
+        {
+          "name": "Seated Calf Raises",
+          "sets": 4,
+          "reps": 20,
+          "weight": 45.0,
+          "supersetGroup": 10
+        },
+        {
+          "name": "Russian Twists",
+          "sets": 3,
+          "reps": 30,
+          "weight": 25.0,
+          "supersetGroup": null
+        }
+      ]
+    }
+  ]
+} 

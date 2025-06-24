@@ -396,6 +396,7 @@ ci:
     - id: build-app
       description: |
         Build the app for device (iphoneos) without launching any simulator unless needed for debugging.
+      # make sure we’re in the UzoFitness directory
       script: |
         xcodebuild \
           -project UzoFitness.xcodeproj \
