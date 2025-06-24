@@ -333,33 +333,54 @@ class ProgressViewModel: ObservableObject {
     
     private func loadPhotos() async {
         print("🔄 [ProgressViewModel.loadPhotos] Starting photos load")
+        
+        guard !isLoadingPhotos else {
+            print("⚠️ [ProgressViewModel.loadPhotos] Already loading photos, skipping")
+            return
+        }
+        
         isLoadingPhotos = true
         
         do {
+            print("🔄 [ProgressViewModel.loadPhotos] Creating FetchDescriptor for ProgressPhoto")
             let descriptor = FetchDescriptor<ProgressPhoto>(
                 sortBy: [SortDescriptor(\.date, order: .reverse)]
             )
             
+            print("🔄 [ProgressViewModel.loadPhotos] Fetching photos from modelContext")
             let photos = try modelContext.fetch(descriptor)
+            print("🔄 [ProgressViewModel.loadPhotos] Fetched \(photos.count) photos from database")
             
             // Group photos by angle
+            print("🔄 [ProgressViewModel.loadPhotos] Grouping photos by angle")
             var groupedPhotos: [PhotoAngle: [ProgressPhoto]] = [:]
             
             for angle in PhotoAngle.allCases {
-                groupedPhotos[angle] = photos.filter { $0.angle == angle }
+                let photosForAngle = photos.filter { $0.angle == angle }
+                groupedPhotos[angle] = photosForAngle
+                print("🔄 [ProgressViewModel.loadPhotos] Found \(photosForAngle.count) photos for angle \(angle)")
             }
             
+            print("🔄 [ProgressViewModel.loadPhotos] Updating photosByAngle property")
             photosByAngle = groupedPhotos
             
             print("✅ [ProgressViewModel.loadPhotos] Successfully loaded \(photos.count) photos")
             
             // Load body metrics for each photo
-            await loadPhotoMetrics(for: photos)
+            if !photos.isEmpty {
+                print("🔄 [ProgressViewModel.loadPhotos] Loading body metrics for photos")
+                await loadPhotoMetrics(for: photos)
+            } else {
+                print("🔄 [ProgressViewModel.loadPhotos] No photos to load metrics for")
+            }
             
             isLoadingPhotos = false
+            print("✅ [ProgressViewModel.loadPhotos] Photo loading completed successfully")
             
         } catch {
-            print("❌ [ProgressViewModel.loadPhotos] Error: \(error.localizedDescription)")
+            print("❌ [ProgressViewModel.loadPhotos] Error: \(error)")
+            print("❌ [ProgressViewModel.loadPhotos] Error type: \(type(of: error))")
+            print("❌ [ProgressViewModel.loadPhotos] Error description: \(error.localizedDescription)")
             self.error = error
             isLoadingPhotos = false
         }

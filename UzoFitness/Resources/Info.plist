@@ -6,5 +6,7 @@
 	<string>We use HealthKit to read your body weight and body fat percentage so you can track your fitness progress.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>We access your photo library to save photos for angles and so you can upload progress photos and compare changes over time.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>We save progress photos to your photo library so you can track your fitness transformation over time.</string>
 </dict>
 </plist>

@@ -24,7 +24,7 @@ struct MainTabView: View {
                 .tabItem {
                     Label("History", systemImage: "clock")
                 }
-            ProgressView()
+            ProgressPhotosView()
                 .tabItem {
                     Label("Progress", systemImage: "photo")
                 }

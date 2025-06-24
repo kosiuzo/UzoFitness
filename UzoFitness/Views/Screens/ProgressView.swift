@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-struct ProgressView: View {
+struct ProgressPhotosView: View {
     @Environment(\.modelContext) private var context
 
     var body: some View {
@@ -14,9 +14,9 @@ struct ProgressView: View {
     }
 }
 
-struct ProgressView_Previews: PreviewProvider {
+struct ProgressPhotosView_Previews: PreviewProvider {
     static var previews: some View {
-        ProgressView()
-            .modelContainer(PersistenceController.preview.container)
+        ProgressPhotosView()
+            .modelContainer(for: [ProgressPhoto.self])
     }
 }

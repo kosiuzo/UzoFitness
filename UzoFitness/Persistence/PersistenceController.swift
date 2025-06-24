@@ -45,15 +45,30 @@ class PersistenceController: ObservableObject {
         )
         
         do {
+            print("🔄 [PersistenceController.init] Creating ModelContainer with schema")
+            print("🔄 [PersistenceController.init] Schema includes: \(schema.entities.map { $0.name })")
+            print("🔄 [PersistenceController.init] In-memory: \(inMemory)")
+            
             container = try ModelContainer(
                 for: schema,
                 configurations: [modelConfiguration]
             )
             
+            print("✅ [PersistenceController.init] ModelContainer created successfully")
+            
             // Configure context
             context.autosaveEnabled = true
+            print("✅ [PersistenceController.init] Context configured with autosave enabled")
             
         } catch {
+            print("❌ [PersistenceController.init] Failed to create ModelContainer")
+            print("❌ [PersistenceController.init] Error: \(error)")
+            print("❌ [PersistenceController.init] Error type: \(type(of: error))")
+            print("❌ [PersistenceController.init] Error description: \(error.localizedDescription)")
+            
+            // More detailed error information
+            print("❌ [PersistenceController.init] Error details: \(error)")
+            
             fatalError("Failed to create ModelContainer: \(error)")
         }
     }

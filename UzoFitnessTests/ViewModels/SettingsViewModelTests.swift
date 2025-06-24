@@ -29,9 +29,206 @@ final class SettingsViewModelTests: XCTestCase {
         try await super.tearDown()
     }
     
-    // MARK: - Battery Monitor Tests
+    // MARK: - ViewModel Integration Tests
     
-
+    func testViewModel_InitializationWithDependencies() async {
+        let healthKit = HealthKitManager()
+        let photoService = PhotoService(dataPersistenceService: DefaultDataPersistenceService(modelContext: PersistenceController.preview.container.mainContext))
+        let modelContext = PersistenceController.preview.container.mainContext
+        
+        let viewModel = SettingsViewModel(
+            healthKitManager: healthKit,
+            photoService: photoService,
+            appSettingsStore: mockAppSettingsStore,
+            iCloudBackupService: mockiCloudBackupService,
+            batteryMonitor: mockBatteryMonitor,
+            modelContext: modelContext
+        )
+        
+        XCTAssertNotNil(viewModel)
+        XCTAssertEqual(viewModel.state, .idle)
+        XCTAssertFalse(viewModel.isHealthKitEnabled)
+        XCTAssertFalse(viewModel.isPhotoAccessGranted)
+        XCTAssertFalse(viewModel.isLoadingBackup)
+        XCTAssertFalse(viewModel.isLoadingRestore)
+    }
+    
+    func testViewModel_HandleHealthKitAccessIntent() async {
+        let healthKit = HealthKitManager()
+        let photoService = PhotoService(dataPersistenceService: DefaultDataPersistenceService(modelContext: PersistenceController.preview.container.mainContext))
+        let modelContext = PersistenceController.preview.container.mainContext
+        
+        let viewModel = SettingsViewModel(
+            healthKitManager: healthKit,
+            photoService: photoService,
+            appSettingsStore: mockAppSettingsStore,
+            iCloudBackupService: mockiCloudBackupService,
+            batteryMonitor: mockBatteryMonitor,
+            modelContext: modelContext
+        )
+        
+        // Test HealthKit access request (may fail on simulator but should not crash)
+        viewModel.handleIntent(.requestHealthKitAccess)
+        
+        // Wait for async operation to complete
+        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 second
+        
+        // We can only test that the operation completed without error
+        XCTAssertNotNil(viewModel)
+    }
+    
+    func testViewModel_HandlePhotoAccessIntent() async {
+        let healthKit = HealthKitManager()
+        let photoService = PhotoService(dataPersistenceService: DefaultDataPersistenceService(modelContext: PersistenceController.preview.container.mainContext))
+        let modelContext = PersistenceController.preview.container.mainContext
+        
+        let viewModel = SettingsViewModel(
+            healthKitManager: healthKit,
+            photoService: photoService,
+            appSettingsStore: mockAppSettingsStore,
+            iCloudBackupService: mockiCloudBackupService,
+            batteryMonitor: mockBatteryMonitor,
+            modelContext: modelContext
+        )
+        
+        // Test photo access request (may be denied on simulator)
+        viewModel.handleIntent(.togglePhotoAccess)
+        
+        // Wait for async operation to complete
+        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 second
+        
+        // We can only test that the operation completed without crashing
+        XCTAssertNotNil(viewModel)
+    }
+    
+    func testViewModel_HandleBackupIntent_Success() async {
+        let healthKit = HealthKitManager()
+        let photoService = PhotoService(dataPersistenceService: DefaultDataPersistenceService(modelContext: PersistenceController.preview.container.mainContext))
+        let modelContext = PersistenceController.preview.container.mainContext
+        
+        mockBatteryMonitor.batteryLevel = 0.8 // High battery
+        mockBatteryMonitor.batteryState = .unplugged
+        
+        let viewModel = SettingsViewModel(
+            healthKitManager: healthKit,
+            photoService: photoService,
+            appSettingsStore: mockAppSettingsStore,
+            iCloudBackupService: mockiCloudBackupService,
+            batteryMonitor: mockBatteryMonitor,
+            modelContext: modelContext
+        )
+        
+        viewModel.handleIntent(.performBackup)
+        
+        // Wait for backup to complete
+        try? await Task.sleep(nanoseconds: 2_500_000_000) // 2.5 seconds
+        
+        XCTAssertTrue(mockiCloudBackupService.performBackupCalled)
+        XCTAssertFalse(viewModel.isLoadingBackup)
+        XCTAssertNotNil(mockAppSettingsStore.lastBackupDate)
+    }
+    
+    func testViewModel_HandleBackupIntent_LowBattery() async {
+        let healthKit = HealthKitManager()
+        let photoService = PhotoService(dataPersistenceService: DefaultDataPersistenceService(modelContext: PersistenceController.preview.container.mainContext))
+        let modelContext = PersistenceController.preview.container.mainContext
+        
+        mockBatteryMonitor.batteryLevel = 0.05 // Low battery
+        mockBatteryMonitor.batteryState = .unplugged
+        
+        let viewModel = SettingsViewModel(
+            healthKitManager: healthKit,
+            photoService: photoService,
+            appSettingsStore: mockAppSettingsStore,
+            iCloudBackupService: mockiCloudBackupService,
+            batteryMonitor: mockBatteryMonitor,
+            modelContext: modelContext
+        )
+        
+        viewModel.handleIntent(.performBackup)
+        
+        // Wait for operation to complete
+        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
+        
+        XCTAssertFalse(mockiCloudBackupService.performBackupCalled)
+        XCTAssertNotNil(viewModel.error)
+        XCTAssertTrue(viewModel.error is SettingsError)
+    }
+    
+    func testViewModel_HandleRestoreIntent() async {
+        let healthKit = HealthKitManager()
+        let photoService = PhotoService(dataPersistenceService: DefaultDataPersistenceService(modelContext: PersistenceController.preview.container.mainContext))
+        let modelContext = PersistenceController.preview.container.mainContext
+        
+        let viewModel = SettingsViewModel(
+            healthKitManager: healthKit,
+            photoService: photoService,
+            appSettingsStore: mockAppSettingsStore,
+            iCloudBackupService: mockiCloudBackupService,
+            batteryMonitor: mockBatteryMonitor,
+            modelContext: modelContext
+        )
+        
+        viewModel.handleIntent(.performRestore)
+        
+        // Wait for restore to complete
+        try? await Task.sleep(nanoseconds: 3_500_000_000) // 3.5 seconds
+        
+        XCTAssertTrue(mockiCloudBackupService.performRestoreCalled)
+        XCTAssertFalse(viewModel.isLoadingRestore)
+    }
+    
+    func testViewModel_FormattedLastBackupDate() {
+        let healthKit = HealthKitManager()
+        let photoService = PhotoService(dataPersistenceService: DefaultDataPersistenceService(modelContext: PersistenceController.preview.container.mainContext))
+        let modelContext = PersistenceController.preview.container.mainContext
+        
+        let viewModel = SettingsViewModel(
+            healthKitManager: healthKit,
+            photoService: photoService,
+            appSettingsStore: mockAppSettingsStore,
+            iCloudBackupService: mockiCloudBackupService,
+            batteryMonitor: mockBatteryMonitor,
+            modelContext: modelContext
+        )
+        
+        // Test "Never" case
+        XCTAssertEqual(viewModel.formattedLastBackupDate, "Never")
+        
+        // Test with actual date
+        let testDate = Date()
+        mockAppSettingsStore.updateLastBackupDate(testDate)
+        
+        // The formatted date should not be "Never"
+        XCTAssertNotEqual(viewModel.formattedLastBackupDate, "Never")
+    }
+    
+    func testViewModel_BackupStatusText() {
+        let healthKit = HealthKitManager()
+        let photoService = PhotoService(dataPersistenceService: DefaultDataPersistenceService(modelContext: PersistenceController.preview.container.mainContext))
+        let modelContext = PersistenceController.preview.container.mainContext
+        
+        let viewModel = SettingsViewModel(
+            healthKitManager: healthKit,
+            photoService: photoService,
+            appSettingsStore: mockAppSettingsStore,
+            iCloudBackupService: mockiCloudBackupService,
+            batteryMonitor: mockBatteryMonitor,
+            modelContext: modelContext
+        )
+        
+        // Test ready state
+        mockBatteryMonitor.batteryLevel = 0.8
+        mockBatteryMonitor.batteryState = .unplugged
+        XCTAssertEqual(viewModel.backupStatusText, "Ready to backup")
+        
+        // Test low battery state
+        mockBatteryMonitor.batteryLevel = 0.05
+        mockBatteryMonitor.batteryState = .unplugged
+        XCTAssertEqual(viewModel.backupStatusText, "Low battery - plug in to backup")
+    }
+    
+    // MARK: - Battery Monitor Tests
     
     // MARK: - Error Tests
     
@@ -214,4 +411,4 @@ class MockBatteryMonitor: BatteryMonitorProtocol {
     var batteryState: UIDevice.BatteryState = .full
 }
 
- 
+

@@ -414,6 +414,9 @@
 				DEVELOPMENT_TEAM = 4Q3A2PZ842;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "We use HealthKit to read your body weight and body fat percentage so you can track your fitness progress.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "We save progress photos to your photo library so you can track your fitness transformation over time.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We access your photo library to save photos for angles and so you can upload progress photos and compare changes over time.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -443,6 +446,9 @@
 				DEVELOPMENT_TEAM = 4Q3A2PZ842;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "We use HealthKit to read your body weight and body fat percentage so you can track your fitness progress.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "We save progress photos to your photo library so you can track your fitness transformation over time.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We access your photo library to save photos for angles and so you can upload progress photos and compare changes over time.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
