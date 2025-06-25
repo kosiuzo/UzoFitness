@@ -10,6 +10,12 @@ final class Exercise: Identified, Codable {
     @Attribute var instructions: String
     @Attribute var mediaAssetID: String?
     
+    // MARK: - Cached Last Used Values
+    @Attribute var lastUsedWeight: Double?
+    @Attribute var lastUsedReps: Int?
+    @Attribute var lastTotalVolume: Double?
+    @Attribute var lastUsedDate: Date?
+    
     // MARK: Relationships
     @Relationship var completedSets: [CompletedSet]
     @Relationship var performedRecords: [PerformedExercise] = []
@@ -20,14 +26,23 @@ final class Exercise: Identified, Codable {
         name: String,
         category: ExerciseCategory,
         instructions: String = "",
-        mediaAssetID: String? = nil
+        mediaAssetID: String? = nil,
+        lastUsedWeight: Double? = nil,
+        lastUsedReps: Int? = nil,
+        lastTotalVolume: Double? = nil,
+        lastUsedDate: Date? = nil
     ) {
         self.id = id
         self.name = name
         self.category = category
         self.instructions = instructions
         self.mediaAssetID = mediaAssetID
+        self.lastUsedWeight = lastUsedWeight
+        self.lastUsedReps = lastUsedReps
+        self.lastTotalVolume = lastTotalVolume
+        self.lastUsedDate = lastUsedDate
         self.completedSets = []
+        print("🔄 [Exercise.init] Created exercise: \(name)")
     }
     
     // MARK: - Codable Implementation
@@ -52,7 +67,14 @@ final class Exercise: Identified, Codable {
         self.category = try container.decode(ExerciseCategory.self, forKey: .category)
         self.instructions = try container.decode(String.self, forKey: .instructions)
         self.mediaAssetID = try container.decodeIfPresent(String.self, forKey: .mediaAssetID)
+        self.lastUsedWeight = nil
+        self.lastUsedReps = nil
+        self.lastTotalVolume = nil
+        self.lastUsedDate = nil
         self.completedSets = []
         self.performedRecords = []
+        print("🔄 [Exercise.init] Decoded exercise: \(name)")
     }
 }
+
+

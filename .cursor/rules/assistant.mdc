@@ -390,6 +390,20 @@ templates:
         }
       }
 
+# ✅ Auto-Completion Enabled Metadata
+metadata:
+  task-tracking:
+    enabled: true
+    system: markdown-checkbox
+    format: "- [ ] [Task ID] Task description"  # Agent can mark as - [x] when complete
+    filenamePattern: "tasks-*.md"
+    completionSignal: "[x]"  # Marked as complete
+    toolingHooks:
+      cursor: true
+      chatgpt-copilot: true
+      ci-aware: true
+      inline-feedback: true
+
 # Continuous Integration
 ci:
   steps:

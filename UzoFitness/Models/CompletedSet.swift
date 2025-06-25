@@ -23,5 +23,7 @@ final class CompletedSet: Identified {
         self.externalSampleUUID = externalSampleUUID
         self.sessionExercise = sessionExercise
         sessionExercise?.completedSets.append(self)
+        
+        print("🏃‍♂️ [CompletedSet.init] Created set: \(reps) reps @ \(weight) lbs")
     }
 }

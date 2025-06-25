@@ -1,11 +1,11 @@
 # Logging View Implementation Tasks
 
 ## 1. Screen & Layout  
-- [ ] Create `LoggingView` (SwiftUI or UIKit)  
-  - [ ] Add **Template Picker** at top (dropdown or menu)  
-  - [ ] Add **Day Picker** (segmented control or picker)  
+- [ ] Create `LoggingView` (SwiftUI or UIKit)   
+  - [ ] Add **Template Picker** at top (dropdown or menu) highlight the ones that are apart of an active workout plans those should be sorted at the top. 
+  - [ ] Add **Day Picker** (segmented control or picker) based on the Template selected  
   - [ ] Render **Exercise List** container beneath  
-  - [ ] Pin **Complete Workout** button at bottom  
+  - [ ] Pin **Complete Workout** button at bottom after the Workout has been selected 
 
 ## 2. ViewModel Binding  
 - [ ] Inject `LoggingViewModel` into `LoggingView`  
@@ -25,7 +25,7 @@
 ## 4. Exercise List & Supersets  
 - [ ] For each exercise in `viewModel.exercises`:  
   - [ ] Display name, sets × reps × weight fields  
-  - [ ] Visually group supersets (e.g. colored background or header)  
+  - [ ] Visually group supersets (e.g. header)  
   - [ ] Add inline editable controls for:  
     - [ ] Reps (stepper or text entry)  
     - [ ] Sets  
@@ -34,7 +34,7 @@
 
 ## 5. Auto-Population of Last Performance  
 - [ ] On view appear, call `viewModel.loadLastPerformedData()`  
-- [ ] Populate each exercise row’s reps/weight with last-performed values  
+- [ ] Populate each exercise row’s reps/weight with last-performed values based on existing logic only add something if it's not already implemented 
 - [ ] Fall back to template defaults if no history exists  
 
 ## 6. Completion Actions  
