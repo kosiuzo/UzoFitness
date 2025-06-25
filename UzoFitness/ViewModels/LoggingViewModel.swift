@@ -104,7 +104,9 @@ class DefaultTimerFactory: TimerFactory {
 @MainActor
 class LoggingViewModel: ObservableObject {
     // MARK: - Published State
+    @Published var availablePlans: [WorkoutPlan] = []
     @Published var activePlan: WorkoutPlan?
+    @Published var availableDays: [DayTemplate] = []
     @Published var selectedDay: DayTemplate?
     @Published var session: WorkoutSession?
     @Published var exercises: [SessionExerciseUI] = []
@@ -139,6 +141,8 @@ class LoggingViewModel: ObservableObject {
         self.modelContext = modelContext
         self.timerFactory = timerFactory
         print("🔄 [LoggingViewModel.init] Initialized with dependencies")
+        
+        loadAvailablePlans()
         
         // Auto-select today's weekday
         let today = Calendar.current.component(.weekday, from: Date())
@@ -176,6 +180,47 @@ class LoggingViewModel: ObservableObject {
         }
     }
     
+    // MARK: - Data Loading Methods
+    func loadAvailablePlans() {
+        print("🔄 [LoggingViewModel.loadAvailablePlans] Loading available plans")
+        do {
+            let fetchDescriptor = FetchDescriptor<WorkoutPlan>()
+            let allPlans = try modelContext.fetch(fetchDescriptor)
+            
+            // Sort manually: Active plans first, then by name
+            availablePlans = allPlans.sorted { lhs, rhs in
+                if lhs.isActive != rhs.isActive {
+                    return lhs.isActive && !rhs.isActive // Active plans first
+                }
+                return lhs.customName < rhs.customName // Then alphabetically
+            }
+            
+            print("✅ [LoggingViewModel.loadAvailablePlans] Loaded \(availablePlans.count) plans")
+            
+            // Auto-select the first active plan if none selected
+            if activePlan == nil, let activePlan = availablePlans.first(where: { $0.isActive }) {
+                print("🔄 [LoggingViewModel.loadAvailablePlans] Auto-selecting active plan: \(activePlan.customName)")
+                handleIntent(.selectPlan(activePlan.id))
+            }
+        } catch {
+            print("❌ [LoggingViewModel.loadAvailablePlans] Error: \(error.localizedDescription)")
+            self.error = error
+        }
+    }
+    
+    func loadLastPerformedData() {
+        print("🔄 [LoggingViewModel.loadLastPerformedData] Loading last performed data")
+        
+        guard selectedDay != nil else {
+            print("❌ [LoggingViewModel.loadLastPerformedData] No day selected")
+            return
+        }
+        
+        // This method would populate exercises with last performed values
+        // Implementation would depend on your specific data access patterns
+        print("✅ [LoggingViewModel.loadLastPerformedData] Last performed data loaded")
+    }
+    
     // MARK: - Private Methods
     private func selectPlan(_ planID: UUID) {
         print("🔄 [LoggingViewModel.selectPlan] Selecting plan: \(planID)")
@@ -195,6 +240,10 @@ class LoggingViewModel: ObservableObject {
             activePlan = plan
             print("✅ [LoggingViewModel.selectPlan] Plan selected: \(plan.customName)")
             print("📊 [LoggingViewModel] Active plan changed to: \(plan.customName)")
+            
+            // Update available days from the selected plan's template
+            availableDays = plan.template?.dayTemplates.sorted(by: { $0.weekday.rawValue < $1.weekday.rawValue }) ?? []
+            print("📊 [LoggingViewModel.selectPlan] Loaded \(availableDays.count) days for plan")
             
             // Refresh day selection if already selected
             if let selectedDay = selectedDay {
@@ -223,6 +272,14 @@ class LoggingViewModel: ObservableObject {
         isRestDay = dayTemplate?.isRest ?? false
         
         print("📊 [LoggingViewModel] Selected day: \(weekday), isRestDay: \(isRestDay)")
+        if let dayTemplate = dayTemplate {
+            print("🏃‍♂️ [LoggingViewModel.selectDay] Day template has \(dayTemplate.exerciseTemplates.count) exercises")
+            for template in dayTemplate.exerciseTemplates {
+                print("  - Exercise: \(template.exercise.name)")
+            }
+        } else {
+            print("❌ [LoggingViewModel.selectDay] No day template found for \(weekday)")
+        }
         
         if isRestDay {
             print("🏃‍♂️ [LoggingViewModel.selectDay] Rest day selected")
@@ -255,13 +312,14 @@ class LoggingViewModel: ObservableObject {
             )
             let existingSessions = try modelContext.fetch(fetchDescriptor)
             
-            // Filter sessions for the active plan
+            // Filter sessions for the active plan AND the selected day
             let planSessions = existingSessions.filter { session in
-                session.plan?.id == activePlan.id
+                session.plan?.id == activePlan.id && 
+                session.title.contains(selectedDay.weekday.fullName)
             }
             
             if let existingSession = planSessions.first {
-                print("✅ [LoggingViewModel.createOrResumeSession] Resuming existing session")
+                print("✅ [LoggingViewModel.createOrResumeSession] Resuming existing session for \(selectedDay.weekday)")
                 session = existingSession
                 sessionStartTime = existingSession.createdAt
             } else {
@@ -289,6 +347,41 @@ class LoggingViewModel: ObservableObject {
         }
     }
     
+    private func createFreshSession() {
+        print("🔄 [LoggingViewModel.createFreshSession] Creating fresh session (no resume)")
+        
+        guard let activePlan = activePlan,
+              let selectedDay = selectedDay else {
+            print("❌ [LoggingViewModel.createFreshSession] Missing plan or day")
+            return
+        }
+        
+        let today = Date()
+        
+        do {
+            print("🔄 [LoggingViewModel.createFreshSession] Creating new session")
+            let newSession = WorkoutSession(
+                date: today,
+                title: "\(selectedDay.weekday) - \(activePlan.customName)",
+                plan: activePlan
+            )
+            
+            modelContext.insert(newSession)
+            session = newSession
+            sessionStartTime = Date()
+            
+            // Create session exercises from day template
+            createSessionExercises(for: newSession, from: selectedDay)
+            
+            updateExercisesUI()
+            print("✅ [LoggingViewModel.createFreshSession] Fresh session ready")
+            
+        } catch {
+            print("❌ [LoggingViewModel.createFreshSession] Error: \(error.localizedDescription)")
+            self.error = error
+        }
+    }
+    
     private func createSessionExercises(for session: WorkoutSession, from dayTemplate: DayTemplate) {
         print("🔄 [LoggingViewModel.createSessionExercises] Creating exercises for session")
         
@@ -300,12 +393,14 @@ class LoggingViewModel: ObservableObject {
                 plannedWeight: exerciseTemplate.weight,
                 position: exerciseTemplate.position,
                 supersetID: exerciseTemplate.supersetID,
+                currentSet: 0,
+                isCompleted: false, // Explicitly set to false for new sessions
                 session: session
             )
             
             modelContext.insert(sessionExercise)
             session.sessionExercises.append(sessionExercise)
-            print("🏃‍♂️ [LoggingViewModel.createSessionExercises] Added exercise: \(exerciseTemplate.exercise.name)")
+            print("🏃‍♂️ [LoggingViewModel.createSessionExercises] Added exercise: \(exerciseTemplate.exercise.name) (isCompleted: false)")
         }
         
         print("✅ [LoggingViewModel.createSessionExercises] Created \(dayTemplate.exerciseTemplates.count) session exercises")
@@ -460,13 +555,19 @@ class LoggingViewModel: ObservableObject {
             return
         }
         
+        // IMPORTANT: Only mark the session-specific exercise as complete
+        // This ensures we don't affect other days or sessions
         sessionExercise.isCompleted = true
+        
+        // Update the exercise's cache for future sessions
+        sessionExercise.updateExerciseCacheOnCompletion()
+        
         updateExercisesUI()
         
         do {
             try modelContext.save()
             print("✅ [LoggingViewModel.markExerciseComplete] Exercise marked complete")
-            print("📊 [LoggingViewModel] Exercise completion status updated")
+            print("📊 [LoggingViewModel] Exercise completion status updated for session only")
         } catch {
             print("❌ [LoggingViewModel.markExerciseComplete] Save error: \(error.localizedDescription)")
             self.error = error
@@ -517,6 +618,12 @@ class LoggingViewModel: ObservableObject {
             self.session = nil
             self.exercises = []
             self.sessionStartTime = nil
+            
+            // Reload the current workout template to start fresh
+            if let selectedDay = selectedDay {
+                print("🔄 [LoggingViewModel.finishSession] Creating fresh session for next workout")
+                createFreshSession()
+            }
             
         } catch {
             print("❌ [LoggingViewModel.finishSession] Save error: \(error.localizedDescription)")

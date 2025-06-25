@@ -421,7 +421,7 @@ class LibraryViewModel: ObservableObject {
         }
         
         do {
-            // Deactivate any existing active plans
+            // Deactivate any existing active plans first
             let activeDescriptor = FetchDescriptor<WorkoutPlan>(
                 predicate: #Predicate<WorkoutPlan> { plan in
                     plan.isActive == true
@@ -434,23 +434,39 @@ class LibraryViewModel: ObservableObject {
                 print("📊 [LibraryViewModel.activatePlan] Deactivated existing plan: \(plan.customName)")
             }
             
-            // Create new active plan
+            // Save deactivation changes first to prevent conflicts
+            if !activePlans.isEmpty {
+                try modelContext.save()
+                print("✅ [LibraryViewModel.activatePlan] Saved deactivation changes")
+            }
+            
+            // Create new active plan with validated data
+            let trimmedName = customName.trimmingCharacters(in: .whitespacesAndNewlines)
+            let finalName = trimmedName.isEmpty ? "New Plan" : trimmedName
+            
             let newPlan = WorkoutPlan(
-                customName: customName,
+                customName: finalName,
                 isActive: true,
                 startedAt: startDate,
+                durationWeeks: 8,
                 template: template
             )
+            
+            // Ensure template relationship is properly set
+            newPlan.template = template
             
             modelContext.insert(newPlan)
             try modelContext.save()
             
             activePlanID = newPlan.id
             
-            print("✅ [LibraryViewModel.activatePlan] Successfully activated plan: \(customName)")
+            print("✅ [LibraryViewModel.activatePlan] Successfully activated plan: \(finalName)")
+            print("📊 [LibraryViewModel.activatePlan] Plan ID: \(newPlan.id), Template: \(template.name)")
             
         } catch {
             print("❌ [LibraryViewModel.activatePlan] Error: \(error.localizedDescription)")
+            print("❌ [LibraryViewModel.activatePlan] Template ID: \(templateID), Custom Name: '\(customName)'")
+            print("❌ [LibraryViewModel.activatePlan] Stack trace: \(Thread.callStackSymbols)")
             self.error = error
         }
     }
