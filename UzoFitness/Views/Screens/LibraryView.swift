@@ -151,49 +151,61 @@ struct WorkoutsTabView: View {
 
     
     var body: some View {
-        List {
-            // Workout Templates Section
-            Section("My Workouts") {
-                if viewModel.workoutTemplates.isEmpty {
-                    Text("No workouts")
-                        .foregroundStyle(.secondary)
-                        .italic()
-                } else {
-                    ForEach(viewModel.workoutTemplates) { template in
-                        NavigationLink(destination: TemplateDetailView(template: template, viewModel: viewModel)) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(template.name)
-                                    .font(.headline)
-                                Text(template.summary)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+        VStack(spacing: 0) {
+            // List of workouts
+            if viewModel.workoutTemplates.isEmpty {
+                VStack(spacing: 16) {
+                    ContentUnavailableView(
+                        "No Workouts",
+                        systemImage: "figure.strengthtraining.traditional",
+                        description: Text("Add workouts to get started")
+                    )
+                    
+                    Button("Import from JSON") {
+                        showingJSONImport = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+            } else {
+                List {
+                    // Workout Templates Section
+                    Section("My Workouts") {
+                        ForEach(viewModel.workoutTemplates) { template in
+                            NavigationLink(destination: TemplateDetailView(template: template, viewModel: viewModel)) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(template.name)
+                                        .font(.headline)
+                                    Text(template.summary)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
                         }
+                        
+                        Button("Add Workout") {
+                            showingTemplateCreator = true
+                        }
+                        .foregroundStyle(.blue)
+                    }
+                    
+                    // Workout Plans Section
+                    Section("My Schedule") {
+                        if viewModel.workoutPlans.isEmpty {
+                            Text("No schedules")
+                                .foregroundStyle(.secondary)
+                                .italic()
+                        } else {
+                            ForEach(viewModel.workoutPlans) { plan in
+                                WorkoutPlanRowView(plan: plan, viewModel: viewModel)
+                            }
+                        }
+                        
+                        Button("Schedule Workout") {
+                            showingPlanCreator = true
+                        }
+                        .foregroundStyle(.blue)
                     }
                 }
-                
-                Button("Add Workout") {
-                    showingTemplateCreator = true
-                }
-                .foregroundStyle(.blue)
-            }
-            
-            // Workout Plans Section
-            Section("My Schedule") {
-                if viewModel.workoutPlans.isEmpty {
-                    Text("No schedules")
-                        .foregroundStyle(.secondary)
-                        .italic()
-                } else {
-                    ForEach(viewModel.workoutPlans) { plan in
-                        WorkoutPlanRowView(plan: plan, viewModel: viewModel)
-                    }
-                }
-                
-                Button("Schedule Workout") {
-                    showingPlanCreator = true
-                }
-                .foregroundStyle(.blue)
             }
         }
         .toolbar {

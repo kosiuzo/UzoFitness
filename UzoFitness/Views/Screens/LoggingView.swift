@@ -43,7 +43,12 @@ struct LoggingContentView: View {
             // Template and Day Pickers
             pickersSection
             
-            if viewModel.isRestDay {
+            if viewModel.availablePlans.isEmpty {
+                // No workout plans available - show create workout guidance
+                emptyStateView
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if viewModel.isRestDay {
+                // Rest day selected
                 restDayView
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if !viewModel.exercises.isEmpty {
@@ -52,8 +57,13 @@ struct LoggingContentView: View {
                 
                 // Complete Workout Button
                 completeWorkoutButton
+            } else if viewModel.activePlan != nil && viewModel.selectedDay != nil {
+                // Workout plan selected but no exercises for this day - treat as rest day
+                restDayView
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                emptyStateView
+                // Plan selected but no day selected - show day selection prompt
+                daySelectionPromptView
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
@@ -63,69 +73,87 @@ struct LoggingContentView: View {
             viewModel.loadAvailablePlans()
             viewModel.loadLastPerformedData()
         }
-        .alert("Error", isPresented: .constant(viewModel.error != nil)) {
-            Button("OK") {
-                viewModel.error = nil
-            }
-        } message: {
-            Text(viewModel.error?.localizedDescription ?? "")
-        }
+        // Remove error alerts for missing workout plans - handle gracefully in UI
     }
     
     // MARK: - Pickers Section
     private var pickersSection: some View {
-        VStack(spacing: 16) {
-            // Template Picker
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Select Workout Plan")
-                    .font(.headline)
-                    .foregroundColor(.primary)
+        VStack(spacing: 20) {
+            // Template Picker - Modern Design
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Image(systemName: "dumbbell.fill")
+                        .foregroundColor(.blue)
+                        .font(.headline)
+                    Text("Workout Plan")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                }
                 
                 if viewModel.availablePlans.isEmpty {
-                    Text("No workout plans available")
-                        .foregroundColor(.secondary)
-                        .padding()
-                        .background(.tertiary)
-                        .cornerRadius(8)
-                } else {
-                    Picker("Workout Plan", selection: Binding(
-                        get: { viewModel.activePlan?.id ?? UUID() },
-                        set: { planID in
-                            if planID != UUID() {
-                                viewModel.handleIntent(.selectPlan(planID))
-                            }
-                        }
-                    )) {
-                        ForEach(viewModel.availablePlans) { plan in
-                            HStack {
-                                Text(plan.customName)
-                                if plan.isActive {
-                                    Spacer()
-                                    Circle()
-                                        .fill(Color.green)
-                                        .frame(width: 8, height: 8)
-                                }
-                            }
-                            .tag(plan.id)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                }
-            }
-            
-            // Day Picker - Clean Design
-            if !viewModel.availableDays.isEmpty {
-                VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        Text("Select Day")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.orange)
+                        Text("No workout plans available")
                             .foregroundColor(.secondary)
                         Spacer()
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(.orange.opacity(0.1))
+                    .cornerRadius(12)
+                } else {
+                    Menu {
+                        ForEach(viewModel.availablePlans) { plan in
+                            Button(action: {
+                                viewModel.handleIntent(.selectPlan(plan.id))
+                            }) {
+                                HStack {
+                                    Text(plan.customName)
+                                    if plan.isActive {
+                                        Spacer()
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundColor(.green)
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack {
+                            Text(viewModel.activePlan?.customName ?? "Select a plan")
+                                .font(.body)
+                                .fontWeight(.medium)
+                                .foregroundColor(viewModel.activePlan != nil ? .primary : .secondary)
+                            Spacer()
+                            Image(systemName: "chevron.up.chevron.down")
+                                .foregroundColor(.blue)
+                                .font(.caption)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .background(.quaternary)
+                        .cornerRadius(12)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            
+            // Day Picker - Modern Rectangular Design
+            if !viewModel.availableDays.isEmpty {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Image(systemName: "calendar")
+                            .foregroundColor(.blue)
+                            .font(.headline)
+                        Text("Today's Workout")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.primary)
+                    }
                     
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
+                        HStack(spacing: 10) {
                             ForEach(viewModel.availableDays, id: \.id) { day in
                                 Button(action: {
                                     print("🔄 [LoggingView] Day tapped: \(day.weekday)")
@@ -133,27 +161,30 @@ struct LoggingContentView: View {
                                 }) {
                                     VStack(spacing: 4) {
                                         Text(day.weekday.abbreviation)
-                                            .font(.caption)
+                                            .font(.subheadline)
                                             .fontWeight(.medium)
+                                            .foregroundColor(isSelected(day) ? .white : .primary)
                                         
-                                        if day.isRest {
-                                            Circle()
-                                                .fill(.secondary)
-                                                .frame(width: 4, height: 4)
+                                        if day.isRest || day.exerciseTemplates.isEmpty {
+                                            Image(systemName: "bed.double.fill")
+                                                .font(.caption2)
+                                                .foregroundColor(isSelected(day) ? .white.opacity(0.8) : .secondary)
                                         } else {
                                             Text("\(day.exerciseTemplates.count)")
-                                                .font(.caption2)
+                                                .font(.caption)
                                                 .fontWeight(.semibold)
+                                                .foregroundColor(isSelected(day) ? .white : .blue)
                                         }
                                     }
-                                    .foregroundColor(viewModel.selectedDay?.weekday == day.weekday ? .white : .primary)
-                                    .frame(width: 44, height: 44)
+                                    .frame(width: 56, height: 56)
                                     .background(
-                                        Circle()
-                                            .fill(viewModel.selectedDay?.weekday == day.weekday ? .blue : Color(.systemGray5))
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(isSelected(day) ? .blue : Color(.systemGray6))
                                     )
                                 }
                                 .buttonStyle(.plain)
+                                .scaleEffect(isSelected(day) ? 1.05 : 1.0)
+                                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected(day))
                             }
                         }
                         .padding(.horizontal, 4)
@@ -161,9 +192,13 @@ struct LoggingContentView: View {
                 }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 20)
-        .background(.background)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 24)
+        .background(.regularMaterial)
+    }
+    
+    private func isSelected(_ day: DayTemplate) -> Bool {
+        viewModel.selectedDay?.weekday == day.weekday
     }
     
     // MARK: - Rest Day View
@@ -204,12 +239,6 @@ struct LoggingContentView: View {
                         onAddSet: {
                             viewModel.handleIntent(.addSet(exerciseID: exercise.id))
                         },
-                        onStartRest: { seconds in
-                            viewModel.handleIntent(.startRest(
-                                exerciseID: exercise.id,
-                                seconds: seconds
-                            ))
-                        },
                         onMarkComplete: {
                             viewModel.handleIntent(.markExerciseComplete(exerciseID: exercise.id))
                         }
@@ -245,60 +274,48 @@ struct LoggingContentView: View {
         }
     }
     
-    // MARK: - Empty State View
+    // MARK: - Empty State View (No Workout Plans)
     private var emptyStateView: some View {
-        VStack(spacing: 24) {
-            Image(systemName: "dumbbell")
-                .font(.largeTitle)
-                .foregroundColor(.orange)
+        VStack(spacing: 32) {
+            Image(systemName: "figure.strengthtraining.traditional")
+                .font(.system(size: 48))
+                .foregroundColor(.blue)
             
-            Text("No Exercises Found")
-                .font(.title2)
-                .fontWeight(.semibold)
-            
-            VStack(spacing: 8) {
-                Text("Select a workout plan and day to get started.")
+            VStack(spacing: 16) {
+                Text("Ready to Start?")
+                    .font(.title2)
+                    .fontWeight(.medium)
+                    .foregroundColor(.primary)
+                
+                Text("Create a workout plan and schedule it in the Library tab first.")
                     .font(.body)
                     .multilineTextAlignment(.center)
                     .foregroundColor(.secondary)
-                
-                if viewModel.availablePlans.isEmpty {
-                    Text("Create a workout plan in the Library tab first.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .italic()
-                } else {
-                    Text("Found \(viewModel.availablePlans.count) workout plan(s)")
-                        .font(.caption)
-                        .foregroundColor(.blue)
-                }
-                
-                if let activePlan = viewModel.activePlan {
-                    Text("Active Plan: \(activePlan.customName)")
-                        .font(.caption)
-                        .foregroundColor(.green)
-                } else {
-                    Text("No active plan selected")
-                        .font(.caption)
-                        .foregroundColor(.orange)
-                }
-                
-                Text("Available Days: \(viewModel.availableDays.count)")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 32)
             }
-            .padding(.horizontal, 32)
+        }
+        .padding()
+    }
+    
+    // MARK: - Day Selection Prompt View
+    private var daySelectionPromptView: some View {
+        VStack(spacing: 32) {
+            Image(systemName: "calendar")
+                .font(.system(size: 48))
+                .foregroundColor(.blue)
             
-            // Debug refresh button
-            Button("Refresh Plans") {
-                print("🔄 [EmptyStateView] Manual refresh triggered")
-                viewModel.loadAvailablePlans()
+            VStack(spacing: 16) {
+                Text("Select a Day")
+                    .font(.title2)
+                    .fontWeight(.medium)
+                    .foregroundColor(.primary)
+                
+                Text("Choose which day of your workout plan you'd like to log.")
+                    .font(.body)
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 32)
             }
-            .font(.caption)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(Color(.systemGray6))
-            .cornerRadius(8)
         }
         .padding()
     }
@@ -309,7 +326,6 @@ struct LoggingExerciseRowView: View {
     let exercise: SessionExerciseUI
     let onEditSet: (Int, Int, Double) -> Void
     let onAddSet: () -> Void
-    let onStartRest: (TimeInterval) -> Void
     let onMarkComplete: () -> Void
     
     @State private var editingSetIndex: Int? = nil
@@ -393,33 +409,7 @@ struct LoggingExerciseRowView: View {
                 }
             }
             
-            // Rest Timer Section
-            if let timerRemaining = exercise.timerRemaining, timerRemaining > 0 {
-                VStack(spacing: 8) {
-                    Text("Rest Timer")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    Text(formatTime(timerRemaining))
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.orange)
-                }
-                .padding(.vertical, 8)
-            } else if !exercise.isCompleted {
-                HStack(spacing: 12) {
-                    ForEach([60, 90, 120], id: \.self) { seconds in
-                        Button("\(seconds)s") {
-                            onStartRest(TimeInterval(seconds))
-                        }
-                        .font(.caption)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(.tertiary)
-                        .cornerRadius(8)
-                    }
-                }
-            }
+            // Rest timer feature temporarily removed for cleaner UI
         }
         .padding(16)
         .background(.background)
@@ -456,12 +446,23 @@ struct SetRowView: View {
                 .frame(width: 20)
             
             if isEditing {
-                // Editing Mode
+                // Editing Mode with Auto-save
                 HStack(spacing: 8) {
                     TextField("Reps", text: $tempReps)
                         .keyboardType(.numberPad)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 60)
+                        .onSubmit {
+                            onSave()
+                        }
+                        .onChange(of: tempReps) { oldValue, newValue in
+                            // Auto-save after a brief delay when user stops typing
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                                if tempReps == newValue && !tempReps.isEmpty && !tempWeight.isEmpty {
+                                    onSave()
+                                }
+                            }
+                        }
                     
                     Text("×")
                         .foregroundColor(.secondary)
@@ -470,18 +471,23 @@ struct SetRowView: View {
                         .keyboardType(.decimalPad)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 60)
+                        .onSubmit {
+                            onSave()
+                        }
+                        .onChange(of: tempWeight) { oldValue, newValue in
+                            // Auto-save after a brief delay when user stops typing
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                                if tempWeight == newValue && !tempReps.isEmpty && !tempWeight.isEmpty {
+                                    onSave()
+                                }
+                            }
+                        }
                     
                     Text("lbs")
                         .font(.caption)
                         .foregroundColor(.secondary)
                     
                     Spacer()
-                    
-                    Button("Save") {
-                        onSave()
-                    }
-                    .font(.caption)
-                    .foregroundColor(.blue)
                     
                     Button("Cancel") {
                         onCancel()

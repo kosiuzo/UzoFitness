@@ -46,6 +46,7 @@ enum LoggingIntent {
     case editSet(exerciseID: UUID, setIndex: Int, reps: Int, weight: Double)
     case addSet(exerciseID: UUID)
     case startRest(exerciseID: UUID, seconds: TimeInterval)
+    case cancelRest(exerciseID: UUID)
     case markExerciseComplete(exerciseID: UUID)
     case finishSession
 }
@@ -143,12 +144,26 @@ class LoggingViewModel: ObservableObject {
         print("🔄 [LoggingViewModel.init] Initialized with dependencies")
         
         loadAvailablePlans()
+    }
+    
+    // MARK: - Auto-select current day after plans are loaded
+    private func autoSelectCurrentDay() {
+        print("🔄 [LoggingViewModel.autoSelectCurrentDay] Attempting to auto-select current day")
         
-        // Auto-select today's weekday
+        guard !availableDays.isEmpty else {
+            print("⚠️ [LoggingViewModel.autoSelectCurrentDay] No available days yet")
+            return
+        }
+        
         let today = Calendar.current.component(.weekday, from: Date())
         if let todayWeekday = Weekday(rawValue: today) {
-            print("🔄 [LoggingViewModel.init] Auto-selecting today: \(todayWeekday)")
-            handleIntent(.selectDay(todayWeekday))
+            // Check if today is available in the current plan
+            if availableDays.contains(where: { $0.weekday == todayWeekday }) {
+                print("🔄 [LoggingViewModel.autoSelectCurrentDay] Auto-selecting today: \(todayWeekday)")
+                handleIntent(.selectDay(todayWeekday))
+            } else {
+                print("📊 [LoggingViewModel.autoSelectCurrentDay] Today (\(todayWeekday)) not available in plan, keeping manual selection")
+            }
         }
     }
     
@@ -171,6 +186,9 @@ class LoggingViewModel: ObservableObject {
             
         case .startRest(let exerciseID, let seconds):
             startRest(exerciseID: exerciseID, seconds: seconds)
+            
+        case .cancelRest(let exerciseID):
+            cancelRest(exerciseID: exerciseID)
             
         case .markExerciseComplete(let exerciseID):
             markExerciseComplete(exerciseID: exerciseID)
@@ -197,10 +215,26 @@ class LoggingViewModel: ObservableObject {
             
             print("✅ [LoggingViewModel.loadAvailablePlans] Loaded \(availablePlans.count) plans")
             
+            // Check if current active plan still exists
+            if let currentActivePlan = activePlan,
+               !availablePlans.contains(where: { $0.id == currentActivePlan.id }) {
+                print("⚠️ [LoggingViewModel.loadAvailablePlans] Active plan was deleted - clearing state")
+                // Current active plan was deleted, clear the state
+                activePlan = nil
+                availableDays = []
+                selectedDay = nil
+                session = nil
+                exercises = []
+                isRestDay = false
+            }
+            
             // Auto-select the first active plan if none selected
-            if activePlan == nil, let activePlan = availablePlans.first(where: { $0.isActive }) {
-                print("🔄 [LoggingViewModel.loadAvailablePlans] Auto-selecting active plan: \(activePlan.customName)")
-                handleIntent(.selectPlan(activePlan.id))
+            if activePlan == nil, let newActivePlan = availablePlans.first(where: { $0.isActive }) {
+                print("🔄 [LoggingViewModel.loadAvailablePlans] Auto-selecting active plan: \(newActivePlan.customName)")
+                handleIntent(.selectPlan(newActivePlan.id))
+            } else if activePlan != nil {
+                // If we already have an active plan, auto-select current day
+                autoSelectCurrentDay()
             }
         } catch {
             print("❌ [LoggingViewModel.loadAvailablePlans] Error: \(error.localizedDescription)")
@@ -245,9 +279,14 @@ class LoggingViewModel: ObservableObject {
             availableDays = plan.template?.dayTemplates.sorted(by: { $0.weekday.rawValue < $1.weekday.rawValue }) ?? []
             print("📊 [LoggingViewModel.selectPlan] Loaded \(availableDays.count) days for plan")
             
-            // Refresh day selection if already selected
-            if let selectedDay = selectedDay {
-                self.selectDay(selectedDay.weekday)
+            // Auto-select current day if no day is currently selected
+            if selectedDay == nil {
+                autoSelectCurrentDay()
+            } else {
+                // Refresh day selection if already selected
+                if let selectedDay = selectedDay {
+                    self.selectDay(selectedDay.weekday)
+                }
             }
             
         } catch {
@@ -283,6 +322,9 @@ class LoggingViewModel: ObservableObject {
         
         if isRestDay {
             print("🏃‍♂️ [LoggingViewModel.selectDay] Rest day selected")
+            // Clear any existing session and exercises for rest days
+            session = nil
+            exercises = []
         } else {
             createOrResumeSession()
         }
@@ -358,28 +400,22 @@ class LoggingViewModel: ObservableObject {
         
         let today = Date()
         
-        do {
-            print("🔄 [LoggingViewModel.createFreshSession] Creating new session")
-            let newSession = WorkoutSession(
-                date: today,
-                title: "\(selectedDay.weekday) - \(activePlan.customName)",
-                plan: activePlan
-            )
-            
-            modelContext.insert(newSession)
-            session = newSession
-            sessionStartTime = Date()
-            
-            // Create session exercises from day template
-            createSessionExercises(for: newSession, from: selectedDay)
-            
-            updateExercisesUI()
-            print("✅ [LoggingViewModel.createFreshSession] Fresh session ready")
-            
-        } catch {
-            print("❌ [LoggingViewModel.createFreshSession] Error: \(error.localizedDescription)")
-            self.error = error
-        }
+        print("🔄 [LoggingViewModel.createFreshSession] Creating new session")
+        let newSession = WorkoutSession(
+            date: today,
+            title: "\(selectedDay.weekday) - \(activePlan.customName)",
+            plan: activePlan
+        )
+        
+        modelContext.insert(newSession)
+        session = newSession
+        sessionStartTime = Date()
+        
+        // Create session exercises from day template
+        createSessionExercises(for: newSession, from: selectedDay)
+        
+        updateExercisesUI()
+        print("✅ [LoggingViewModel.createFreshSession] Fresh session ready")
     }
     
     private func createSessionExercises(for session: WorkoutSession, from dayTemplate: DayTemplate) {
@@ -395,7 +431,8 @@ class LoggingViewModel: ObservableObject {
                 supersetID: exerciseTemplate.supersetID,
                 currentSet: 0,
                 isCompleted: false, // Explicitly set to false for new sessions
-                session: session
+                session: session,
+                autoPopulateFromLastSession: true // Enable auto-population from last used values
             )
             
             modelContext.insert(sessionExercise)
@@ -520,6 +557,27 @@ class LoggingViewModel: ObservableObject {
         print("🏃‍♂️ [LoggingViewModel.startRest] Rest timer started")
     }
     
+    private func cancelRest(exerciseID: UUID) {
+        print("🔄 [LoggingViewModel.cancelRest] Cancelling rest timer for exercise: \(exerciseID)")
+        
+        guard let session = session,
+              let sessionExercise = session.sessionExercises.first(where: { $0.id == exerciseID }) else {
+            print("❌ [LoggingViewModel.cancelRest] Exercise not found")
+            error = LoggingError.exerciseNotFound
+            return
+        }
+        
+        // Cancel and clean up timer
+        restTimer?.invalidate()
+        restTimer = nil
+        sessionExercise.restTimer = nil
+        showTimerSheet = false
+        
+        updateExercisesUI()
+        
+        print("✅ [LoggingViewModel.cancelRest] Rest timer cancelled successfully")
+    }
+    
     private func tickTimer(exerciseID: UUID) {
         guard let session = session,
               let sessionExercise = session.sessionExercises.first(where: { $0.id == exerciseID }),
@@ -620,7 +678,7 @@ class LoggingViewModel: ObservableObject {
             self.sessionStartTime = nil
             
             // Reload the current workout template to start fresh
-            if let selectedDay = selectedDay {
+            if selectedDay != nil {
                 print("🔄 [LoggingViewModel.finishSession] Creating fresh session for next workout")
                 createFreshSession()
             }
