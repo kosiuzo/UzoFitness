@@ -95,13 +95,7 @@ guidelines:
 
   - id: minimalist-ui & design
     description: |
-      • Embrace whitespace: 16–24pt padding around elements.
-      • Use system fonts (San Francisco) and semantic colors.
-      • Default to neutral palette (white, gray), use accent sparingly.
-      • Rely on SwiftUI's built-in components; minimize custom subviews.
-      • Use SF Symbols for icons, sized appropriately (.font(.title2), etc.).
-      • Implement dark mode support using semantic colors.
-      • At the end the design should be something an iphone lover would appreciate with the clean esthetic 
+      • Follow guidelines lines in [minimalist-ios-guide.mdc](mdc:.cursor/rules/minimalist-ios-guide.mdc)
     links:
       - https://developer.apple.com/design/human-interface-guidelines/ios/overview/themes/
 

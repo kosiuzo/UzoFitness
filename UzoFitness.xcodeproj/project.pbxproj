@@ -33,29 +33,17 @@
 		F6BA9A652E03C03200AB8E0E /* Exceptions for "UzoFitness" folder in "UzoFitness" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				"Models/Extensions/Exercise+LastUsedValues.swift",
 				Resources/Info.plist,
 			);
 			target = F65E613A2DFFA78900A2D01C /* UzoFitness */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
-/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-		F6BA9CB42E0B879300AB8E0E /* Exceptions for "UzoFitness" folder in "Copy Bundle Resources" phase from "UzoFitness" target */ = {
-			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
-			buildPhase = F65E61392DFFA78900A2D01C /* Resources */;
-			membershipExceptions = (
-				"Models/Extensions/Exercise+LastUsedValues.swift",
-			);
-		};
-/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		F65E613D2DFFA78900A2D01C /* UzoFitness */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				F6BA9A652E03C03200AB8E0E /* Exceptions for "UzoFitness" folder in "UzoFitness" target */,
-				F6BA9CB42E0B879300AB8E0E /* Exceptions for "UzoFitness" folder in "Copy Bundle Resources" phase from "UzoFitness" target */,
 			);
 			path = UzoFitness;
 			sourceTree = "<group>";

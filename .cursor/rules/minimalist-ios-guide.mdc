@@ -1,0 +1,110 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# iOS Minimalist Design Philosophy for Cursor
+
+## Core Design Principles
+
+Apply these minimalist design principles when developing iOS applications:
+
+### Visual Hierarchy
+- Use generous white space as the primary design element
+- Employ subtle gray backgrounds (`UIColor.systemGray6` or similar) to create gentle visual separation
+- Minimize visual noise - every element should serve a clear purpose
+- Create breathing room between components with consistent spacing (16px, 24px, 32px increments)
+
+### Typography & Content
+- Prioritize clear, readable text over decorative elements
+- Use system fonts (San Francisco) for consistency and legibility
+- Implement a clear information hierarchy with appropriate font weights and sizes
+- Keep text concise and functional - "4 sets x 8 reps" instead of verbose descriptions
+
+### Color Palette
+- Default to a neutral color scheme with whites, light grays, and subtle accents
+- Use color sparingly and purposefully (blue for interactive elements, green for completion states)
+- Avoid gradients, shadows, or complex visual effects unless absolutely necessary
+- Maintain high contrast for accessibility while keeping the overall aesthetic clean
+
+### Interface Elements
+- Design with clean, simple shapes and minimal ornamentation
+- Use standard iOS components (circles, rounded rectangles) without heavy customization
+- Implement subtle interactive states - light gray fills on tap, minimal animations
+- Group related content with consistent card-based layouts and gentle borders
+
+### Layout & Structure
+- Follow iOS Human Interface Guidelines for familiar interaction patterns
+- Use standard navigation patterns and system-provided UI elements
+- Create consistent spacing and alignment throughout the interface
+- Design with a clear content-first approach where functionality drives the visual design
+
+### Interaction Design
+- Implement smooth, subtle animations that feel natural to iOS users
+- Use haptic feedback appropriately to enhance interactions without being overwhelming
+- Design for thumb-friendly touch targets with adequate spacing
+- Maintain consistency in interaction patterns across the entire application
+
+## Implementation Guidelines
+
+When building iOS interfaces, always ask:
+1. Can this be simplified further?
+2. Does every visual element serve the user's primary goal?
+3. Is the interface immediately understandable without explanation?
+4. Does it feel native to iOS while maintaining clean aesthetics?
+
+Remember: The best interface is often the one that gets out of the user's way and lets them focus on their task efficiently.
+
+How to build: # iOS Minimalist Design Philosophy for Cursor
+
+## Core Design Principles
+
+Apply these minimalist design principles when developing iOS applications:
+
+### Visual Hierarchy
+- Use generous white space as the primary design element
+- Employ subtle gray backgrounds (`UIColor.systemGray6` or similar) to create gentle visual separation
+- Minimize visual noise - every element should serve a clear purpose
+- Create breathing room between components with consistent spacing (16px, 24px, 32px increments)
+
+### Typography & Content
+- Prioritize clear, readable text over decorative elements
+- Use system fonts (San Francisco) for consistency and legibility
+- Implement a clear information hierarchy with appropriate font weights and sizes
+- Keep text concise and functional - "4 sets x 8 reps" instead of verbose descriptions
+
+### Color Palette
+- Default to a neutral color scheme with whites, light grays, and subtle accents
+- Use color sparingly and purposefully (blue for interactive elements, green for completion states)
+- Avoid gradients, shadows, or complex visual effects unless absolutely necessary
+- Maintain high contrast for accessibility while keeping the overall aesthetic clean
+
+### Interface Elements
+- Design with clean, simple shapes and minimal ornamentation
+- Use standard iOS components (circles, rounded rectangles) without heavy customization
+- Implement subtle interactive states - light gray fills on tap, minimal animations
+- Group related content with consistent card-based layouts and gentle borders
+
+### Layout & Structure
+- Follow iOS Human Interface Guidelines for familiar interaction patterns
+- Use standard navigation patterns and system-provided UI elements
+- Create consistent spacing and alignment throughout the interface
+- Design with a clear content-first approach where functionality drives the visual design
+
+### Interaction Design
+- Implement smooth, subtle animations that feel natural to iOS users
+- Use haptic feedback appropriately to enhance interactions without being overwhelming
+- Design for thumb-friendly touch targets with adequate spacing
+- Maintain consistency in interaction patterns across the entire application
+
+## Implementation Guidelines
+
+When building iOS interfaces, always ask:
+1. Can this be simplified further?
+2. Does every visual element serve the user's primary goal?
+3. Is the interface immediately understandable without explanation?
+4. Does it feel native to iOS while maintaining clean aesthetics?
+
+Remember: The best interface is often the one that gets out of the user's way and lets them focus on their task efficiently.
+
+How to build app to make sure changes work: xcodebuild -scheme MyFitnessApp -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5' build
