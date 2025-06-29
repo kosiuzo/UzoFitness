@@ -636,10 +636,30 @@ struct WorkoutSessionCard: View {
                                                 .font(.caption)
                                                 .foregroundColor(.secondary)
                                             
-                                            if let bestSet = sessionExercise.completedSets.max(by: { $0.weight < $1.weight }) {
-                                                Text("\(bestSet.reps) × \(formatWeight(bestSet.weight))")
+                                            // Show weight range or individual weights
+                                            let weights = sessionExercise.completedSets.map { $0.weight }.sorted()
+                                            let uniqueWeights = Array(Set(weights))
+                                            
+                                            if uniqueWeights.count == 1 {
+                                                // All sets same weight
+                                                if let weight = uniqueWeights.first, let reps = sessionExercise.completedSets.first?.reps {
+                                                    Text("\(reps) × \(formatWeight(weight))")
+                                                        .font(.caption2)
+                                                        .foregroundColor(.secondary)
+                                                }
+                                            } else if uniqueWeights.count <= 3 {
+                                                // Show all unique weights
+                                                let weightStrings = uniqueWeights.sorted().map { formatWeight($0) }
+                                                Text(weightStrings.joined(separator: ", "))
                                                     .font(.caption2)
                                                     .foregroundColor(.secondary)
+                                            } else {
+                                                // Show range
+                                                if let minWeight = uniqueWeights.min(), let maxWeight = uniqueWeights.max() {
+                                                    Text("\(formatWeight(minWeight)) - \(formatWeight(maxWeight))")
+                                                        .font(.caption2)
+                                                        .foregroundColor(.secondary)
+                                                }
                                             }
                                         }
                                     }

@@ -12,7 +12,7 @@ class LibraryViewModel: ObservableObject {
     @Published var showExerciseSheet: Bool = false
     @Published var error: Error?
     @Published var state: LoadingState = .idle
-    @Published var selectedSegment: LibrarySegment = .exercises
+    @Published var selectedSegment: LibrarySegment = .workouts
     @Published var importErrorMessage: String?
     
     // MARK: - Computed Properties
@@ -738,7 +738,10 @@ class LibraryViewModel: ObservableObject {
         
         modelContext.insert(template)
         
-        // Process days
+        // Create a set of day indices from the imported data
+        let importedDayIndices = Set(dto.days.map { $0.dayIndex })
+        
+        // Process imported days
         for dayDTO in dto.days {
             print("🔄 [LibraryViewModel.importWorkoutTemplate] Processing day: \(dayDTO.name)")
             
@@ -778,6 +781,29 @@ class LibraryViewModel: ObservableObject {
                 
                 modelContext.insert(exerciseTemplate)
                 dayTemplate.exerciseTemplates.append(exerciseTemplate)
+            }
+        }
+        
+        // Create rest days for missing days (1-7 are valid weekdays)
+        for dayIndex in 1...7 {
+            if !importedDayIndices.contains(dayIndex) {
+                print("🔄 [LibraryViewModel.importWorkoutTemplate] Creating rest day for day index: \(dayIndex)")
+                
+                guard let weekday = Weekday(rawValue: dayIndex) else {
+                    continue // Skip invalid weekday
+                }
+                
+                let restDayTemplate = DayTemplate(
+                    weekday: weekday,
+                    isRest: true,
+                    notes: "Rest day (auto-generated during import)",
+                    workoutTemplate: template
+                )
+                
+                modelContext.insert(restDayTemplate)
+                template.dayTemplates.append(restDayTemplate)
+                
+                print("✅ [LibraryViewModel.importWorkoutTemplate] Created rest day for \(weekday.fullName)")
             }
         }
         

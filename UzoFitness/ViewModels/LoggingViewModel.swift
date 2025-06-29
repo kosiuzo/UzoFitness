@@ -21,7 +21,7 @@ struct SessionExerciseUI: Identifiable, Hashable {
     init(from sessionExercise: SessionExercise) {
         self.id = sessionExercise.id
         self.name = sessionExercise.exercise.name
-        self.sets = sessionExercise.completedSets
+        self.sets = sessionExercise.completedSets.sorted(by: { $0.position < $1.position }) // Sort sets by position
         self.plannedSets = sessionExercise.plannedSets
         self.plannedReps = sessionExercise.plannedReps
         self.plannedWeight = sessionExercise.plannedWeight
@@ -512,10 +512,12 @@ class LoggingViewModel: ObservableObject {
                 let plannedSet = CompletedSet(
                     reps: exerciseTemplate.reps,
                     weight: exerciseTemplate.weight ?? 0,
+                    isCompleted: false, // Mark as not completed initially
+                    position: setIndex, // Set proper position for ordering
                     sessionExercise: sessionExercise
                 )
-                plannedSet.isCompleted = false // Mark as not completed initially
                 modelContext.insert(plannedSet)
+                sessionExercise.completedSets.append(plannedSet)
                 print("🏃‍♂️ [LoggingViewModel.createSessionExercises] Created planned set \(setIndex + 1) for \(exerciseTemplate.exercise.name)")
             }
             
@@ -548,23 +550,30 @@ class LoggingViewModel: ObservableObject {
             return
         }
         
-        // Ensure we have enough completed sets
-        while sessionExercise.completedSets.count <= setIndex {
+        // Get ordered sets and ensure we have enough completed sets
+        var orderedSets = sessionExercise.completedSets.sorted(by: { $0.position < $1.position })
+        while orderedSets.count <= setIndex {
+            let newPosition = orderedSets.count
             let newSet = CompletedSet(
                 reps: sessionExercise.plannedReps,
                 weight: sessionExercise.plannedWeight ?? 0,
+                isCompleted: false,
+                position: newPosition,
                 sessionExercise: sessionExercise
             )
             modelContext.insert(newSet)
+            sessionExercise.completedSets.append(newSet)
+            // Update the ordered sets after adding new set
+            orderedSets = sessionExercise.completedSets.sorted(by: { $0.position < $1.position })
         }
         
-        guard setIndex < sessionExercise.completedSets.count else {
+        guard setIndex < orderedSets.count else {
             print("❌ [LoggingViewModel.editSet] Invalid set index")
             error = LoggingError.invalidSetIndex
             return
         }
         
-        let completedSet = sessionExercise.completedSets[setIndex]
+        let completedSet = orderedSets[setIndex]
         completedSet.reps = reps
         completedSet.weight = weight
         
@@ -594,14 +603,17 @@ class LoggingViewModel: ObservableObject {
             return
         }
         
+        let newPosition = sessionExercise.completedSets.count
         let newSet = CompletedSet(
             reps: sessionExercise.plannedReps,
             weight: sessionExercise.plannedWeight ?? 0,
             isCompleted: false,
+            position: newPosition,
             sessionExercise: sessionExercise
         )
         
         modelContext.insert(newSet)
+        sessionExercise.completedSets.append(newSet)
         sessionExercise.currentSet += 1
         updateExercisesUI()
         
@@ -624,13 +636,14 @@ class LoggingViewModel: ObservableObject {
             return
         }
         
-        guard setIndex < sessionExercise.completedSets.count else {
+        let orderedSets = sessionExercise.completedSets.sorted(by: { $0.position < $1.position })
+        guard setIndex < orderedSets.count else {
             print("❌ [LoggingViewModel.toggleSetCompletion] Invalid set index")
             error = LoggingError.invalidSetIndex
             return
         }
         
-        let completedSet = sessionExercise.completedSets[setIndex]
+        let completedSet = orderedSets[setIndex]
         completedSet.isCompleted.toggle()
         
         print("✅ [LoggingViewModel.toggleSetCompletion] Set \(setIndex + 1) completion toggled to: \(completedSet.isCompleted)")
