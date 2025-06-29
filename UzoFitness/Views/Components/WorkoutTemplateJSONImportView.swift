@@ -153,7 +153,7 @@ struct WorkoutTemplateJSONImportView: View {
                 // Import into the app
                 await MainActor.run {
                     do {
-                        let templateCount = try viewModel.importWorkoutTemplate(from: importDTO)
+                        _ = try viewModel.importWorkoutTemplate(from: importDTO)
                         print("✅ [WorkoutTemplateJSONImportView] Successfully imported template")
                         
                         showSuccess(message: "Imported 1 template with \(importDTO.days.count) days")

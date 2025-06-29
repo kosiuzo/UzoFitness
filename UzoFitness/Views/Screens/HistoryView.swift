@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct HistoryView: View {
     @Environment(\.modelContext) private var modelContext
@@ -143,7 +144,7 @@ struct HistoryView: View {
             
             // Loading indicator
             if isLoading {
-                ProgressView()
+                SwiftUI.ProgressView()
                     .scaleEffect(0.8)
                     .padding(.vertical, 8)
             }

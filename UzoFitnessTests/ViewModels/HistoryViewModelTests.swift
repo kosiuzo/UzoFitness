@@ -28,7 +28,8 @@ final class HistoryViewModelTests: XCTestCase {
         )
         
         modelContext = modelContainer.mainContext
-        viewModel = HistoryViewModel(modelContext: modelContext)
+        viewModel = HistoryViewModel()
+        viewModel.setModelContext(modelContext)
         
         print("✅ [HistoryViewModelTests.setUp] Test environment initialized")
     }

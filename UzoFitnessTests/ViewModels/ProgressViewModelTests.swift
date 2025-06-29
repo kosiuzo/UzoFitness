@@ -106,7 +106,7 @@ final class ProgressViewModelTests: XCTestCase {
         XCTAssertEqual(trend.maxWeight, 120.0)
         let expectedVolume = (100.0 * 10.0) + (120.0 * 8.0) + (90.0 * 12.0) // 1000 + 960 + 1080 = 3040
         XCTAssertEqual(trend.totalVolume, expectedVolume)
-        XCTAssertEqual(trend.sessionCount, 3)
+        XCTAssertEqual(trend.totalSessions, 3)
         
         print("✅ [ProgressViewModelTests.testExerciseTrend_CalculatesMetricsCorrectly] Passed")
     }
@@ -152,7 +152,8 @@ final class ProgressViewModelTests: XCTestCase {
         // Then
         XCTAssertEqual(MetricType.maxWeight.displayName, "Max Weight")
         XCTAssertEqual(MetricType.totalVolume.displayName, "Total Volume")
-        XCTAssertEqual(MetricType.sessionCount.displayName, "Session Count")
+        XCTAssertEqual(MetricType.totalSessions.displayName, "Total Sets")
+        XCTAssertEqual(MetricType.totalReps.displayName, "Total Reps")
         
         print("✅ [ProgressViewModelTests.testMetricType_HasCorrectDisplayNames] Passed")
     }
@@ -161,7 +162,8 @@ final class ProgressViewModelTests: XCTestCase {
         // Then
         XCTAssertEqual(MetricType.maxWeight.unit, "lbs")
         XCTAssertEqual(MetricType.totalVolume.unit, "lbs")
-        XCTAssertEqual(MetricType.sessionCount.unit, "sessions")
+        XCTAssertEqual(MetricType.totalSessions.unit, "sets")
+        XCTAssertEqual(MetricType.totalReps.unit, "reps")
         
         print("✅ [ProgressViewModelTests.testMetricType_HasCorrectUnits] Passed")
     }
@@ -176,6 +178,44 @@ final class ProgressViewModelTests: XCTestCase {
         XCTAssertEqual(ProgressError.custom("Custom message").errorDescription, "Custom message")
         
         print("✅ [ProgressViewModelTests.testProgressError_HasCorrectDescriptions] Passed")
+    }
+
+    func testAddPhoto_SavesToCacheAndUpdatesViewModel() async throws {
+        // Given
+        let image = UIImage(systemName: "person.fill")!
+        let angle = PhotoAngle.front
+        
+        // When
+        await viewModel.handleIntent(.addPhoto(angle, image))
+        
+        // A short sleep to allow async operations inside the view model to complete.
+        try await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+        
+        // Then
+        // 1. Check if the ViewModel's state is updated
+        let photos = viewModel.getPhotosForAngle(angle)
+        XCTAssertEqual(photos.count, 1, "ViewModel should have one photo for the specified angle.")
+        
+        guard let savedPhoto = photos.first else {
+            XCTFail("Could not retrieve the saved photo from the ViewModel.")
+            return
+        }
+        
+        // 2. Verify the assetIdentifier is a valid file URL
+        guard let url = URL(string: savedPhoto.assetIdentifier) else {
+            XCTFail("The assetIdentifier is not a valid URL string: \(savedPhoto.assetIdentifier)")
+            return
+        }
+        XCTAssertTrue(url.isFileURL, "The URL created from assetIdentifier should be a file URL.")
+        
+        // 3. Verify the file exists in the cache
+        let fileManager = FileManager.default
+        XCTAssertTrue(fileManager.fileExists(atPath: url.path), "The image file should exist at the path from the assetIdentifier.")
+        
+        // 4. Clean up the created file
+        try? fileManager.removeItem(at: url)
+        
+        print("✅ [ProgressViewModelTests.testAddPhoto_SavesToCacheAndUpdatesViewModel] Passed")
     }
 }
 

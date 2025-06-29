@@ -24,10 +24,14 @@ struct MainTabView: View {
                 .tabItem {
                     Label("History", systemImage: "clock")
                 }
-            ProgressPhotosView()
-                .tabItem {
-                    Label("Progress", systemImage: "photo")
-                }
+            ProgressView(
+                modelContext: PersistenceController.shared.container.mainContext,
+                photoService: PhotoService(dataPersistenceService: DefaultDataPersistenceService(modelContext: PersistenceController.shared.container.mainContext)),
+                healthKitManager: HealthKitManager()
+            )
+            .tabItem {
+                Label("Progress", systemImage: "photo")
+            }
 
             SettingsView()
                 .tabItem {

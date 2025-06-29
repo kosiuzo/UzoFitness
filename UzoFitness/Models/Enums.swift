@@ -43,6 +43,16 @@ enum PhotoAngle: String, Codable, CaseIterable {
   case back = "back"
 }
 
+extension PhotoAngle {
+    var displayName: String {
+        switch self {
+        case .front: return "Front"
+        case .side: return "Side"
+        case .back: return "Back"
+        }
+    }
+}
+
 // MARK: - Validation Error Types
 enum ValidationError: Error, LocalizedError {
     case duplicateWorkoutTemplateName(String)

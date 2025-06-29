@@ -115,7 +115,7 @@ struct SettingsView: View {
             Spacer()
             
             if viewModel.state == .loading {
-                ProgressView()
+                SwiftUI.ProgressView()
                     .scaleEffect(0.8)
             } else {
                 Toggle("", isOn: Binding(
@@ -163,7 +163,7 @@ struct SettingsView: View {
             Spacer()
             
             if viewModel.state == .loading {
-                ProgressView()
+                SwiftUI.ProgressView()
                     .scaleEffect(0.8)
             } else {
                 Toggle("", isOn: Binding(
@@ -225,7 +225,7 @@ struct SettingsView: View {
                         .foregroundColor(.primary)
                     
                     if viewModel.isLoadingBackup {
-                        ProgressView()
+                        SwiftUI.ProgressView()
                             .progressViewStyle(LinearProgressViewStyle())
                             .scaleEffect(y: 0.5)
                     }
@@ -234,7 +234,7 @@ struct SettingsView: View {
                 Spacer()
                 
                 if viewModel.isLoadingBackup {
-                    ProgressView()
+                    SwiftUI.ProgressView()
                         .scaleEffect(0.8)
                 }
             }
@@ -276,7 +276,7 @@ struct SettingsView: View {
                         .foregroundColor(.primary)
                     
                     if viewModel.isLoadingRestore {
-                        ProgressView()
+                        SwiftUI.ProgressView()
                             .progressViewStyle(LinearProgressViewStyle())
                             .scaleEffect(y: 0.5)
                     }
@@ -285,7 +285,7 @@ struct SettingsView: View {
                 Spacer()
                 
                 if viewModel.isLoadingRestore {
-                    ProgressView()
+                    SwiftUI.ProgressView()
                         .scaleEffect(0.8)
                 }
             }

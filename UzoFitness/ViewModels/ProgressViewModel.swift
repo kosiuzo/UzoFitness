@@ -11,21 +11,24 @@ struct ExerciseTrend: Identifiable, Hashable {
     let exerciseName: String
     let maxWeight: Double
     let totalVolume: Double
+    let totalSessions: Int
+    let totalReps: Int
     let weekStartDate: Date
-    let sessionCount: Int
     
     init(exerciseID: UUID, exerciseName: String, performedExercises: [PerformedExercise], weekStartDate: Date) {
         self.id = UUID()
         self.exerciseID = exerciseID
         self.exerciseName = exerciseName
         self.weekStartDate = weekStartDate
-        self.sessionCount = performedExercises.count
+        self.totalSessions = performedExercises.count
         
         if performedExercises.isEmpty {
             self.maxWeight = 0.0
             self.totalVolume = 0.0
+            self.totalReps = 0
         } else {
             self.maxWeight = performedExercises.map { $0.weight }.max() ?? 0.0
+            self.totalReps = performedExercises.reduce(0) { $0 + $1.reps }
             self.totalVolume = performedExercises.reduce(0) { total, exercise in
                 total + (exercise.weight * Double(exercise.reps))
             }
@@ -74,17 +77,7 @@ struct BodyMetrics: Identifiable, Hashable {
     }
 }
 
-// MARK: - Chart Data Point
-struct ChartDataPoint: Identifiable, Hashable {
-    let id = UUID()
-    let date: Date
-    let value: Double
-    
-    init(date: Date, value: Double) {
-        self.date = date
-        self.value = value
-    }
-}
+// ChartDataPoint is now imported from ProgressTypes.swift
 
 @MainActor
 class ProgressViewModel: ObservableObject {
@@ -123,9 +116,13 @@ class ProgressViewModel: ObservableObject {
             return exerciseSpecificTrends.map { trend in
                 ChartDataPoint(date: trend.weekStartDate, value: trend.totalVolume)
             }
-        case .sessionCount:
+        case .totalSessions:
             return exerciseSpecificTrends.map { trend in
-                ChartDataPoint(date: trend.weekStartDate, value: Double(trend.sessionCount))
+                ChartDataPoint(date: trend.weekStartDate, value: Double(trend.totalSessions))
+            }
+        case .totalReps:
+            return exerciseSpecificTrends.map { trend in
+                ChartDataPoint(date: trend.weekStartDate, value: Double(trend.totalReps))
             }
         }
     }
@@ -245,8 +242,6 @@ class ProgressViewModel: ObservableObject {
     
     private func loadExerciseTrends() async {
         print("🔄 [ProgressViewModel.loadExerciseTrends] Starting exercise trends load")
-        isLoadingStats = true
-        state = .loading
         
         do {
             // Fetch all performed exercises
@@ -257,55 +252,31 @@ class ProgressViewModel: ObservableObject {
             let performedExercises = try modelContext.fetch(descriptor)
             
             // Group by exercise and week
-            var trendsDict: [String: [PerformedExercise]] = [:]
+            let groupedByWeek = Dictionary(grouping: performedExercises) { exercise -> Date in
+                return calendar.dateInterval(of: .weekOfYear, for: exercise.performedAt)?.start ?? exercise.performedAt
+            }
             
-            for exercise in performedExercises {
-                let weekStart = calendar.dateInterval(of: .weekOfYear, for: exercise.performedAt)?.start ?? exercise.performedAt
-                let key = "\(exercise.exercise.id.uuidString)_\(weekStart.timeIntervalSince1970)"
-                
-                if trendsDict[key] != nil {
-                    trendsDict[key]?.append(exercise)
-                } else {
-                    trendsDict[key] = [exercise]
+            var trends: [ExerciseTrend] = []
+            
+            for (week, exercisesInWeek) in groupedByWeek {
+                let exercisesByName = Dictionary(grouping: exercisesInWeek) { $0.exercise.name }
+                for (name, exercises) in exercisesByName {
+                    if let firstExercise = exercises.first {
+                        let exerciseID = firstExercise.exercise.id
+                        trends.append(ExerciseTrend(exerciseID: exerciseID, exerciseName: name, performedExercises: exercises, weekStartDate: week))
+                    }
                 }
             }
             
-            // Convert to ExerciseTrend objects
-            var trends: [ExerciseTrend] = []
-            
-            for (_, exercisesInWeek) in trendsDict {
-                guard let firstExercise = exercisesInWeek.first else { continue }
-                
-                let weekStart = calendar.dateInterval(of: .weekOfYear, for: firstExercise.performedAt)?.start ?? firstExercise.performedAt
-                
-                let trend = ExerciseTrend(
-                    exerciseID: firstExercise.exercise.id,
-                    exerciseName: firstExercise.exercise.name,
-                    performedExercises: exercisesInWeek,
-                    weekStartDate: weekStart
-                )
-                
-                trends.append(trend)
-            }
-            
-            exerciseTrends = trends.sorted { $0.weekStartDate > $1.weekStartDate }
-            
+            self.exerciseTrends = trends
             print("✅ [ProgressViewModel.loadExerciseTrends] Successfully loaded \(trends.count) exercise trends")
-            print("📊 [ProgressViewModel] State changed to: loaded")
-            
-            state = .loaded
-            isLoadingStats = false
             
             // Load current weight from HealthKit
             await loadCurrentWeight()
             
         } catch {
             print("❌ [ProgressViewModel.loadExerciseTrends] Error: \(error.localizedDescription)")
-            print("📊 [ProgressViewModel] State changed to: error")
-            
             self.error = error
-            state = .error
-            isLoadingStats = false
         }
     }
     
@@ -509,18 +480,27 @@ class ProgressViewModel: ObservableObject {
     
     private func loadInitialData() {
         print("🔄 [ProgressViewModel.loadInitialData] Loading initial data")
-        
         Task {
-            await loadExerciseTrends()
-            await loadPhotos()
+            await refreshData()
         }
     }
     
     private func refreshData() async {
         print("🔄 [ProgressViewModel.refreshData] Refreshing all data")
+        state = .loading
         
-        await loadExerciseTrends()
-        await loadPhotos()
+        async let statsLoad: () = loadExerciseTrends()
+        async let photosLoad: () = loadPhotos()
+        
+        _ = await [statsLoad, photosLoad]
+        
+        // Update state based on whether data is available
+        if exerciseTrends.isEmpty && photosByAngle.allSatisfy({ $0.value.isEmpty }) {
+            state = .empty
+        } else {
+            state = .loaded
+        }
+        print("✅ [ProgressViewModel.refreshData] All data refreshed")
     }
     
     // MARK: - Helper Methods
@@ -567,31 +547,11 @@ enum ProgressIntent {
     case hideImagePicker
 }
 
-enum MetricType: String, CaseIterable {
-    case maxWeight = "Max Weight"
-    case totalVolume = "Total Volume"
-    case sessionCount = "Session Count"
-    
-    var displayName: String {
-        return self.rawValue
-    }
-    
-    var unit: String {
-        switch self {
-        case .maxWeight:
-            return "lbs"
-        case .totalVolume:
-            return "lbs"
-        case .sessionCount:
-            return "sessions"
-        }
-    }
-}
-
 enum ProgressLoadingState {
     case idle
     case loading
     case loaded
+    case empty
     case error
 }
 

@@ -12,7 +12,7 @@ struct LoggingView: View {
             if let viewModel = viewModel {
                 LoggingContentView(viewModel: viewModel)
             } else {
-                ProgressView("Loading...")
+                SwiftUI.ProgressView("Loading...")
             }
         }
         .onAppear {
