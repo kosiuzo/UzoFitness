@@ -2,20 +2,15 @@
 
 ## 1. Screen & Layout  
 - [ ] Create `HistoryView` (SwiftUI or UIKit)  
-  - [ ] Add a “🔥 Streak: X days” label at the top  
   - [ ] Add a monthly calendar grid beneath the streak label  
-  - [ ] Implement a drill-down detail panel (modal or bottom sheet) for tapped dates  
+  - [ ] Implement a persistent bottom sheet view directly under the calendar  
 
 ## 2. Calendar Display  
+- [ ] Preload calendar data at app launch and cache in memory
 - [ ] Render calendar for the current month  
   - [ ] Highlight days with logged workouts using a subtle dot or underline  
   - [ ] Disable navigation past available history range  
 - [ ] Add controls to navigate to previous/next month  
-
-## 3. Streak Indicator  
-- [ ] In `HistoryViewModel`, compute `streakCount` by inspecting consecutive `PerformedWorkout` dates  
-- [ ] Bind `streakCount` to the streak label in the view  
-- [ ] Ensure the streak updates in real time when new workouts are logged  
 
 ## 4. Plan Progress Tracking  
 - [ ] In `HistoryViewModel`, detect when a `PerformedWorkout` belongs to a multi-week plan  
@@ -23,17 +18,15 @@
 - [ ] Expose `planWeekStatus` (currentWeek, totalWeeks) for the selected date  
 - [ ] In the drill-down panel, display “Week Y of Z” for plan entries  
 
-## 5. Date Drill-Down Details  
-- [ ] Add tap gesture to calendar cells  
-- [ ] On tap of a marked day, fetch `PerformedWorkout` entries for that date  
-- [ ] Present drill-down panel listing each workout:  
-  - [ ] Workout name  
-  - [ ] Total volume (Σ sets × reps × weight)  
-  - [ ] **If part of a plan:** “Week Y of Z”  
-- [ ] Under each workout, list exercises with:  
-  - [ ] Exercise name  
-  - [ ] Total volume  
-  - [ ] Body Weight  
+## 5. Workout Summary Cards Under Calendar
+- [ ] Render a list of workout summary cards under the calendar for the selected day
+- [ ] Each card shows:
+  - [ ] Workout name
+  - [ ] Total volume (Σ sets × reps × weight)
+- [ ] Expandable section per workout card to reveal:
+  - [ ] Each performed exercise:
+    - [ ] Exercise name
+    - [ ] Reps, sets, and weight (displayed compactly)
 
 ## 6. Volume Calculations  
 - [ ] In `HistoryViewModel`, check if you have the necessary columns for Total Volume to decide if you need to implement  
@@ -45,6 +38,7 @@
 - [ ] In drill-down panel (or hover), display “Logged N times” badge for each template  
 
 ## 8. Persistence & Data Flow  
+- [ ] Load calendar-relevant history data during app launch and persist in memory for fast access
 - [ ] Fetch history from SwiftData/Core Data `PerformedWorkout` and `PerformedExercise` entities  
 - [ ] Cache adjacent months’ data in memory for smooth scrolling  
 - [ ] Invalidate cache when new workouts are logged  
