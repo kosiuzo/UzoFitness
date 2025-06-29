@@ -350,26 +350,31 @@ class LoggingViewModel: ObservableObject {
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
         
         do {
+            // Only look for sessions from the current plan to avoid affecting other plans' history
             let fetchDescriptor = FetchDescriptor<WorkoutSession>(
                 predicate: #Predicate<WorkoutSession> { session in
                     session.date >= startOfDay &&
                     session.date < endOfDay
                 }
             )
-            let existingSessions = try modelContext.fetch(fetchDescriptor)
+            let allTodaySessions = try modelContext.fetch(fetchDescriptor)
             
-            // Filter sessions for the active plan AND the selected day
-            let planSessions = existingSessions.filter { session in
-                session.plan?.id == activePlan.id && 
-                (session.title.contains(selectedDay.weekday.fullName) || session.title.contains(selectedDay.weekday.abbreviation))
+            // Filter for the current plan only
+            let planSessions = allTodaySessions.filter { session in
+                session.plan?.id == activePlan.id
             }
             
-            print("🔍 [LoggingViewModel.createOrResumeSession] Found \(existingSessions.count) sessions today, \(planSessions.count) matching current plan/day")
+            // Further filter for the specific day/workout
+            let daySpecificSessions = planSessions.filter { session in
+                session.title.contains(selectedDay.weekday.fullName) || session.title.contains(selectedDay.weekday.abbreviation)
+            }
             
-            if let existingSession = planSessions.first {
+            print("🔍 [LoggingViewModel.createOrResumeSession] Found \(daySpecificSessions.count) sessions for current plan and day")
+            
+            if let existingSession = daySpecificSessions.first {
                 // Check if this session was already completed (has duration set)
                 if existingSession.duration != nil && existingSession.duration! > 0 {
-                    print("🔄 [LoggingViewModel.createOrResumeSession] Found completed session, creating fresh session instead")
+                    print("🔄 [LoggingViewModel.createOrResumeSession] Found completed session from same plan, creating fresh session instead")
                     createFreshSessionForSameDay(existingSession: existingSession)
                     return
                 }
@@ -459,6 +464,8 @@ class LoggingViewModel: ObservableObject {
         }
         
         // Delete the existing completed session since we're starting fresh
+        // (This session is guaranteed to be from the same plan due to our filtering)
+        print("🔄 [LoggingViewModel.createFreshSessionForSameDay] Deleting existing session from same plan")
         modelContext.delete(existingSession)
         
         let today = Date()

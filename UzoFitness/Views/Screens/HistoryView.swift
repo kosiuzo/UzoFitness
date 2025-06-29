@@ -305,21 +305,18 @@ struct HistoryView: View {
             )
             let allSessions = try modelContext.fetch(sessionDescriptor)
             
-            // Filter out sessions that have no completed sets (incomplete sessions)
-            // Also filter out sessions that were never actually completed (duration is nil or 0)
+            // Filter out sessions that have no completed sets
+            // Show any session that has at least one completed set, regardless of whether it was formally finished
             workoutSessions = allSessions.filter { session in
                 let hasCompletedSets = session.sessionExercises.contains { sessionExercise in
-                    !sessionExercise.completedSets.isEmpty
-                }
-                let wasCompleted = session.duration != nil && session.duration! > 0
-                
-                if !hasCompletedSets || !wasCompleted {
-                    if !session.sessionExercises.isEmpty {
-                        print("🔍 [HistoryView.loadWorkoutData] Filtering out incomplete session: \(session.title) (hasCompletedSets: \(hasCompletedSets), wasCompleted: \(wasCompleted))")
-                    }
+                    sessionExercise.completedSets.contains { $0.isCompleted }
                 }
                 
-                return hasCompletedSets && wasCompleted
+                if !hasCompletedSets && !session.sessionExercises.isEmpty {
+                    print("🔍 [HistoryView.loadWorkoutData] Filtering out session with no completed sets: \(session.title)")
+                }
+                
+                return hasCompletedSets
             }
             
             // Calculate streak and total days
