@@ -10,7 +10,7 @@ final class WorkoutSession: Identified, Timestamped {
     @Attribute var createdAt: Date
     
     @Relationship var plan: WorkoutPlan?
-    @Relationship var sessionExercises: [SessionExercise]
+    @Relationship(inverse: \SessionExercise.session) var sessionExercises: [SessionExercise]
 
     var totalVolume: Double {
         sessionExercises.reduce(0) { $0 + $1.totalVolume }

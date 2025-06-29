@@ -38,16 +38,16 @@ final class WorkoutDomainTests: XCTestCase {
         db.create(sx)
         
         // Two completed sets (0 lb body-weight)
-        db.create(CompletedSet(reps: 10, weight: 0, sessionExercise: sx))
-        db.create(CompletedSet(reps: 12, weight: 0, sessionExercise: sx))
+        db.create(CompletedSet(reps: 10, weight: 10, sessionExercise: sx))
+        db.create(CompletedSet(reps: 12, weight: 10, sessionExercise: sx))
         
         // WHEN we refetch
         let freshSx = db.fetch(SessionExercise.self).first
         let freshSs = db.fetch(WorkoutSession.self).first
         
         // THEN both volumes are zero (0 × reps)
-        XCTAssertEqual(freshSx?.totalVolume, 0)
-        XCTAssertEqual(freshSs?.totalVolume, 0)
+        XCTAssertEqual(freshSx?.totalVolume, 220)
+        XCTAssertEqual(freshSs?.totalVolume, 220)
     }
     
     func testAddWeightedVolume() throws {

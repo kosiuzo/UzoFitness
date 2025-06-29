@@ -23,7 +23,7 @@ final class SessionExercise: Identified, Timestamped {
     @Attribute var createdAt: Date
     
     @Relationship var session: WorkoutSession?
-    @Relationship var completedSets: [CompletedSet]
+    @Relationship(inverse: \CompletedSet.sessionExercise) var completedSets: [CompletedSet]
 
     var totalVolume: Double {
         completedSets.reduce(0) {
