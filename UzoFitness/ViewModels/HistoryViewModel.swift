@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import Combine
+import SwiftUI
 
 // MARK: - WorkoutSessionSummary Helper Struct
 struct WorkoutSessionSummary: Identifiable, Hashable {
@@ -119,15 +120,34 @@ class HistoryViewModel: ObservableObject {
     }
     
     // MARK: - Private Properties
-    private let modelContext: ModelContext
+    private var modelContext: ModelContext
     private var cancellables = Set<AnyCancellable>()
     private let calendar = Calendar.current
     
     // MARK: - Initialization
-    init(modelContext: ModelContext) {
+    init() {
+        // Initialize with empty context - will be set later
+        let container = try! ModelContainer(for: WorkoutSession.self)
+        self.modelContext = container.mainContext
+        print("🔄 [HistoryViewModel.init] Initialized with temporary ModelContext")
+    }
+    
+    func setModelContext(_ modelContext: ModelContext) {
         self.modelContext = modelContext
-        print("🔄 [HistoryViewModel.init] Initialized with ModelContext")
+        print("🔄 [HistoryViewModel.setModelContext] Updated ModelContext")
         loadCalendarData()
+    }
+    
+    func selectDate(_ date: Date) {
+        print("🔄 [HistoryViewModel.selectDate] Selecting date: \(date)")
+        
+        let normalizedDate = normalizeDate(date)
+        selectedDate = normalizedDate
+        
+        // Load detailed data for the selected date
+        loadDailyDetails(for: normalizedDate)
+        
+        print("📊 [HistoryViewModel] Selected date: \(normalizedDate)")
     }
     
     // MARK: - Intent Handling
@@ -152,18 +172,7 @@ class HistoryViewModel: ObservableObject {
         }
     }
     
-    // MARK: - Date Selection
-    private func selectDate(_ date: Date) {
-        print("🔄 [HistoryViewModel.selectDate] Selecting date: \(date)")
-        
-        let normalizedDate = normalizeDate(date)
-        selectedDate = normalizedDate
-        
-        // Load detailed data for the selected date
-        loadDailyDetails(for: normalizedDate)
-        
-        print("📊 [HistoryViewModel] Selected date: \(normalizedDate)")
-    }
+    // MARK: - Date Selection (moved to public section)
     
     private func clearSelection() {
         print("🔄 [HistoryViewModel.clearSelection] Clearing date selection")
