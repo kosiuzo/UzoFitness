@@ -357,18 +357,34 @@ class LoggingViewModel: ObservableObject {
             // Filter sessions for the active plan AND the selected day
             let planSessions = existingSessions.filter { session in
                 session.plan?.id == activePlan.id && 
-                session.title.contains(selectedDay.weekday.fullName)
+                (session.title.contains(selectedDay.weekday.fullName) || session.title.contains(selectedDay.weekday.abbreviation))
             }
             
+            print("🔍 [LoggingViewModel.createOrResumeSession] Found \(existingSessions.count) sessions today, \(planSessions.count) matching current plan/day")
+            
             if let existingSession = planSessions.first {
+                // Check if this session was already completed (has duration set)
+                if existingSession.duration != nil && existingSession.duration! > 0 {
+                    print("🔄 [LoggingViewModel.createOrResumeSession] Found completed session, creating fresh session instead")
+                    createFreshSessionForSameDay(existingSession: existingSession)
+                    return
+                }
+                
                 print("✅ [LoggingViewModel.createOrResumeSession] Resuming existing session for \(selectedDay.weekday)")
+                print("🔍 [LoggingViewModel.createOrResumeSession] Existing session has \(existingSession.sessionExercises.count) exercises")
                 session = existingSession
                 sessionStartTime = existingSession.createdAt
+                
+                // Ensure session exercises exist for resumed sessions
+                if existingSession.sessionExercises.isEmpty {
+                    print("⚠️ [LoggingViewModel.createOrResumeSession] Resumed session has no exercises, creating them")
+                    createSessionExercises(for: existingSession, from: selectedDay)
+                }
             } else {
                 print("🔄 [LoggingViewModel.createOrResumeSession] Creating new session")
                 let newSession = WorkoutSession(
                     date: today,
-                    title: "\(selectedDay.weekday) - \(activePlan.customName)",
+                    title: "\(selectedDay.weekday.fullName) - \(activePlan.customName)",
                     plan: activePlan
                 )
                 
@@ -376,8 +392,19 @@ class LoggingViewModel: ObservableObject {
                 session = newSession
                 sessionStartTime = Date()
                 
+                print("🔍 [LoggingViewModel.createOrResumeSession] New session created with ID: \(newSession.id)")
+                print("🔍 [LoggingViewModel.createOrResumeSession] Session title: '\(newSession.title)'")
+                
                 // Create session exercises from day template
                 createSessionExercises(for: newSession, from: selectedDay)
+                
+                // Save immediately to ensure the session persists
+                do {
+                    try modelContext.save()
+                    print("✅ [LoggingViewModel.createOrResumeSession] New session saved successfully")
+                } catch {
+                    print("❌ [LoggingViewModel.createOrResumeSession] Failed to save new session: \(error.localizedDescription)")
+                }
             }
             
             updateExercisesUI()
@@ -403,7 +430,7 @@ class LoggingViewModel: ObservableObject {
         print("🔄 [LoggingViewModel.createFreshSession] Creating new session")
         let newSession = WorkoutSession(
             date: today,
-            title: "\(selectedDay.weekday) - \(activePlan.customName)",
+            title: "\(selectedDay.weekday.fullName) - \(activePlan.customName)",
             plan: activePlan
         )
         
@@ -416,6 +443,44 @@ class LoggingViewModel: ObservableObject {
         
         updateExercisesUI()
         print("✅ [LoggingViewModel.createFreshSession] Fresh session ready")
+    }
+    
+    private func createFreshSessionForSameDay(existingSession: WorkoutSession) {
+        print("🔄 [LoggingViewModel.createFreshSessionForSameDay] Creating fresh session to replace completed one")
+        
+        guard let activePlan = activePlan,
+              let selectedDay = selectedDay else {
+            print("❌ [LoggingViewModel.createFreshSessionForSameDay] Missing plan or day")
+            return
+        }
+        
+        // Delete the existing completed session since we're starting fresh
+        modelContext.delete(existingSession)
+        
+        let today = Date()
+        let newSession = WorkoutSession(
+            date: today,
+            title: "\(selectedDay.weekday.fullName) - \(activePlan.customName)",
+            plan: activePlan
+        )
+        
+        modelContext.insert(newSession)
+        session = newSession
+        sessionStartTime = Date()
+        
+        // Create session exercises from day template
+        createSessionExercises(for: newSession, from: selectedDay)
+        
+        // Save immediately
+        do {
+            try modelContext.save()
+            print("✅ [LoggingViewModel.createFreshSessionForSameDay] Fresh session created and saved")
+        } catch {
+            print("❌ [LoggingViewModel.createFreshSessionForSameDay] Failed to save: \(error.localizedDescription)")
+        }
+        
+        updateExercisesUI()
+        print("✅ [LoggingViewModel.createFreshSessionForSameDay] Fresh session ready")
     }
     
     private func createSessionExercises(for session: WorkoutSession, from dayTemplate: DayTemplate) {
@@ -613,6 +678,13 @@ class LoggingViewModel: ObservableObject {
             return
         }
         
+        // Check if the exercise has at least one completed set
+        if sessionExercise.completedSets.isEmpty {
+            print("❌ [LoggingViewModel.markExerciseComplete] Cannot mark complete - no sets recorded")
+            error = LoggingError.custom("Please add at least one set before marking the exercise as complete")
+            return
+        }
+        
         // IMPORTANT: Only mark the session-specific exercise as complete
         // This ensures we don't affect other days or sessions
         sessionExercise.isCompleted = true
@@ -624,7 +696,7 @@ class LoggingViewModel: ObservableObject {
         
         do {
             try modelContext.save()
-            print("✅ [LoggingViewModel.markExerciseComplete] Exercise marked complete")
+            print("✅ [LoggingViewModel.markExerciseComplete] Exercise marked complete with \(sessionExercise.completedSets.count) sets")
             print("📊 [LoggingViewModel] Exercise completion status updated for session only")
         } catch {
             print("❌ [LoggingViewModel.markExerciseComplete] Save error: \(error.localizedDescription)")
@@ -672,16 +744,12 @@ class LoggingViewModel: ObservableObject {
             print("📊 [LoggingViewModel] Session duration: \(session.duration ?? 0) seconds")
             print("🏃‍♂️ [LoggingViewModel.finishSession] Total volume: \(totalVolume) lbs")
             
-            // Reset state for next session
+            // Reset state for next session - DON'T create a fresh session automatically
             self.session = nil
             self.exercises = []
             self.sessionStartTime = nil
             
-            // Reload the current workout template to start fresh
-            if selectedDay != nil {
-                print("🔄 [LoggingViewModel.finishSession] Creating fresh session for next workout")
-                createFreshSession()
-            }
+            print("✅ [LoggingViewModel.finishSession] Session state reset - ready for next workout")
             
         } catch {
             print("❌ [LoggingViewModel.finishSession] Save error: \(error.localizedDescription)")

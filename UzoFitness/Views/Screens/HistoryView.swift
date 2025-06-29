@@ -40,6 +40,11 @@ struct HistoryView: View {
             .refreshable {
                 await loadWorkoutData()
             }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+                Task {
+                    await loadWorkoutData()
+                }
+            }
         }
     }
     
@@ -294,11 +299,28 @@ struct HistoryView: View {
         errorMessage = nil
         
         do {
-            // Load workout sessions
+            // Load workout sessions with all relationships
             let sessionDescriptor = FetchDescriptor<WorkoutSession>(
                 sortBy: [SortDescriptor(\.date, order: .reverse)]
             )
-            workoutSessions = try modelContext.fetch(sessionDescriptor)
+            let allSessions = try modelContext.fetch(sessionDescriptor)
+            
+            // Filter out sessions that have no completed sets (incomplete sessions)
+            // Also filter out sessions that were never actually completed (duration is nil or 0)
+            workoutSessions = allSessions.filter { session in
+                let hasCompletedSets = session.sessionExercises.contains { sessionExercise in
+                    !sessionExercise.completedSets.isEmpty
+                }
+                let wasCompleted = session.duration != nil && session.duration! > 0
+                
+                if !hasCompletedSets || !wasCompleted {
+                    if !session.sessionExercises.isEmpty {
+                        print("🔍 [HistoryView.loadWorkoutData] Filtering out incomplete session: \(session.title) (hasCompletedSets: \(hasCompletedSets), wasCompleted: \(wasCompleted))")
+                    }
+                }
+                
+                return hasCompletedSets && wasCompleted
+            }
             
             // Calculate streak and total days
             calculateStreakAndTotals()
@@ -592,14 +614,23 @@ struct WorkoutSessionCard: View {
                                     Spacer()
                                     
                                     VStack(alignment: .trailing, spacing: 2) {
-                                        Text("\(sessionExercise.completedSets.count) sets")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                        
-                                        if let bestSet = sessionExercise.completedSets.max(by: { $0.weight < $1.weight }) {
-                                            Text("\(bestSet.reps) × \(formatWeight(bestSet.weight))")
-                                                .font(.caption2)
+                                        if sessionExercise.completedSets.isEmpty {
+                                            Text("0 sets")
+                                                .font(.caption)
                                                 .foregroundColor(.secondary)
+                                            Text("Not completed")
+                                                .font(.caption2)
+                                                .foregroundColor(.orange)
+                                        } else {
+                                            Text("\(sessionExercise.completedSets.count) sets")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                            
+                                            if let bestSet = sessionExercise.completedSets.max(by: { $0.weight < $1.weight }) {
+                                                Text("\(bestSet.reps) × \(formatWeight(bestSet.weight))")
+                                                    .font(.caption2)
+                                                    .foregroundColor(.secondary)
+                                            }
                                         }
                                     }
                                 }
