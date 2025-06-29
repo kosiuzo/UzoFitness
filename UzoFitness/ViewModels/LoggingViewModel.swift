@@ -45,6 +45,7 @@ enum LoggingIntent {
     case selectDay(Weekday)
     case editSet(exerciseID: UUID, setIndex: Int, reps: Int, weight: Double)
     case addSet(exerciseID: UUID)
+    case toggleSetCompletion(exerciseID: UUID, setIndex: Int)
     case startRest(exerciseID: UUID, seconds: TimeInterval)
     case cancelRest(exerciseID: UUID)
     case markExerciseComplete(exerciseID: UUID)
@@ -183,6 +184,9 @@ class LoggingViewModel: ObservableObject {
             
         case .addSet(let exerciseID):
             addSet(exerciseID: exerciseID)
+            
+        case .toggleSetCompletion(let exerciseID, let setIndex):
+            toggleSetCompletion(exerciseID: exerciseID, setIndex: setIndex)
             
         case .startRest(let exerciseID, let seconds):
             startRest(exerciseID: exerciseID, seconds: seconds)
@@ -502,7 +506,20 @@ class LoggingViewModel: ObservableObject {
             
             modelContext.insert(sessionExercise)
             session.sessionExercises.append(sessionExercise)
-            print("🏃‍♂️ [LoggingViewModel.createSessionExercises] Added exercise: \(exerciseTemplate.exercise.name) (isCompleted: false)")
+            
+            // Create planned sets as real sets that need to be completed
+            for setIndex in 0..<exerciseTemplate.setCount {
+                let plannedSet = CompletedSet(
+                    reps: exerciseTemplate.reps,
+                    weight: exerciseTemplate.weight ?? 0,
+                    sessionExercise: sessionExercise
+                )
+                plannedSet.isCompleted = false // Mark as not completed initially
+                modelContext.insert(plannedSet)
+                print("🏃‍♂️ [LoggingViewModel.createSessionExercises] Created planned set \(setIndex + 1) for \(exerciseTemplate.exercise.name)")
+            }
+            
+            print("🏃‍♂️ [LoggingViewModel.createSessionExercises] Added exercise: \(exerciseTemplate.exercise.name) with \(exerciseTemplate.setCount) planned sets")
         }
         
         print("✅ [LoggingViewModel.createSessionExercises] Created \(dayTemplate.exerciseTemplates.count) session exercises")
@@ -580,6 +597,7 @@ class LoggingViewModel: ObservableObject {
         let newSet = CompletedSet(
             reps: sessionExercise.plannedReps,
             weight: sessionExercise.plannedWeight ?? 0,
+            isCompleted: false,
             sessionExercise: sessionExercise
         )
         
@@ -592,6 +610,51 @@ class LoggingViewModel: ObservableObject {
             print("✅ [LoggingViewModel.addSet] Set added successfully")
         } catch {
             print("❌ [LoggingViewModel.addSet] Save error: \(error.localizedDescription)")
+            self.error = error
+        }
+    }
+    
+    private func toggleSetCompletion(exerciseID: UUID, setIndex: Int) {
+        print("🔄 [LoggingViewModel.toggleSetCompletion] Toggling completion for set \(setIndex) of exercise: \(exerciseID)")
+        
+        guard let session = session,
+              let sessionExercise = session.sessionExercises.first(where: { $0.id == exerciseID }) else {
+            print("❌ [LoggingViewModel.toggleSetCompletion] Exercise not found")
+            error = LoggingError.exerciseNotFound
+            return
+        }
+        
+        guard setIndex < sessionExercise.completedSets.count else {
+            print("❌ [LoggingViewModel.toggleSetCompletion] Invalid set index")
+            error = LoggingError.invalidSetIndex
+            return
+        }
+        
+        let completedSet = sessionExercise.completedSets[setIndex]
+        completedSet.isCompleted.toggle()
+        
+        print("✅ [LoggingViewModel.toggleSetCompletion] Set \(setIndex + 1) completion toggled to: \(completedSet.isCompleted)")
+        
+        // Check if all sets are now completed and auto-complete the exercise
+        let completedSetsCount = sessionExercise.completedSets.filter { $0.isCompleted }.count
+        let totalSetsCount = sessionExercise.completedSets.count
+        
+        if completedSetsCount == totalSetsCount && !sessionExercise.isCompleted {
+            print("🎉 [LoggingViewModel.toggleSetCompletion] All sets completed - auto-completing exercise")
+            sessionExercise.isCompleted = true
+            sessionExercise.updateExerciseCacheOnCompletion()
+        } else if completedSetsCount < totalSetsCount && sessionExercise.isCompleted {
+            print("⚠️ [LoggingViewModel.toggleSetCompletion] Not all sets completed - marking exercise as incomplete")
+            sessionExercise.isCompleted = false
+        }
+        
+        updateExercisesUI()
+        
+        do {
+            try modelContext.save()
+            print("✅ [LoggingViewModel.toggleSetCompletion] Set completion status saved")
+        } catch {
+            print("❌ [LoggingViewModel.toggleSetCompletion] Save error: \(error.localizedDescription)")
             self.error = error
         }
     }
@@ -678,15 +741,20 @@ class LoggingViewModel: ObservableObject {
             return
         }
         
-        // Check if the exercise has at least one completed set
-        if sessionExercise.completedSets.isEmpty {
-            print("❌ [LoggingViewModel.markExerciseComplete] Cannot mark complete - no sets recorded")
-            error = LoggingError.custom("Please add at least one set before marking the exercise as complete")
+        let totalSetsCount = sessionExercise.completedSets.count
+        
+        if totalSetsCount == 0 {
+            print("❌ [LoggingViewModel.markExerciseComplete] Cannot mark complete - no sets available")
+            error = LoggingError.custom("This exercise has no sets. Please add at least one set before marking it as complete.")
             return
         }
         
-        // IMPORTANT: Only mark the session-specific exercise as complete
-        // This ensures we don't affect other days or sessions
+        // Mark all sets as completed
+        for completedSet in sessionExercise.completedSets {
+            completedSet.isCompleted = true
+        }
+        
+        // Mark exercise as complete
         sessionExercise.isCompleted = true
         
         // Update the exercise's cache for future sessions
@@ -696,8 +764,8 @@ class LoggingViewModel: ObservableObject {
         
         do {
             try modelContext.save()
-            print("✅ [LoggingViewModel.markExerciseComplete] Exercise marked complete with \(sessionExercise.completedSets.count) sets")
-            print("📊 [LoggingViewModel] Exercise completion status updated for session only")
+            print("✅ [LoggingViewModel.markExerciseComplete] Exercise marked complete with all \(totalSetsCount) sets completed")
+            print("📊 [LoggingViewModel] Exercise completion status updated")
         } catch {
             print("❌ [LoggingViewModel.markExerciseComplete] Save error: \(error.localizedDescription)")
             self.error = error

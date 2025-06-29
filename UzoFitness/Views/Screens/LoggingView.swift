@@ -239,6 +239,12 @@ struct LoggingContentView: View {
                         onAddSet: {
                             viewModel.handleIntent(.addSet(exerciseID: exercise.id))
                         },
+                        onToggleSetCompletion: { setIndex in
+                            viewModel.handleIntent(.toggleSetCompletion(
+                                exerciseID: exercise.id,
+                                setIndex: setIndex
+                            ))
+                        },
                         onMarkComplete: {
                             viewModel.handleIntent(.markExerciseComplete(exerciseID: exercise.id))
                         }
@@ -326,6 +332,7 @@ struct LoggingExerciseRowView: View {
     let exercise: SessionExerciseUI
     let onEditSet: (Int, Int, Double) -> Void
     let onAddSet: () -> Void
+    let onToggleSetCompletion: (Int) -> Void
     let onMarkComplete: () -> Void
     
     @State private var editingSetIndex: Int? = nil
@@ -349,24 +356,38 @@ struct LoggingExerciseRowView: View {
                 Spacer()
                 
                 if exercise.isCompleted {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.green)
-                        .font(.title3)
-                } else {
-                    Button("Complete All Sets") {
-                        onMarkComplete()
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                            .font(.title3)
+                        Text("Complete")
+                            .font(.caption)
+                            .foregroundColor(.green)
                     }
-                    .font(.caption)
-                    .foregroundColor(.blue)
+                } else {
+                    VStack(alignment: .trailing, spacing: 4) {
+                        let completedSets = exercise.sets.filter { $0.isCompleted }.count
+                        let totalSets = exercise.sets.count
+                        
+                        Text("\(completedSets)/\(totalSets) sets")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        Button("Complete All Sets") {
+                            onMarkComplete()
+                        }
+                        .font(.caption)
+                        .foregroundColor(.blue)
+                    }
                 }
             }
             
             // Sets List
             VStack(spacing: 8) {
-                ForEach(0..<max(exercise.sets.count, 1), id: \.self) { setIndex in
+                ForEach(0..<exercise.sets.count, id: \.self) { setIndex in
                     SetRowView(
                         setIndex: setIndex,
-                        set: setIndex < exercise.sets.count ? exercise.sets[setIndex] : nil,
+                        set: exercise.sets[setIndex],
                         plannedReps: exercise.plannedReps,
                         plannedWeight: exercise.plannedWeight ?? 0,
                         isEditing: editingSetIndex == setIndex,
@@ -374,13 +395,8 @@ struct LoggingExerciseRowView: View {
                         tempWeight: $tempWeight,
                         onEdit: {
                             editingSetIndex = setIndex
-                            if setIndex < exercise.sets.count {
-                                tempReps = "\(exercise.sets[setIndex].reps)"
-                                tempWeight = "\(Int(exercise.sets[setIndex].weight))"
-                            } else {
-                                tempReps = "\(exercise.plannedReps)"
-                                tempWeight = "\(Int(exercise.plannedWeight ?? 0))"
-                            }
+                            tempReps = "\(exercise.sets[setIndex].reps)"
+                            tempWeight = "\(Int(exercise.sets[setIndex].weight))"
                         },
                         onSave: {
                             guard let reps = Int(tempReps),
@@ -390,6 +406,9 @@ struct LoggingExerciseRowView: View {
                         },
                         onCancel: {
                             editingSetIndex = nil
+                        },
+                        onToggleCompletion: {
+                            onToggleSetCompletion(setIndex)
                         }
                     )
                 }
@@ -436,6 +455,7 @@ struct SetRowView: View {
     let onEdit: () -> Void
     let onSave: () -> Void
     let onCancel: () -> Void
+    let onToggleCompletion: () -> Void
     
     var body: some View {
         HStack(spacing: 12) {
@@ -488,12 +508,6 @@ struct SetRowView: View {
                         .foregroundColor(.secondary)
                     
                     Spacer()
-                    
-                    Button("Cancel") {
-                        onCancel()
-                    }
-                    .font(.caption)
-                    .foregroundColor(.red)
                 }
             } else {
                 // Direct Editing Mode - No Edit Button Required
@@ -554,11 +568,15 @@ struct SetRowView: View {
                     
                     Spacer()
                     
-                    if set == nil {
-                        Image(systemName: "pencil.circle")
-                            .foregroundColor(.blue)
-                            .font(.caption)
+                    // Completion toggle button
+                    Button {
+                        onToggleCompletion()
+                    } label: {
+                        Image(systemName: set?.isCompleted == true ? "checkmark.circle.fill" : "circle")
+                            .foregroundColor(set?.isCompleted == true ? .green : .gray)
+                            .font(.title3)
                     }
+                    .buttonStyle(.plain)
                 }
             }
         }

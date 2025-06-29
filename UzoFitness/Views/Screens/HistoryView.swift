@@ -607,9 +607,19 @@ struct WorkoutSessionCard: View {
                         LazyVStack(spacing: 8) {
                             ForEach(session.sessionExercises.prefix(10)) { sessionExercise in
                                 HStack {
-                                    Text(sessionExercise.exercise.name)
-                                        .font(.body)
-                                        .multilineTextAlignment(.leading)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(sessionExercise.exercise.name)
+                                            .font(.body)
+                                            .multilineTextAlignment(.leading)
+                                        
+                                        // Show exercise volume
+                                        let exerciseVolume = sessionExercise.totalVolume
+                                        if exerciseVolume > 0 {
+                                            Text("Volume: \(formatVolume(exerciseVolume))")
+                                                .font(.caption2)
+                                                .foregroundColor(.blue)
+                                        }
+                                    }
                                     
                                     Spacer()
                                     
