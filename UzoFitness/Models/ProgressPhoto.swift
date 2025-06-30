@@ -9,6 +9,8 @@ final class ProgressPhoto: Identified, Timestamped {
     @Attribute var assetIdentifier: String
     @Attribute var weightSampleUUID: UUID?
     @Attribute var notes: String
+    /// Optional manual weight annotation (lbs) set by the user
+    @Attribute var manualWeight: Double?
     @Attribute var createdAt: Date
 
     init(
@@ -18,6 +20,7 @@ final class ProgressPhoto: Identified, Timestamped {
         assetIdentifier: String,
         weightSampleUUID: UUID? = nil,
         notes: String = "",
+        manualWeight: Double? = nil,
         createdAt: Date = .now
     ) {
         self.id = id
@@ -26,6 +29,7 @@ final class ProgressPhoto: Identified, Timestamped {
         self.assetIdentifier = assetIdentifier
         self.weightSampleUUID = weightSampleUUID
         self.notes = notes
+        self.manualWeight = manualWeight
         self.createdAt = createdAt
     }
 }

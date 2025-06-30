@@ -222,6 +222,9 @@ class ProgressViewModel: ObservableObject {
                 
             case .hideImagePicker:
                 hideImagePicker()
+                
+            case .editPhoto(let photoID, let date, let weight):
+                await editPhoto(photoID, date, weight)
             }
         }
     }
@@ -528,6 +531,29 @@ class ProgressViewModel: ObservableObject {
             .filter { $0.exerciseID == exerciseID }
             .max { $0.weekStartDate < $1.weekStartDate }
     }
+    
+    /// Edit an existing photo's date and manual weight, then reload.
+    private func editPhoto(_ photoID: UUID, _ newDate: Date, _ manualWeight: Double?) async {
+        print("🔄 [ProgressViewModel.editPhoto] Editing photo: \(photoID)")
+        do {
+            // Find the photo entity
+            let allPhotos = photosByAngle.values.flatMap { $0 }
+            guard let photo = allPhotos.first(where: { $0.id == photoID }) else {
+                throw ProgressError.photoNotFound
+            }
+            // Update properties
+            photo.date = newDate
+            photo.manualWeight = manualWeight
+            // Save to SwiftData
+            try modelContext.save()
+            print("✅ [ProgressViewModel.editPhoto] Photo updated successfully")
+            // Reload data to reflect changes
+            await loadPhotos()
+        } catch {
+            print("❌ [ProgressViewModel.editPhoto] Error: \(error.localizedDescription)")
+            self.error = error
+        }
+    }
 }
 
 // MARK: - Supporting Types
@@ -545,6 +571,7 @@ enum ProgressIntent {
     case clearError
     case showImagePicker(PhotoAngle)
     case hideImagePicker
+    case editPhoto(UUID, Date, Double?)
 }
 
 enum ProgressLoadingState {
