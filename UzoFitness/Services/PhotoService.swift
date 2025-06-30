@@ -55,11 +55,29 @@ final class DefaultPhotoLibraryService: PhotoLibraryServiceProtocol {
 }
 
 final class DefaultFileSystemService: FileSystemServiceProtocol {
+    /// Returns a persistent directory for storing progress photos.
+    /// The directory is located in Application Support to avoid being purged by the system (unlike the caches directory).
+    /// A sub-folder "ProgressPhotos" is created the first time this method is called.
     func cacheDirectory() throws -> URL {
-        guard let url = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+        let fileManager = FileManager.default
+
+        guard var baseURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
             throw PhotoServiceError.cacheDirectoryNotFound
         }
-        return url
+
+        // Ensure our app-specific folder exists (App Support may be shared with other data).
+        // Some apps run in the simulator do not have the Application Support directory created upfront.
+        if !fileManager.fileExists(atPath: baseURL.path) {
+            try fileManager.createDirectory(at: baseURL, withIntermediateDirectories: true, attributes: nil)
+        }
+
+        // Use subfolder to keep things tidy.
+        baseURL.appendPathComponent("ProgressPhotos", isDirectory: true)
+        if !fileManager.fileExists(atPath: baseURL.path) {
+            try fileManager.createDirectory(at: baseURL, withIntermediateDirectories: true, attributes: nil)
+        }
+
+        return baseURL
     }
     
     func writeData(_ data: Data, to url: URL) throws {

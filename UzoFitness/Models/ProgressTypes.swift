@@ -24,23 +24,23 @@ struct DateRange {
         self.displayName = displayName
     }
     
-    static let sixMonths = DateRange(
-        startDate: Calendar.current.date(byAdding: .month, value: -6, to: Date()) ?? Date(),
-        endDate: Date(),
-        displayName: "6 Months"
-    )
+    static var sixMonths: DateRange {
+        let now = Date()
+        let sixMonthsAgo = Calendar.current.date(byAdding: .month, value: -6, to: now) ?? now
+        return DateRange(startDate: sixMonthsAgo, endDate: now, displayName: "6 Months")
+    }
     
-    static let oneYear = DateRange(
-        startDate: Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date(),
-        endDate: Date(),
-        displayName: "1 Year"
-    )
+    static var oneYear: DateRange {
+        let now = Date()
+        let oneYearAgo = Calendar.current.date(byAdding: .year, value: -1, to: now) ?? now
+        return DateRange(startDate: oneYearAgo, endDate: now, displayName: "1 Year")
+    }
     
-    static let twoYears = DateRange(
-        startDate: Calendar.current.date(byAdding: .year, value: -2, to: Date()) ?? Date(),
-        endDate: Date(),
-        displayName: "2 Years"
-    )
+    static var twoYears: DateRange {
+        let now = Date()
+        let twoYearsAgo = Calendar.current.date(byAdding: .year, value: -2, to: now) ?? now
+        return DateRange(startDate: twoYearsAgo, endDate: now, displayName: "2 Years")
+    }
     
     static func custom(_ start: Date, _ end: Date) -> DateRange {
         DateRange(
@@ -50,10 +50,12 @@ struct DateRange {
         )
     }
     
-    static let presets: [DateRange] = [.sixMonths, .oneYear, .twoYears]
+    static var presets: [DateRange] { [.sixMonths, .oneYear, .twoYears] }
     
     func contains(_ date: Date) -> Bool {
-        return date >= startDate && date <= endDate
+        // Ensure the range always includes "now" so newly added items are not filtered out.
+        let effectiveEnd = max(endDate, Date())
+        return date >= startDate && date <= effectiveEnd
     }
 }
 

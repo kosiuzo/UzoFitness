@@ -150,12 +150,19 @@ struct PhotoThumbnailView: View {
     }
     
     private var photoURL: URL? {
-        // If assetIdentifier is already an absolute path/URL string, use it directly.
         if let url = URL(string: photo.assetIdentifier), url.isFileURL {
             return url
         }
 
-        // Fallback: treat assetIdentifier as relative filename inside Cache directory.
+        // Look in Application Support / ProgressPhotos first (new location).
+        if let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+            let appSupportUrl = appSupport.appendingPathComponent("ProgressPhotos").appendingPathComponent(photo.assetIdentifier)
+            if FileManager.default.fileExists(atPath: appSupportUrl.path) {
+                return appSupportUrl
+            }
+        }
+
+        // Legacy cache directory fallback
         let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
         return cacheDir?.appendingPathComponent(photo.assetIdentifier)
     }
@@ -228,7 +235,19 @@ struct FullScreenPhotoView: View {
     @Environment(\.dismiss) private var dismiss
 
     private var photoURL: URL? {
-        if let url = URL(string: photo.assetIdentifier), url.isFileURL { return url }
+        if let url = URL(string: photo.assetIdentifier), url.isFileURL {
+            return url
+        }
+
+        // Look in Application Support / ProgressPhotos first (new location).
+        if let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+            let appSupportUrl = appSupport.appendingPathComponent("ProgressPhotos").appendingPathComponent(photo.assetIdentifier)
+            if FileManager.default.fileExists(atPath: appSupportUrl.path) {
+                return appSupportUrl
+            }
+        }
+
+        // Legacy cache directory fallback
         let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
         return cacheDir?.appendingPathComponent(photo.assetIdentifier)
     }
