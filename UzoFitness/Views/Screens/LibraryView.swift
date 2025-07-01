@@ -214,13 +214,13 @@ struct WorkoutsTabView: View {
                     Button {
                         showingTemplateCreator = true
                     } label: {
-                        Label("Create Template", systemImage: "plus")
+                        Label("Create Workout", systemImage: "plus")
                     }
                     
                     Button {
                         showingJSONImport = true
                     } label: {
-                        Label("Import Template from JSON", systemImage: "doc.text")
+                        Label("Import Workout from JSON", systemImage: "doc.text")
                     }
                 } label: {
                     Image(systemName: "plus")
@@ -228,14 +228,14 @@ struct WorkoutsTabView: View {
                 }
             }
         }
-        .alert("Create Template", isPresented: $showingTemplateCreator) {
+        .alert("Create Workout", isPresented: $showingTemplateCreator) {
             TemplateNameInputView { name in
                 viewModel.createWorkoutTemplate(name: name)
             }
         }
         .actionSheet(isPresented: $showingPlanCreator) {
             ActionSheet(
-                title: Text("Create Plan From Template"),
+                title: Text("Create Plan From Workout"),
                 buttons: viewModel.workoutTemplates.map { template in
                 .default(Text(template.name)) {
                     viewModel.createPlan(from: template)
@@ -288,7 +288,7 @@ struct TemplateNameInputView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        TextField("Template Name", text: $templateName)
+        TextField("Workout Name", text: $templateName)
         Button("Create") {
             if !templateName.isEmpty {
                 onSave(templateName)
@@ -417,10 +417,10 @@ struct TemplateDetailView: View {
     var body: some View {
         List {
             // Template Info Section
-            Section("Template Info") {
+            Section("Workout Info") {
                 VStack(alignment: .leading, spacing: 12) {
                     if isEditing {
-                        TextField("Template Name", text: $name)
+                        TextField("Workout Name", text: $name)
                             .font(.headline)
                             .autocapitalization(.words)
                             .textFieldStyle(.roundedBorder)
@@ -460,13 +460,13 @@ struct TemplateDetailView: View {
             
             // Delete Template Section
             Section {
-                Button("Delete Template", role: .destructive) {
+                Button("Delete Workout", role: .destructive) {
                     showingDeleteConfirmation = true
                 }
                 .frame(maxWidth: .infinity)
             }
         }
-        .navigationTitle(isEditing ? "Edit Template" : template.name)
+        .navigationTitle(isEditing ? "Edit Workout" : template.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -492,13 +492,13 @@ struct TemplateDetailView: View {
                 }
             }
         }
-        .alert("Delete Template", isPresented: $showingDeleteConfirmation) {
+        .alert("Delete Workout", isPresented: $showingDeleteConfirmation) {
             Button("Delete", role: .destructive) {
                 viewModel.deleteTemplate(template)
             }
             Button("Cancel", role: .cancel) { }
         } message: {
-            Text("Are you sure you want to delete this workout template? This action cannot be undone.")
+            Text("Are you sure you want to delete this workout? This action cannot be undone.")
         }
         .alert("Error", isPresented: .constant(viewModel.error != nil)) {
             Button("OK") {
@@ -1255,7 +1255,7 @@ struct WorkoutPlanEditorView: View {
             
             // Template Info Section
             if let template = plan.template {
-                Section("Based on Template") {
+                Section("Based on Workout") {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(template.name)
                             .font(.headline)
@@ -1266,7 +1266,7 @@ struct WorkoutPlanEditorView: View {
                                 .foregroundStyle(.secondary)
                         }
                         
-                        Text("Template created: \(template.createdAt.formatted(date: .abbreviated, time: .omitted))")
+                        Text("Workout created: \(template.createdAt.formatted(date: .abbreviated, time: .omitted))")
                             .font(.caption)
                             .foregroundStyle(.tertiary)
                     }
