@@ -126,7 +126,7 @@ struct ProgressView: View {
 struct StatsContentView: View {
     @ObservedObject var viewModel: ProgressViewModel
     let dateRange: DateRange
-    @State private var selectedMetrics: Set<MetricType> = [.maxWeight]
+    @State private var selectedMetrics: Set<MetricType> = [.totalReps, .maxWeight, .totalVolume, .totalSessions]
     
     var body: some View {
         ScrollView {
@@ -252,16 +252,37 @@ struct StatsContentView: View {
     }
     
     private var chartsSection: some View {
-        VStack(spacing: 20) {
-            ForEach(Array(selectedMetrics), id: \.self) { metric in
-                MetricLineChart(
-                    title: metric.displayName,
-                    unit: metric.unit,
-                    data: getChartData(for: metric),
-                    dateRange: dateRange
-                )
+        ConsolidatedMetricChart(
+            title: viewModel.selectedExerciseName ?? "Exercise Progress",
+            selectedMetrics: selectedMetrics,
+            data: getConsolidatedChartData(),
+            dateRange: dateRange
+        )
+    }
+    
+    private func getConsolidatedChartData() -> [MetricType: [ChartDataPoint]] {
+        guard let exerciseID = viewModel.selectedExerciseID else { return [:] }
+        
+        let filteredTrends = viewModel.exerciseTrends
+            .filter { $0.exerciseID == exerciseID && dateRange.contains($0.weekStartDate) }
+            .sorted { $0.weekStartDate < $1.weekStartDate }
+        
+        var data: [MetricType: [ChartDataPoint]] = [:]
+        
+        for metric in selectedMetrics {
+            switch metric {
+            case .maxWeight:
+                data[metric] = filteredTrends.map { ChartDataPoint(date: $0.weekStartDate, value: $0.maxWeight) }
+            case .totalVolume:
+                data[metric] = filteredTrends.map { ChartDataPoint(date: $0.weekStartDate, value: $0.totalVolume) }
+            case .totalSessions:
+                data[metric] = filteredTrends.map { ChartDataPoint(date: $0.weekStartDate, value: Double($0.totalSessions)) }
+            case .totalReps:
+                data[metric] = filteredTrends.map { ChartDataPoint(date: $0.weekStartDate, value: Double($0.totalReps)) }
             }
         }
+        
+        return data
     }
     
     private func getChartData(for metric: MetricType) -> [ChartDataPoint] {

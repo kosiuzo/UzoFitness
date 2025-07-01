@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 // MARK: - Chart Data Point
 struct ChartDataPoint: Identifiable, Hashable {
@@ -74,33 +75,48 @@ public enum ProgressSegment: String, CaseIterable, Codable {
 
 // PhotoAngle extension will be added to Enums.swift instead 
 
-public enum MetricType: String, CaseIterable, Codable {
-    case maxWeight
-    case totalVolume
-    case totalSessions
-    case totalReps
+enum MetricType: String, CaseIterable, Identifiable {
+    case maxWeight = "Max Weight"
+    case totalVolume = "Total Volume"
+    case totalReps = "Total Reps"
+    case totalSessions = "Total Sets"
 
-    public var displayName: String {
+    var id: String { self.rawValue }
+    
+    /// A color for the metric, used in charts.
+    var color: Color {
         switch self {
-        case .maxWeight:
-            return "Max Weight"
-        case .totalVolume:
-            return "Total Volume"
-        case .totalSessions:
-            return "Total Sets"
-        case .totalReps:
-            return "Total Reps"
+        case .maxWeight: return .green
+        case .totalVolume: return .purple
+        case .totalReps: return .blue
+        case .totalSessions: return .orange
         }
     }
 
-    public var unit: String {
+    /// Unit string for the metric.
+    var unit: String {
+        switch self {
+        case .maxWeight: return "lbs"
+        case .totalVolume: return "lbs"
+        case .totalReps: return "reps"
+        case .totalSessions: return "sets"
+        }
+    }
+    
+    /// Display name for the metric.
+    var displayName: String {
+        return self.rawValue
+    }
+
+    /// Determines if the metric is weight-based (for axis assignment).
+    var isWeightBased: Bool {
         switch self {
         case .maxWeight, .totalVolume:
-            return "lbs"
-        case .totalSessions:
-            return "sets"
-        case .totalReps:
-            return "reps"
+            return true
+        case .totalReps, .totalSessions:
+            return false
         }
     }
-} 
+}
+
+// ExerciseTrend is defined in ProgressViewModel.swift to avoid duplication 
