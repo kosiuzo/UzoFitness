@@ -14,7 +14,7 @@ class AppSettingsStore: ObservableObject {
     
     init() {
         loadSettings()
-        print("🔄 [AppSettingsStore.init] Initialized app settings store")
+        AppLogger.debug("[AppSettingsStore.init] Initialized app settings store", category: "AppSettingsStore")
     }
     
     private func loadSettings() {
@@ -35,13 +35,13 @@ class AppSettingsStore: ObservableObject {
         userDefaults.set(lastBackupDate, forKey: "lastBackupDate")
         userDefaults.set(autoBackupEnabled, forKey: "autoBackupEnabled")
         userDefaults.set(lowBatteryThreshold, forKey: "lowBatteryThreshold")
-        print("✅ [AppSettingsStore.saveSettings] Settings saved to UserDefaults")
+        AppLogger.info("[AppSettingsStore.saveSettings] Settings saved to UserDefaults", category: "AppSettingsStore")
     }
     
     func updateLastBackupDate(_ date: Date) {
         lastBackupDate = date
         saveSettings()
-        print("📊 [AppSettingsStore] Last backup date updated to: \(date)")
+        AppLogger.debug("[AppSettingsStore] Last backup date updated to: \(date)", category: "AppSettingsStore")
     }
 }
 
@@ -68,7 +68,7 @@ class DefaultiCloudBackupService: iCloudBackupServiceProtocol {
     }
     
     func performBackup() async throws -> BackupResult {
-        print("🔄 [DefaultiCloudBackupService.performBackup] Starting backup")
+        AppLogger.debug("[DefaultiCloudBackupService.performBackup] Starting backup", category: "iCloudBackupService")
         
         // Simulate backup process
         try await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
@@ -85,12 +85,12 @@ class DefaultiCloudBackupService: iCloudBackupServiceProtocol {
             duration: 2.0
         )
         
-        print("✅ [DefaultiCloudBackupService.performBackup] Backup completed successfully")
+        AppLogger.info("[DefaultiCloudBackupService.performBackup] Backup completed successfully", category: "iCloudBackupService")
         return result
     }
     
     func performRestore() async throws -> RestoreResult {
-        print("🔄 [DefaultiCloudBackupService.performRestore] Starting restore")
+        AppLogger.debug("[DefaultiCloudBackupService.performRestore] Starting restore", category: "iCloudBackupService")
         
         // Simulate restore process
         try await Task.sleep(nanoseconds: 3_000_000_000) // 3 seconds
@@ -101,7 +101,7 @@ class DefaultiCloudBackupService: iCloudBackupServiceProtocol {
             duration: 3.0
         )
         
-        print("✅ [DefaultiCloudBackupService.performRestore] Restore completed successfully")
+        AppLogger.info("[DefaultiCloudBackupService.performRestore] Restore completed successfully", category: "iCloudBackupService")
         return result
     }
     
@@ -198,7 +198,7 @@ class SettingsViewModel: ObservableObject {
         self.iCloudBackupService = iCloudBackupService ?? DefaultiCloudBackupService(modelContext: modelContext)
         self.batteryMonitor = batteryMonitor ?? DefaultBatteryMonitor()
         
-        print("🔄 [SettingsViewModel.init] Initialized with dependencies")
+        AppLogger.debug("[SettingsViewModel.init] Initialized with dependencies", category: "SettingsViewModel")
         
         setupBindings()
         loadInitialState()
@@ -206,7 +206,7 @@ class SettingsViewModel: ObservableObject {
     
     // MARK: - Intent Handling
     func handleIntent(_ intent: SettingsIntent) {
-        print("🔄 [SettingsViewModel.handleIntent] Processing intent: \(intent)")
+        AppLogger.debug("[SettingsViewModel.handleIntent] Processing intent: \(intent)", category: "SettingsViewModel")
         
         Task {
             switch intent {
@@ -243,11 +243,11 @@ class SettingsViewModel: ObservableObject {
             .assign(to: \.lastBackupDate, on: self)
             .store(in: &cancellables)
         
-        print("✅ [SettingsViewModel.setupBindings] Bindings established")
+        AppLogger.info("[SettingsViewModel.setupBindings] Bindings established", category: "SettingsViewModel")
     }
     
     private func loadInitialState() {
-        print("🔄 [SettingsViewModel.loadInitialState] Loading initial permissions state")
+        AppLogger.debug("[SettingsViewModel.loadInitialState] Loading initial permissions state", category: "SettingsViewModel")
         
         Task {
             await refreshPermissions()
@@ -255,21 +255,21 @@ class SettingsViewModel: ObservableObject {
     }
     
     private func requestHealthKitAccess() async {
-        print("🔄 [SettingsViewModel.requestHealthKitAccess] Requesting HealthKit authorization")
+        AppLogger.debug("[SettingsViewModel.requestHealthKitAccess] Requesting HealthKit authorization", category: "SettingsViewModel")
         state = .loading
         
         await withCheckedContinuation { continuation in
             healthKitManager.requestAuthorization { [weak self] success, error in
                 Task { @MainActor in
                     if let error = error {
-                        print("❌ [SettingsViewModel.requestHealthKitAccess] Error: \(error.localizedDescription)")
+                        AppLogger.error("[SettingsViewModel.requestHealthKitAccess] Error: \(error.localizedDescription)", category: "SettingsViewModel", error: error)
                         self?.error = error
                         self?.state = .error
                     } else {
-                        print("✅ [SettingsViewModel.requestHealthKitAccess] Success: \(success)")
+                        AppLogger.info("[SettingsViewModel.requestHealthKitAccess] Success: \(success)", category: "SettingsViewModel")
                         self?.isHealthKitEnabled = success
                         self?.state = success ? .loaded : .error
-                        print("📊 [SettingsViewModel] HealthKit enabled state: \(success)")
+                        AppLogger.debug("[SettingsViewModel] HealthKit enabled state: \(success)", category: "SettingsViewModel")
                     }
                     continuation.resume()
                 }
@@ -278,7 +278,7 @@ class SettingsViewModel: ObservableObject {
     }
     
     private func togglePhotoAccess() async {
-        print("🔄 [SettingsViewModel.togglePhotoAccess] Requesting photo library access")
+        AppLogger.debug("[SettingsViewModel.togglePhotoAccess] Requesting photo library access", category: "SettingsViewModel")
         state = .loading
         
         let status = await photoService.requestPhotoLibraryAuthorization()
@@ -287,16 +287,16 @@ class SettingsViewModel: ObservableObject {
         isPhotoAccessGranted = granted
         state = .loaded
         
-        print("✅ [SettingsViewModel.togglePhotoAccess] Photo access granted: \(granted)")
-        print("📊 [SettingsViewModel] Photo access state: \(granted)")
+        AppLogger.info("[SettingsViewModel.togglePhotoAccess] Photo access granted: \(granted)", category: "SettingsViewModel")
+        AppLogger.debug("[SettingsViewModel] Photo access state: \(granted)", category: "SettingsViewModel")
     }
     
     private func performBackup() async {
-        print("🔄 [SettingsViewModel.performBackup] Starting backup process")
+        AppLogger.debug("[SettingsViewModel.performBackup] Starting backup process", category: "SettingsViewModel")
         
         guard canPerformBackup else {
             let batteryError = SettingsError.lowBattery(current: batteryMonitor.batteryLevel)
-            print("❌ [SettingsViewModel.performBackup] \(batteryError.localizedDescription)")
+            AppLogger.error("[SettingsViewModel.performBackup] \(batteryError.localizedDescription)", category: "SettingsViewModel", error: batteryError)
             error = batteryError
             return
         }
@@ -323,14 +323,14 @@ class SettingsViewModel: ObservableObject {
                 appSettingsStore.updateLastBackupDate(Date())
                 backupProgress = 1.0
                 
-                print("✅ [SettingsViewModel.performBackup] Backup completed")
-                print("📊 [SettingsViewModel] Backup result: \(result.itemCount) items, \(result.sizeInBytes) bytes")
+                AppLogger.info("[SettingsViewModel.performBackup] Backup completed", category: "SettingsViewModel")
+                AppLogger.debug("[SettingsViewModel] Backup result: \(result.itemCount) items, \(result.sizeInBytes) bytes", category: "SettingsViewModel")
             } else {
                 throw SettingsError.backupFailed("Backup process failed")
             }
             
         } catch {
-            print("❌ [SettingsViewModel.performBackup] Error: \(error.localizedDescription)")
+            AppLogger.error("[SettingsViewModel.performBackup] Error: \(error.localizedDescription)", category: "SettingsViewModel", error: error)
             self.error = error
             backupProgress = 0.0
         }
@@ -339,7 +339,7 @@ class SettingsViewModel: ObservableObject {
     }
     
     private func performRestore() async {
-        print("🔄 [SettingsViewModel.performRestore] Starting restore process")
+        AppLogger.debug("[SettingsViewModel.performRestore] Starting restore process", category: "SettingsViewModel")
         
         isLoadingRestore = true
         restoreProgress = 0.0
@@ -362,8 +362,8 @@ class SettingsViewModel: ObservableObject {
             if result.success {
                 restoreProgress = 1.0
                 
-                print("✅ [SettingsViewModel.performRestore] Restore completed")
-                print("📊 [SettingsViewModel] Restore result: \(result.itemsRestored) items restored")
+                AppLogger.info("[SettingsViewModel.performRestore] Restore completed", category: "SettingsViewModel")
+                AppLogger.debug("[SettingsViewModel] Restore result: \(result.itemsRestored) items restored", category: "SettingsViewModel")
                 
                 // Refresh permissions after restore
                 await refreshPermissions()
@@ -372,7 +372,7 @@ class SettingsViewModel: ObservableObject {
             }
             
         } catch {
-            print("❌ [SettingsViewModel.performRestore] Error: \(error.localizedDescription)")
+            AppLogger.error("[SettingsViewModel.performRestore] Error: \(error.localizedDescription)", category: "SettingsViewModel", error: error)
             self.error = error
             restoreProgress = 0.0
         }
@@ -381,7 +381,7 @@ class SettingsViewModel: ObservableObject {
     }
     
     private func refreshPermissions() async {
-        print("🔄 [SettingsViewModel.refreshPermissions] Refreshing permission states")
+        AppLogger.debug("[SettingsViewModel.refreshPermissions] Refreshing permission states", category: "SettingsViewModel")
         
         // Check photo access
         let photoStatus = await photoService.requestPhotoLibraryAuthorization()
@@ -390,7 +390,7 @@ class SettingsViewModel: ObservableObject {
         // HealthKit permissions are harder to check directly, so we assume they're granted
         // if the user has previously authorized. In a real app, you might store this state.
         
-        print("📊 [SettingsViewModel] Permissions refreshed - Photo: \(isPhotoAccessGranted)")
+        AppLogger.debug("[SettingsViewModel] Permissions refreshed - Photo: \(isPhotoAccessGranted)", category: "SettingsViewModel")
     }
 }
 

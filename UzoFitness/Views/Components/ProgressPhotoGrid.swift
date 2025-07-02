@@ -242,14 +242,14 @@ struct LocalFileImage: View {
         // Perform file-loading off the main thread.
         let loadedImage = await Task.detached(priority: .userInitiated) { () -> UIImage? in
             guard FileManager.default.fileExists(atPath: url.path) else {
-                print("❌ [LocalFileImage] File does not exist at path: \(url.path)")
+                AppLogger.error("[LocalFileImage] File does not exist at path: \(url.path)", category: "ProgressPhotoGrid")
                 return nil
             }
             do {
                 let data = try Data(contentsOf: url)
                 return UIImage(data: data)
             } catch {
-                print("❌ [LocalFileImage] Failed to load image data from \(url): \(error.localizedDescription)")
+                AppLogger.error("[LocalFileImage] Failed to load image data from \(url)", category: "ProgressPhotoGrid", error: error)
                 return nil
             }
         }.value

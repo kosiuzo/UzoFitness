@@ -80,26 +80,26 @@ final class SessionExercise: Identified, Timestamped {
             self.previousTotalVolume = suggestedValues.totalVolume
             self.previousSessionDate = exercise.lastUsedDate
             
-            print("🏃‍♂️ [SessionExercise.init] Auto-populated from exercise: \(exercise.name)")
-            print("📊 [SessionExercise.init] Suggested weight: \(suggestedValues.weight ?? 0), reps: \(suggestedValues.reps ?? 0)")
+            AppLogger.debug("[SessionExercise.init] Auto-populated from exercise: \(exercise.name)", category: "SessionExercise")
+            AppLogger.debug("[SessionExercise.init] Suggested weight: \(suggestedValues.weight ?? 0), reps: \(suggestedValues.reps ?? 0)", category: "SessionExercise")
         } else {
             self.plannedReps = plannedReps ?? 10
             self.plannedWeight = plannedWeight
             self.previousTotalVolume = nil
             self.previousSessionDate = nil
             
-            print("🔄 [SessionExercise.init] Created without auto-population for: \(exercise.name)")
+            AppLogger.debug("[SessionExercise.init] Created without auto-population for: \(exercise.name)", category: "SessionExercise")
         }
     }
     
     /// Updates the exercise's cached values when this session is completed
     func updateExerciseCacheOnCompletion() {
         guard isCompleted && !completedSets.isEmpty else {
-            print("📊 [SessionExercise.updateExerciseCacheOnCompletion] Cannot update - not completed or no sets")
+            AppLogger.debug("[SessionExercise.updateExerciseCacheOnCompletion] Cannot update - not completed or no sets", category: "SessionExercise")
             return
         }
         
-        print("🔄 [SessionExercise.updateExerciseCacheOnCompletion] Updating exercise cache for: \(exercise.name)")
+        AppLogger.debug("[SessionExercise.updateExerciseCacheOnCompletion] Updating exercise cache for: \(exercise.name)", category: "SessionExercise")
         
         // Update exercise's cached values with this session's data
         let totalVolume = self.totalVolume
@@ -112,6 +112,6 @@ final class SessionExercise: Identified, Timestamped {
         exercise.lastTotalVolume = totalVolume
         exercise.lastUsedDate = session?.date ?? createdAt
         
-        print("✅ [SessionExercise.updateExerciseCacheOnCompletion] Updated cache - Weight: \(exercise.lastUsedWeight ?? 0), Reps: \(exercise.lastUsedReps ?? 0), Volume: \(exercise.lastTotalVolume ?? 0)")
+        AppLogger.info("[SessionExercise.updateExerciseCacheOnCompletion] Updated cache - Weight: \(exercise.lastUsedWeight ?? 0), Reps: \(exercise.lastUsedReps ?? 0), Volume: \(exercise.lastTotalVolume ?? 0)", category: "SessionExercise")
     }
 }

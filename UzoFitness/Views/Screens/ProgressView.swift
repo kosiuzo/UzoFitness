@@ -11,7 +11,7 @@ struct ProgressView: View {
     @State private var customEndDate = Date()
     
     init(modelContext: ModelContext, photoService: PhotoService, healthKitManager: HealthKitManager) {
-        print("🔄 [ProgressView.init] Initializing with dependencies")
+        AppLogger.info("[ProgressView.init] Initializing with dependencies", category: "ProgressView")
         self._viewModel = StateObject(wrappedValue: ProgressViewModel(
             modelContext: modelContext,
             photoService: photoService,
@@ -31,7 +31,7 @@ struct ProgressView: View {
             .navigationTitle("Progress")
             .navigationBarTitleDisplayMode(.large)
             .task {
-                print("🔄 [ProgressView] Task started - loading initial data")
+                AppLogger.info("[ProgressView] Task started - loading initial data", category: "ProgressView")
                 await viewModel.handleIntent(.refreshData)
             }
             .sheet(isPresented: $viewModel.showImagePicker) {

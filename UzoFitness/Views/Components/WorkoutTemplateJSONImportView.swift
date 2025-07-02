@@ -61,7 +61,7 @@ struct WorkoutTemplateJSONImportView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
-                        print("🔄 [WorkoutTemplateJSONImportView] Cancel button tapped")
+                        AppLogger.info("[WorkoutTemplateJSONImportView] Cancel button tapped", category: "WorkoutTemplateJSONImportView")
                         dismiss()
                     }
                 }
@@ -104,7 +104,7 @@ struct WorkoutTemplateJSONImportView: View {
     }
     
     private func handleFileImport(result: Result<[URL], Error>) {
-        print("🔄 [WorkoutTemplateJSONImportView.handleFileImport] Starting file import")
+        AppLogger.info("[WorkoutTemplateJSONImportView.handleFileImport] Starting file import", category: "WorkoutTemplateJSONImportView")
         
         switch result {
         case .success(let urls):
@@ -113,17 +113,17 @@ struct WorkoutTemplateJSONImportView: View {
                 return
             }
             
-            print("🔄 [WorkoutTemplateJSONImportView] Selected file: \(url.lastPathComponent)")
+            AppLogger.info("[WorkoutTemplateJSONImportView] Selected file: \(url.lastPathComponent)", category: "WorkoutTemplateJSONImportView")
             importWorkoutTemplate(from: url)
             
         case .failure(let error):
-            print("❌ [WorkoutTemplateJSONImportView.handleFileImport] File picker error: \(error.localizedDescription)")
+            AppLogger.error("[WorkoutTemplateJSONImportView.handleFileImport] File picker error", category: "WorkoutTemplateJSONImportView", error: error)
             showError(title: "File Selection Error", message: error.localizedDescription)
         }
     }
     
     private func importWorkoutTemplate(from url: URL) {
-        print("🔄 [WorkoutTemplateJSONImportView.importWorkoutTemplate] Starting import from: \(url.lastPathComponent)")
+        AppLogger.info("[WorkoutTemplateJSONImportView.importWorkoutTemplate] Starting import from: \(url.lastPathComponent)", category: "WorkoutTemplateJSONImportView")
         
         Task {
             do {
@@ -137,24 +137,24 @@ struct WorkoutTemplateJSONImportView: View {
                 
                 // Read file data
                 let data = try Data(contentsOf: url)
-                print("🔄 [WorkoutTemplateJSONImportView] Read \(data.count) bytes from file")
+                AppLogger.info("[WorkoutTemplateJSONImportView] Read \(data.count) bytes from file", category: "WorkoutTemplateJSONImportView")
                 
                 // Decode JSON
                 let decoder = JSONDecoder()
                 decoder.dateDecodingStrategy = .iso8601
                 
                 let importDTO = try decoder.decode(WorkoutTemplateImportDTO.self, from: data)
-                print("🔄 [WorkoutTemplateJSONImportView] Successfully decoded JSON")
+                AppLogger.info("[WorkoutTemplateJSONImportView] Successfully decoded JSON", category: "WorkoutTemplateJSONImportView")
                 
                 // Validate imported data
                 try importDTO.validate()
-                print("✅ [WorkoutTemplateJSONImportView] Validation successful")
+                AppLogger.info("[WorkoutTemplateJSONImportView] Validation successful", category: "WorkoutTemplateJSONImportView")
                 
                 // Import into the app
                 await MainActor.run {
                     do {
                         _ = try viewModel.importWorkoutTemplate(from: importDTO)
-                        print("✅ [WorkoutTemplateJSONImportView] Successfully imported template")
+                        AppLogger.info("[WorkoutTemplateJSONImportView] Successfully imported template", category: "WorkoutTemplateJSONImportView")
                         
                         showSuccess(message: "Imported 1 template with \(importDTO.days.count) days")
                         
@@ -164,25 +164,25 @@ struct WorkoutTemplateJSONImportView: View {
                         }
                         
                     } catch {
-                        print("❌ [WorkoutTemplateJSONImportView] Import error: \(error.localizedDescription)")
+                        AppLogger.error("[WorkoutTemplateJSONImportView] Import error", category: "WorkoutTemplateJSONImportView", error: error)
                         showError(title: "Import Failed", message: error.localizedDescription)
                     }
                 }
                 
             } catch let decodingError as DecodingError {
-                print("❌ [WorkoutTemplateJSONImportView] JSON decoding error: \(decodingError)")
+                AppLogger.error("[WorkoutTemplateJSONImportView] JSON decoding error", category: "WorkoutTemplateJSONImportView", error: decodingError)
                 await MainActor.run {
                     showError(title: "Invalid JSON Format", message: formatDecodingError(decodingError))
                 }
                 
             } catch let importError as ImportError {
-                print("❌ [WorkoutTemplateJSONImportView] Validation error: \(importError.localizedDescription)")
+                AppLogger.error("[WorkoutTemplateJSONImportVew] Validation error", category: "WorkoutTemplateJSONImportView", error: importError)
                 await MainActor.run {
                     showError(title: "Validation Failed", message: importError.localizedDescription)
                 }
                 
             } catch {
-                print("❌ [WorkoutTemplateJSONImportView] Unexpected error: \(error.localizedDescription)")
+                AppLogger.error("[WorkoutTemplateJSONImportView] Unexpected error", category: "WorkoutTemplateJSONImportView", error: error)
                 await MainActor.run {
                     showError(title: "Import Error", message: error.localizedDescription)
                 }

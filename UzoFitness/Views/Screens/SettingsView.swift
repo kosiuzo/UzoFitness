@@ -9,32 +9,32 @@ struct SettingsView: View {
     @State private var showingErrorAlert = false
     
     init() {
-        print("🔄 [SettingsView.init] Initializing settings view")
+        AppLogger.info("[SettingsView.init] Initializing settings view", category: "SettingsView")
         
         // Create services step by step with logging
-        print("🔄 [SettingsView.init] Creating HealthKitManager...")
+        AppLogger.info("[SettingsView.init] Creating HealthKitManager...", category: "SettingsView")
         let healthKitManager = HealthKitManager()
         
-        print("🔄 [SettingsView.init] Creating AppSettingsStore...")
+        AppLogger.info("[SettingsView.init] Creating AppSettingsStore...", category: "SettingsView")
         let appSettings = AppSettingsStore()
         
         // Try to safely get the model context
-        print("🔄 [SettingsView.init] Attempting to get PersistenceController...")
+        AppLogger.info("[SettingsView.init] Attempting to get PersistenceController...", category: "SettingsView")
         let persistenceController: PersistenceController
         let modelContext: ModelContext
         let dataPersistenceService: DefaultDataPersistenceService
         let photoService: PhotoService
         
         // Get the persistence controller
-        print("🔄 [SettingsView.init] Getting shared PersistenceController...")
+        AppLogger.info("[SettingsView.init] Getting shared PersistenceController...", category: "SettingsView")
         persistenceController = PersistenceController.shared
         modelContext = persistenceController.container.mainContext
-        print("✅ [SettingsView.init] Successfully got model context")
+        AppLogger.info("[SettingsView.init] Successfully got model context", category: "SettingsView")
         
         dataPersistenceService = DefaultDataPersistenceService(modelContext: modelContext)
         photoService = PhotoService(dataPersistenceService: dataPersistenceService)
         
-        print("🔄 [SettingsView.init] Creating SettingsViewModel...")
+        AppLogger.info("[SettingsView.init] Creating SettingsViewModel...", category: "SettingsView")
         self._viewModel = StateObject(wrappedValue: SettingsViewModel(
             healthKitManager: healthKitManager,
             photoService: photoService,
@@ -42,7 +42,7 @@ struct SettingsView: View {
             modelContext: modelContext
         ))
         
-        print("✅ [SettingsView.init] Settings view initialization completed successfully")
+        AppLogger.info("[SettingsView.init] Settings view initialization completed successfully", category: "SettingsView")
     }
     
     var body: some View {
@@ -54,13 +54,13 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .listStyle(.insetGrouped)
             .task {
-                print("🔄 [SettingsView] Task started - loading initial state")
+                AppLogger.info("[SettingsView] Task started - loading initial state", category: "SettingsView")
                 viewModel.handleIntent(.loadInitialState)
             }
             .alert("Restore Data", isPresented: $showingRestoreConfirmation) {
                 Button("Cancel", role: .cancel) { }
                 Button("Restore", role: .destructive) {
-                    print("🔄 [SettingsView] User confirmed restore")
+                    AppLogger.info("[SettingsView] User confirmed restore", category: "SettingsView")
                     viewModel.handleIntent(.performRestore)
                 }
             } message: {
@@ -126,14 +126,14 @@ struct SettingsView: View {
                             let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                             impactFeedback.impactOccurred()
                             
-                            print("🔄 [SettingsView] HealthKit toggle changed to: \(newValue)")
+                            AppLogger.info("[SettingsView] HealthKit toggle changed to: \(newValue)", category: "SettingsView")
                             if newValue {
                                 viewModel.handleIntent(.requestHealthKitAccess)
                             } else {
                                 // For HealthKit, we can't really "disable" it once granted,
                                 // but we can update our internal state
                                 viewModel.isHealthKitEnabled = false
-                                print("📊 [SettingsView] HealthKit disabled by user")
+                                AppLogger.debug("[SettingsView] HealthKit disabled by user", category: "SettingsView")
                             }
                         }
                     }
@@ -174,14 +174,14 @@ struct SettingsView: View {
                             let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                             impactFeedback.impactOccurred()
                             
-                            print("🔄 [SettingsView] Photo access toggle changed to: \(newValue)")
+                            AppLogger.info("[SettingsView] Photo access toggle changed to: \(newValue)", category: "SettingsView")
                             if newValue {
                                 viewModel.handleIntent(.togglePhotoAccess)
                             } else {
                                 // For photo access, we can't revoke system permissions,
                                 // but we can update our internal state
                                 viewModel.isPhotoAccessGranted = false
-                                print("📊 [SettingsView] Photo access disabled by user")
+                                AppLogger.debug("[SettingsView] Photo access disabled by user", category: "SettingsView")
                             }
                         }
                     }
@@ -210,7 +210,7 @@ struct SettingsView: View {
     
     private var syncToCloudButton: some View {
         Button(action: {
-            print("🔄 [SettingsView] Sync to iCloud button tapped")
+            AppLogger.info("[SettingsView] Sync to iCloud button tapped", category: "SettingsView")
             viewModel.handleIntent(.performBackup)
         }) {
             HStack(spacing: 16) {
@@ -261,7 +261,7 @@ struct SettingsView: View {
     
     private var restoreFromCloudButton: some View {
         Button(action: {
-            print("🔄 [SettingsView] Restore from iCloud button tapped")
+            AppLogger.info("[SettingsView] Restore from iCloud button tapped", category: "SettingsView")
             showingRestoreConfirmation = true
         }) {
             HStack(spacing: 16) {

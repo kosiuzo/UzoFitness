@@ -37,7 +37,7 @@ struct LibraryView: View {
             }
             .navigationTitle("Library")
             .task {
-                print("🔄 [LibraryView] Task started - loading data")
+                AppLogger.info("[LibraryView] Task started - loading data", category: "LibraryView")
                 viewModel.handleIntent(.loadData)
             }
         }
@@ -386,7 +386,7 @@ struct ExerciseEditorView: View {
                 try viewModel.createExercise(name: trimmedName, category: category, instructions: instructions)
             }
         } catch {
-            print("❌ [ExerciseEditorView] Error: \(error.localizedDescription)")
+            AppLogger.error("[ExerciseEditorView] Error", category: "LibraryView", error: error)
             viewModel.error = error
         }
     }
@@ -512,7 +512,7 @@ struct TemplateDetailView: View {
     }
     
     private func saveTemplate() {
-        print("🔄 [TemplateDetailView.saveTemplate] Saving template changes")
+        AppLogger.info("[TemplateDetailView.saveTemplate] Saving template changes", category: "LibraryView")
         
         do {
             try viewModel.updateTemplate(
@@ -520,10 +520,10 @@ struct TemplateDetailView: View {
                 name: name.trimmingCharacters(in: .whitespacesAndNewlines),
                 summary: summary.trimmingCharacters(in: .whitespacesAndNewlines)
             )
-            print("✅ [TemplateDetailView.saveTemplate] Successfully saved template")
+            AppLogger.info("[TemplateDetailView.saveTemplate] Successfully saved template", category: "LibraryView")
             isEditing = false
         } catch {
-            print("❌ [TemplateDetailView.saveTemplate] Error: \(error.localizedDescription)")
+            AppLogger.error("[TemplateDetailView.saveTemplate] Error saving template", category: "LibraryView", error: error)
             viewModel.error = error
         }
     }
@@ -717,7 +717,7 @@ struct DayDetailView: View {
     }
     
     private func deleteExercises(offsets: IndexSet) {
-        print("🔄 [DayDetailView.deleteExercises] Deleting exercises at offsets: \(offsets)")
+        AppLogger.info("[DayDetailView.deleteExercises] Deleting exercises at offsets: \(offsets)", category: "LibraryView")
         
         let sortedExercises = dayTemplate.exerciseTemplates.sorted(by: { $0.position < $1.position })
         for index in offsets {
@@ -1010,7 +1010,7 @@ struct ExerciseTemplateEditorView: View {
             supersetID: supersetID
         )
         
-        print("✅ [ExerciseTemplateEditorView] Saved changes for \(exerciseTemplate.exercise.name)")
+        AppLogger.info("[ExerciseTemplateEditorView] Saved changes for \(exerciseTemplate.exercise.name)", category: "LibraryView")
     }
 }
 
@@ -1329,7 +1329,7 @@ struct WorkoutPlanEditorView: View {
     }
     
     private func savePlan() {
-        print("🔄 [WorkoutPlanEditorView.savePlan] Saving plan changes")
+        AppLogger.info("[WorkoutPlanEditorView.savePlan] Saving plan changes", category: "LibraryView")
         
         do {
             try viewModel.updateWorkoutPlan(
@@ -1338,23 +1338,23 @@ struct WorkoutPlanEditorView: View {
                 durationWeeks: durationWeeks,
                 isActive: isActive
             )
-            print("✅ [WorkoutPlanEditorView.savePlan] Successfully saved plan")
+            AppLogger.info("[WorkoutPlanEditorView.savePlan] Successfully saved plan", category: "LibraryView")
             isEditing = false
         } catch {
-            print("❌ [WorkoutPlanEditorView.savePlan] Error: \(error.localizedDescription)")
+            AppLogger.error("[WorkoutPlanEditorView.savePlan] Error", category: "LibraryView", error: error)
             viewModel.error = error
         }
     }
     
     private func deletePlan() {
-        print("🔄 [WorkoutPlanEditorView.deletePlan] Deleting plan")
+        AppLogger.info("[WorkoutPlanEditorView.deletePlan] Deleting plan", category: "LibraryView")
         
         do {
             try viewModel.deleteWorkoutPlan(plan)
-            print("✅ [WorkoutPlanEditorView.deletePlan] Successfully deleted plan")
+            AppLogger.info("[WorkoutPlanEditorView.deletePlan] Successfully deleted plan", category: "LibraryView")
             dismiss()
         } catch {
-            print("❌ [WorkoutPlanEditorView.deletePlan] Error: \(error.localizedDescription)")
+            AppLogger.error("[WorkoutPlanEditorView.deletePlan] Error", category: "LibraryView", error: error)
             viewModel.error = error
         }
     }

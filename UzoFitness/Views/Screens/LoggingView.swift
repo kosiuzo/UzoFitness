@@ -17,7 +17,7 @@ struct LoggingView: View {
         }
         .onAppear {
             if viewModel == nil {
-                print("🔄 [LoggingView] Initializing viewModel with context")
+                AppLogger.info("[LoggingView] Initializing viewModel with context", category: "LoggingView")
                 viewModel = LoggingViewModel(modelContext: context)
             }
         }
@@ -31,7 +31,7 @@ struct LoggingContentView: View {
     var body: some View {
         contentView
             .onAppear {
-                print("🔄 [LoggingContentView] View appeared - loading data")
+                AppLogger.info("[LoggingContentView] View appeared - loading data", category: "LoggingView")
                 viewModel.loadAvailablePlans()
                 viewModel.loadLastPerformedData()
             }
@@ -69,7 +69,7 @@ struct LoggingContentView: View {
         }
         .background(.background.secondary)
         .refreshable {
-            print("🔄 [LoggingContentView] Refreshing workout plans")
+            AppLogger.info("[LoggingContentView] Refreshing workout plans", category: "LoggingView")
             viewModel.loadAvailablePlans()
             viewModel.loadLastPerformedData()
         }
@@ -142,21 +142,12 @@ struct LoggingContentView: View {
             // Day Picker - Modern Rectangular Design
             if !viewModel.availableDays.isEmpty {
                 VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Image(systemName: "calendar")
-                            .foregroundColor(.blue)
-                            .font(.headline)
-                        Text("Today's Workout")
-                            .font(.headline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.primary)
-                    }
                     
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 10) {
                             ForEach(viewModel.availableDays, id: \.id) { day in
                                 Button(action: {
-                                    print("🔄 [LoggingView] Day tapped: \(day.weekday)")
+                                    AppLogger.info("[LoggingView] Day tapped: \(day.weekday)", category: "LoggingView")
                                     viewModel.handleIntent(.selectDay(day.weekday))
                                 }) {
                                     VStack(spacing: 4) {
@@ -262,7 +253,7 @@ struct LoggingContentView: View {
             Divider()
             
             Button {
-                print("🔄 [LoggingView] Complete Workout button tapped")
+                AppLogger.info("[LoggingView] Complete Workout button tapped", category: "LoggingView")
                 viewModel.handleIntent(.finishSession)
             } label: {
                 Text("Complete Workout")

@@ -1,4 +1,5 @@
 import SwiftUI
+import OSLog
 
 struct JSONImportView: View {
     @State private var jsonText: String = """
@@ -67,7 +68,7 @@ struct JSONImportView: View {
                 
                 // Import Button
                 Button {
-                    print("🔄 [JSONImportView] Import button tapped")
+                    AppLogger.info("[JSONImportView] Import button tapped", category: "JSONImportView")
                     performImport()
                 } label: {
                     Text("Import Exercises")
@@ -85,7 +86,7 @@ struct JSONImportView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
-                        print("🔄 [JSONImportView] Cancel button tapped")
+                        AppLogger.info("[JSONImportView] Cancel button tapped", category: "JSONImportView")
                         dismiss()
                     }
                 }
@@ -94,19 +95,19 @@ struct JSONImportView: View {
     }
     
     private func performImport() {
-        print("🔄 [JSONImportView.performImport] Starting import process")
+        AppLogger.info("[JSONImportView.performImport] Starting import process", category: "JSONImportView")
         
         guard let jsonData = jsonText.data(using: .utf8) else {
-            print("❌ [JSONImportView.performImport] Failed to convert text to data")
+            AppLogger.error("[JSONImportView.performImport] Failed to convert text to data", category: "JSONImportView")
             return
         }
         
         do {
             try importAction(jsonData)
-            print("✅ [JSONImportView.performImport] Import successful, dismissing view")
+            AppLogger.info("[JSONImportView.performImport] Import successful, dismissing view", category: "JSONImportView")
             dismiss()
         } catch {
-            print("❌ [JSONImportView.performImport] Import failed: \(error.localizedDescription)")
+            AppLogger.error("[JSONImportView.performImport] Import failed", category: "JSONImportView", error: error)
             // Error is handled by the importAction and will show in errorMessage
         }
     }
@@ -116,7 +117,7 @@ struct JSONImportView: View {
 #Preview {
     JSONImportView(
         importAction: { data in
-            print("Preview import action called with \(data.count) bytes")
+            AppLogger.debug("Preview import action called with \(data.count) bytes", category: "JSONImportView")
         },
         errorMessage: nil as String?
     )

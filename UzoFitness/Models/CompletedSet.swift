@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 import SwiftData
 
 @Model
@@ -29,6 +30,6 @@ final class CompletedSet: Identified {
         self.externalSampleUUID = externalSampleUUID
         self.sessionExercise = sessionExercise
         
-        print("🏃‍♂️ [CompletedSet.init] Created set: \(reps) reps @ \(weight) lbs (completed: \(isCompleted), position: \(position))")
+        AppLogger.debug("[CompletedSet.init] Created set: \(reps) reps @ \(weight) lbs (completed: \(isCompleted), position: \(position))", category: "CompletedSet")
     }
 }

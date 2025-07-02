@@ -42,7 +42,7 @@ final class Exercise: Identified, Codable {
         self.lastTotalVolume = lastTotalVolume
         self.lastUsedDate = lastUsedDate
         self.completedSets = []
-        print("🔄 [Exercise.init] Created exercise: \(name)")
+        AppLogger.debug("[Exercise.init] Created exercise: \(name)", category: "Exercise")
     }
     
     // MARK: - Codable Implementation
@@ -73,7 +73,7 @@ final class Exercise: Identified, Codable {
         self.lastUsedDate = nil
         self.completedSets = []
         self.performedRecords = []
-        print("🔄 [Exercise.init] Decoded exercise: \(name)")
+        AppLogger.debug("[Exercise.init] Decoded exercise: \(name)", category: "Exercise")
     }
 }
 

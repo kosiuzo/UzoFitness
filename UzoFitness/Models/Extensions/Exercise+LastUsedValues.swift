@@ -10,14 +10,14 @@
 extension Exercise {
     /// Updates the cached last used values based on the most recent completed session
     func updateLastUsedValues() {
-        print("🔄 [Exercise.updateLastUsedValues] Updating cached values for: \(name)")
+        AppLogger.debug("[Exercise.updateLastUsedValues] Updating cached values for: \(name)", category: "Exercise")
         
         // Find the most recent session exercise with completed sets
         let recentSessionExercise = findMostRecentCompletedSessionExercise()
         
         guard let sessionExercise = recentSessionExercise,
               !sessionExercise.completedSets.isEmpty else {
-            print("📊 [Exercise.updateLastUsedValues] No recent completed sets found")
+            AppLogger.debug("[Exercise.updateLastUsedValues] No recent completed sets found", category: "Exercise")
             return
         }
         
@@ -34,7 +34,7 @@ extension Exercise {
         lastTotalVolume = totalVolume
         lastUsedDate = sessionExercise.session?.date ?? sessionExercise.createdAt
         
-        print("✅ [Exercise.updateLastUsedValues] Updated - Weight: \(lastUsedWeight ?? 0), Reps: \(lastUsedReps ?? 0), Volume: \(lastTotalVolume ?? 0)")
+        AppLogger.info("[Exercise.updateLastUsedValues] Updated - Weight: \(lastUsedWeight ?? 0), Reps: \(lastUsedReps ?? 0), Volume: \(lastTotalVolume ?? 0)", category: "Exercise")
     }
     
     /// Finds the most recent session exercise with completed sets for this exercise

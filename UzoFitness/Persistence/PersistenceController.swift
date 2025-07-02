@@ -45,29 +45,24 @@ class PersistenceController: ObservableObject {
         )
         
         do {
-            print("🔄 [PersistenceController.init] Creating ModelContainer with schema")
-            print("🔄 [PersistenceController.init] Schema includes: \(schema.entities.map { $0.name })")
-            print("🔄 [PersistenceController.init] In-memory: \(inMemory)")
+            AppLogger.info("[PersistenceController.init] Creating ModelContainer with schema", category: "Persistence")
+            AppLogger.debug("[PersistenceController.init] Schema includes: \(schema.entities.map { $0.name })", category: "Persistence")
+            AppLogger.debug("[PersistenceController.init] In-memory: \(inMemory)", category: "Persistence")
             
             container = try ModelContainer(
                 for: schema,
                 configurations: [modelConfiguration]
             )
             
-            print("✅ [PersistenceController.init] ModelContainer created successfully")
+            AppLogger.info("[PersistenceController.init] ModelContainer created successfully", category: "Persistence")
             
             // Configure context
             context.autosaveEnabled = true
-            print("✅ [PersistenceController.init] Context configured with autosave enabled")
+            AppLogger.info("[PersistenceController.init] Context configured with autosave enabled", category: "Persistence")
             
         } catch {
-            print("❌ [PersistenceController.init] Failed to create ModelContainer")
-            print("❌ [PersistenceController.init] Error: \(error)")
-            print("❌ [PersistenceController.init] Error type: \(type(of: error))")
-            print("❌ [PersistenceController.init] Error description: \(error.localizedDescription)")
-            
-            // More detailed error information
-            print("❌ [PersistenceController.init] Error details: \(error)")
+            AppLogger.error("[PersistenceController.init] Failed to create ModelContainer", category: "Persistence", error: error)
+            AppLogger.error("[PersistenceController.init] Error details: \(error)", category: "Persistence", error: error)
             
             fatalError("Failed to create ModelContainer: \(error)")
         }
@@ -78,7 +73,7 @@ class PersistenceController: ObservableObject {
         do {
             try context.save()
         } catch {
-            print("Failed to save context: \(error)")
+            AppLogger.error("Failed to save context", category: "Persistence", error: error)
         }
     }
     
@@ -96,7 +91,7 @@ class PersistenceController: ObservableObject {
             let descriptor = FetchDescriptor<T>()
             return try context.fetch(descriptor)
         } catch {
-            print("Failed to fetch \(T.entityName): \(error)")
+            AppLogger.error("Failed to fetch \(T.entityName)", category: "Persistence", error: error)
             return []
         }
     }
@@ -107,20 +102,20 @@ class PersistenceController: ObservableObject {
             let descriptor = FetchDescriptor<T>(predicate: predicate, sortBy: sortBy)
             return try context.fetch(descriptor)
         } catch {
-            print("Failed to fetch \(T.entityName) with predicate: \(error)")
+            AppLogger.error("Failed to fetch \(T.entityName) with predicate", category: "Persistence", error: error)
             return []
         }
     }
     
     /// Delete a model (cascade-safe)
     func delete<T: PersistentModel & Identified>(_ model: T) {
-        print("🔄 [PersistenceController.delete] Deleting \(T.entityName)")
+        AppLogger.info("[PersistenceController.delete] Deleting \(T.entityName)", category: "Persistence")
         
         switch model {
         case let session as WorkoutSession:
-            print("🗑️ [PersistenceController.delete] Cascading deletion for WorkoutSession with \(session.sessionExercises.count) exercises")
+            AppLogger.debug("[PersistenceController.delete] Cascading deletion for WorkoutSession with \(session.sessionExercises.count) exercises", category: "Persistence")
             for exercise in session.sessionExercises {
-                print("🗑️ [PersistenceController.delete] Deleting SessionExercise with \(exercise.completedSets.count) sets")
+                AppLogger.debug("[PersistenceController.delete] Deleting SessionExercise with \(exercise.completedSets.count) sets", category: "Persistence")
                 for set in exercise.completedSets {
                     context.delete(set)
                 }
@@ -128,9 +123,9 @@ class PersistenceController: ObservableObject {
             }
 
         case let template as WorkoutTemplate:
-            print("🗑️ [PersistenceController.delete] Cascading deletion for WorkoutTemplate '\(template.name)' with \(template.dayTemplates.count) days")
+            AppLogger.debug("[PersistenceController.delete] Cascading deletion for WorkoutTemplate '\(template.name)' with \(template.dayTemplates.count) days", category: "Persistence")
             for day in template.dayTemplates {
-                print("🗑️ [PersistenceController.delete] Deleting DayTemplate for \(day.weekday) with \(day.exerciseTemplates.count) exercises")
+                AppLogger.debug("[PersistenceController.delete] Deleting DayTemplate for \(day.weekday) with \(day.exerciseTemplates.count) exercises", category: "Persistence")
                 for exerciseTemplate in day.exerciseTemplates {
                     context.delete(exerciseTemplate)
                 }
@@ -138,7 +133,7 @@ class PersistenceController: ObservableObject {
             }
 
         case let exercise as SessionExercise:
-            print("🗑️ [PersistenceController.delete] Cascading deletion for SessionExercise with \(exercise.completedSets.count) sets")
+            AppLogger.debug("[PersistenceController.delete] Cascading deletion for SessionExercise with \(exercise.completedSets.count) sets", category: "Persistence")
             for set in exercise.completedSets {
                 context.delete(set)
             }
@@ -149,15 +144,15 @@ class PersistenceController: ObservableObject {
 
         context.delete(model)
         save()
-        print("✅ [PersistenceController.delete] Successfully deleted \(T.entityName)")
+        AppLogger.info("[PersistenceController.delete] Successfully deleted \(T.entityName)", category: "Persistence")
     }
     
     /// Delete multiple models
     func delete<T: PersistentModel & Identified>(_ models: [T]) {
-        print("🔄 [PersistenceController.delete] Batch deleting \(models.count) \(T.entityName) models")
+        AppLogger.info("[PersistenceController.delete] Batch deleting \(models.count) \(T.entityName) models", category: "Persistence")
         models.forEach { context.delete($0) }
         save()
-        print("✅ [PersistenceController.delete] Successfully deleted \(models.count) \(T.entityName) models")
+        AppLogger.info("[PersistenceController.delete] Successfully deleted \(models.count) \(T.entityName) models", category: "Persistence")
     }
     
     // MARK: - Specific Helper Methods
@@ -186,7 +181,7 @@ class PersistenceController: ObservableObject {
         do {
             return try context.fetch(descriptor)
         } catch {
-            print("Failed to fetch recent sessions: \(error)")
+            AppLogger.error("Failed to fetch recent sessions", category: "Persistence", error: error)
             return []
         }
     }
@@ -215,7 +210,7 @@ class PersistenceController: ObservableObject {
     
     /// Delete all data (useful for testing/reset)
     func deleteAllData() {
-        print("🔄 [PersistenceController.deleteAllData] Starting deletion of all data")
+        AppLogger.info("[PersistenceController.deleteAllData] Starting deletion of all data", category: "Persistence")
         
         // Delete in order to respect relationships
         let completedSets = fetch(CompletedSet.self)
@@ -229,37 +224,37 @@ class PersistenceController: ObservableObject {
         let performedExercises = fetch(PerformedExercise.self)
         let exercises = fetch(Exercise.self)
         
-        print("🗑️ [PersistenceController.deleteAllData] Deleting \(completedSets.count) CompletedSets")
+        AppLogger.debug("[PersistenceController.deleteAllData] Deleting \(completedSets.count) CompletedSets", category: "Persistence")
         delete(completedSets)
         
-        print("🗑️ [PersistenceController.deleteAllData] Deleting \(sessionExercises.count) SessionExercises")
+        AppLogger.debug("[PersistenceController.deleteAllData] Deleting \(sessionExercises.count) SessionExercises", category: "Persistence")
         delete(sessionExercises)
         
-        print("🗑️ [PersistenceController.deleteAllData] Deleting \(workoutSessions.count) WorkoutSessions")
+        AppLogger.debug("[PersistenceController.deleteAllData] Deleting \(workoutSessions.count) WorkoutSessions", category: "Persistence")
         delete(workoutSessions)
         
-        print("🗑️ [PersistenceController.deleteAllData] Deleting \(exerciseTemplates.count) ExerciseTemplates")
+        AppLogger.debug("[PersistenceController.deleteAllData] Deleting \(exerciseTemplates.count) ExerciseTemplates", category: "Persistence")
         delete(exerciseTemplates)
         
-        print("🗑️ [PersistenceController.deleteAllData] Deleting \(dayTemplates.count) DayTemplates")
+        AppLogger.debug("[PersistenceController.deleteAllData] Deleting \(dayTemplates.count) DayTemplates", category: "Persistence")
         delete(dayTemplates)
         
-        print("🗑️ [PersistenceController.deleteAllData] Deleting \(workoutPlans.count) WorkoutPlans")
+        AppLogger.debug("[PersistenceController.deleteAllData] Deleting \(workoutPlans.count) WorkoutPlans", category: "Persistence")
         delete(workoutPlans)
         
-        print("🗑️ [PersistenceController.deleteAllData] Deleting \(workoutTemplates.count) WorkoutTemplates")
+        AppLogger.debug("[PersistenceController.deleteAllData] Deleting \(workoutTemplates.count) WorkoutTemplates", category: "Persistence")
         delete(workoutTemplates)
         
-        print("🗑️ [PersistenceController.deleteAllData] Deleting \(progressPhotos.count) ProgressPhotos")
+        AppLogger.debug("[PersistenceController.deleteAllData] Deleting \(progressPhotos.count) ProgressPhotos", category: "Persistence")
         delete(progressPhotos)
         
-        print("🗑️ [PersistenceController.deleteAllData] Deleting \(performedExercises.count) PerformedExercises")
+        AppLogger.debug("[PersistenceController.deleteAllData] Deleting \(performedExercises.count) PerformedExercises", category: "Persistence")
         delete(performedExercises)
         
-        print("🗑️ [PersistenceController.deleteAllData] Deleting \(exercises.count) Exercises")
+        AppLogger.debug("[PersistenceController.deleteAllData] Deleting \(exercises.count) Exercises", category: "Persistence")
         delete(exercises)
         
-        print("✅ [PersistenceController.deleteAllData] Successfully deleted all data")
+        AppLogger.info("[PersistenceController.deleteAllData] Successfully deleted all data", category: "Persistence")
     }
     
     // MARK: - Sample Data for Previews

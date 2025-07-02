@@ -295,7 +295,7 @@ struct HistoryView: View {
     // MARK: - Data Loading
     @MainActor
     private func loadWorkoutData() async {
-        print("🔄 [HistoryView.loadWorkoutData] Starting data load")
+        AppLogger.info("[HistoryView.loadWorkoutData] Starting data load", category: "HistoryView")
         isLoading = true
         errorMessage = nil
         
@@ -314,7 +314,7 @@ struct HistoryView: View {
                 }
                 
                 if !hasCompletedSets && !session.sessionExercises.isEmpty {
-                    print("🔍 [HistoryView.loadWorkoutData] Filtering out session with no completed sets: \(session.title)")
+                    AppLogger.debug("[HistoryView.loadWorkoutData] Filtering out session with no completed sets: \(session.title)", category: "HistoryView")
                 }
                 
                 return hasCompletedSets
@@ -326,10 +326,10 @@ struct HistoryView: View {
             // Calculate template usage counts
             await calculateTemplateUsageCounts()
             
-            print("✅ [HistoryView.loadWorkoutData] Successfully loaded \(workoutSessions.count) sessions")
+            AppLogger.info("[HistoryView.loadWorkoutData] Successfully loaded \(workoutSessions.count) sessions", category: "HistoryView")
             
         } catch {
-            print("❌ [HistoryView.loadWorkoutData] Error: \(error.localizedDescription)")
+            AppLogger.error("[HistoryView.loadWorkoutData] Error", category: "HistoryView", error: error)
             errorMessage = "Failed to load workout data"
         }
         
@@ -360,12 +360,12 @@ struct HistoryView: View {
         }
         
         streakCount = streak
-        print("📊 [HistoryView] Calculated streak: \(streak), total days: \(totalWorkoutDays)")
+        AppLogger.debug("[HistoryView] Calculated streak: \(streak), total days: \(totalWorkoutDays)", category: "HistoryView")
     }
     
     // MARK: - Template Usage Calculation
     private func calculateTemplateUsageCounts() async {
-        print("🔄 [HistoryView.calculateTemplateUsageCounts] Calculating template usage")
+        AppLogger.info("[HistoryView.calculateTemplateUsageCounts] Calculating template usage", category: "HistoryView")
         
         var counts: [UUID: Int] = [:]
         
@@ -376,7 +376,7 @@ struct HistoryView: View {
         }
         
         templateUsageCounts = counts
-        print("📊 [HistoryView] Template usage counts: \(counts.count) templates tracked")
+        AppLogger.debug("[HistoryView] Template usage counts: \(counts.count) templates tracked", category: "HistoryView")
     }
 }
 

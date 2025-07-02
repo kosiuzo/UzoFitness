@@ -129,17 +129,17 @@ class HistoryViewModel: ObservableObject {
         // Initialize with empty context - will be set later
         let container = try! ModelContainer(for: WorkoutSession.self)
         self.modelContext = container.mainContext
-        print("🔄 [HistoryViewModel.init] Initialized with temporary ModelContext")
+        AppLogger.debug("[HistoryViewModel.init] Initialized with temporary ModelContext", category: "HistoryViewModel")
     }
     
     func setModelContext(_ modelContext: ModelContext) {
         self.modelContext = modelContext
-        print("🔄 [HistoryViewModel.setModelContext] Updated ModelContext")
+        AppLogger.debug("[HistoryViewModel.setModelContext] Updated ModelContext", category: "HistoryViewModel")
         loadCalendarData()
     }
     
     func selectDate(_ date: Date) {
-        print("🔄 [HistoryViewModel.selectDate] Selecting date: \(date)")
+        AppLogger.debug("[HistoryViewModel.selectDate] Selecting date: \(date)", category: "HistoryViewModel")
         
         let normalizedDate = normalizeDate(date)
         selectedDate = normalizedDate
@@ -147,12 +147,12 @@ class HistoryViewModel: ObservableObject {
         // Load detailed data for the selected date
         loadDailyDetails(for: normalizedDate)
         
-        print("📊 [HistoryViewModel] Selected date: \(normalizedDate)")
+        AppLogger.debug("[HistoryViewModel] Selected date: \(normalizedDate)", category: "HistoryViewModel")
     }
     
     // MARK: - Intent Handling
     func handleIntent(_ intent: HistoryIntent) {
-        print("🔄 [HistoryViewModel.handleIntent] Processing intent: \(intent)")
+        AppLogger.debug("[HistoryViewModel.handleIntent] Processing intent: \(intent)", category: "HistoryViewModel")
         
         switch intent {
         case .selectDate(let date):
@@ -175,15 +175,15 @@ class HistoryViewModel: ObservableObject {
     // MARK: - Date Selection (moved to public section)
     
     private func clearSelection() {
-        print("🔄 [HistoryViewModel.clearSelection] Clearing date selection")
+        AppLogger.debug("[HistoryViewModel.clearSelection] Clearing date selection", category: "HistoryViewModel")
         selectedDate = nil
         dailyDetails = []
-        print("📊 [HistoryViewModel] Selection cleared")
+        AppLogger.debug("[HistoryViewModel] Selection cleared", category: "HistoryViewModel")
     }
     
     // MARK: - Data Loading
     private func loadCalendarData() {
-        print("🔄 [HistoryViewModel.loadCalendarData] Starting calendar data load")
+        AppLogger.debug("[HistoryViewModel.loadCalendarData] Starting calendar data load", category: "HistoryViewModel")
         state = .loading
         isLoading = true
         
@@ -210,15 +210,15 @@ class HistoryViewModel: ObservableObject {
             
             calendarData = groupedSessions
             
-            print("✅ [HistoryViewModel.loadCalendarData] Successfully loaded \(sessions.count) sessions across \(groupedSessions.count) days")
-            print("📊 [HistoryViewModel] State changed to: loaded")
+            AppLogger.info("[HistoryViewModel.loadCalendarData] Successfully loaded \(sessions.count) sessions across \(groupedSessions.count) days", category: "HistoryViewModel")
+            AppLogger.debug("[HistoryViewModel] State changed to: loaded", category: "HistoryViewModel")
             
             state = .loaded
             isLoading = false
             
         } catch {
-            print("❌ [HistoryViewModel.loadCalendarData] Error: \(error.localizedDescription)")
-            print("📊 [HistoryViewModel] State changed to: error")
+            AppLogger.error("[HistoryViewModel.loadCalendarData] Error: \(error.localizedDescription)", category: "HistoryViewModel", error: error)
+            AppLogger.debug("[HistoryViewModel] State changed to: error", category: "HistoryViewModel")
             
             self.error = error
             state = .error
@@ -227,7 +227,7 @@ class HistoryViewModel: ObservableObject {
     }
     
     private func loadDailyDetails(for date: Date) {
-        print("🔄 [HistoryViewModel.loadDailyDetails] Loading details for date: \(date)")
+        AppLogger.debug("[HistoryViewModel.loadDailyDetails] Loading details for date: \(date)", category: "HistoryViewModel")
         
         do {
             let startOfDay = calendar.startOfDay(for: date)
@@ -242,17 +242,17 @@ class HistoryViewModel: ObservableObject {
             
             dailyDetails = try modelContext.fetch(descriptor)
             
-            print("📊 [HistoryViewModel.loadDailyDetails] Loaded \(dailyDetails.count) performed exercises for \(date)")
+            AppLogger.debug("[HistoryViewModel.loadDailyDetails] Loaded \(dailyDetails.count) performed exercises for \(date)", category: "HistoryViewModel")
             
         } catch {
-            print("❌ [HistoryViewModel.loadDailyDetails] Error: \(error.localizedDescription)")
+            AppLogger.error("[HistoryViewModel.loadDailyDetails] Error: \(error.localizedDescription)", category: "HistoryViewModel", error: error)
             self.error = error
             dailyDetails = []
         }
     }
     
     private func refreshData() {
-        print("🔄 [HistoryViewModel.refreshData] Refreshing all data")
+        AppLogger.debug("[HistoryViewModel.refreshData] Refreshing all data", category: "HistoryViewModel")
         loadCalendarData()
         
         if let selectedDate = selectedDate {

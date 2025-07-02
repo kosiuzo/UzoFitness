@@ -16,7 +16,7 @@ struct WorkoutTemplateImportDTO: Codable {
     
     /// Validates the imported data for consistency and completeness
     func validate() throws {
-        print("🔄 [WorkoutTemplateImportDTO.validate] Starting validation")
+        AppLogger.debug("[WorkoutTemplateImportDTO.validate] Starting validation", category: "WorkoutTemplateImport")
         
         guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw ImportError.emptyTemplateName
@@ -39,7 +39,7 @@ struct WorkoutTemplateImportDTO: Codable {
             }
         }
         
-        print("✅ [WorkoutTemplateImportDTO.validate] Validation successful")
+        AppLogger.info("[WorkoutTemplateImportDTO.validate] Validation successful", category: "WorkoutTemplateImport")
     }
 }
 
@@ -55,7 +55,7 @@ struct DayImportDTO: Codable {
     
     /// Validates the imported day data
     func validate() throws {
-        print("🔄 [DayImportDTO.validate] Starting validation for day: \(name)")
+        AppLogger.debug("[DayImportDTO.validate] Starting validation for day: \(name)", category: "WorkoutTemplateImport")
         
         guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw ImportError.emptyDayName
@@ -78,7 +78,7 @@ struct DayImportDTO: Codable {
             }
         }
         
-        print("✅ [DayImportDTO.validate] Validation successful for day: \(name)")
+        AppLogger.info("[DayImportDTO.validate] Validation successful for day: \(name)", category: "WorkoutTemplateImport")
     }
 }
 
@@ -96,7 +96,7 @@ struct ExerciseImportDTO: Codable {
     
     /// Validates the imported exercise data
     func validate() throws {
-        print("🔄 [ExerciseImportDTO.validate] Starting validation for exercise: \(name)")
+        AppLogger.debug("[ExerciseImportDTO.validate] Starting validation for exercise: \(name)", category: "WorkoutTemplateImport")
         
         guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw ImportError.emptyExerciseName
@@ -118,7 +118,7 @@ struct ExerciseImportDTO: Codable {
             throw ImportError.invalidSupersetGroup(supersetGroup)
         }
         
-        print("✅ [ExerciseImportDTO.validate] Validation successful for exercise: \(name)")
+        AppLogger.info("[ExerciseImportDTO.validate] Validation successful for exercise: \(name)", category: "WorkoutTemplateImport")
     }
 }
 

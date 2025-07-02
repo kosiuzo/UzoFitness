@@ -176,14 +176,14 @@ class ProgressViewModel: ObservableObject {
         self.modelContext = modelContext
         self.photoService = photoService
         self.healthKitManager = healthKitManager
-        print("🔄 [ProgressViewModel.init] Initialized with dependencies")
+        AppLogger.debug("[ProgressViewModel.init] Initialized with dependencies", category: "ProgressViewModel")
         
         loadInitialData()
     }
     
     // MARK: - Intent Handling
     func handleIntent(_ intent: ProgressIntent) {
-        print("🔄 [ProgressViewModel.handleIntent] Processing intent: \(intent)")
+        AppLogger.debug("[ProgressViewModel.handleIntent] Processing intent: \(intent)", category: "ProgressViewModel")
         
         Task {
             switch intent {
@@ -232,19 +232,19 @@ class ProgressViewModel: ObservableObject {
     // MARK: - Stats Tab Methods
     
     private func selectExercise(_ exerciseID: UUID) async {
-        print("🔄 [ProgressViewModel.selectExercise] Selecting exercise: \(exerciseID)")
+        AppLogger.debug("[ProgressViewModel.selectExercise] Selecting exercise: \(exerciseID)", category: "ProgressViewModel")
         selectedExerciseID = exerciseID
-        print("📊 [ProgressViewModel] Selected exercise changed to: \(exerciseID)")
+        AppLogger.debug("[ProgressViewModel] Selected exercise changed to: \(exerciseID)", category: "ProgressViewModel")
     }
     
     private func toggleMetric(_ metricType: MetricType) {
-        print("🔄 [ProgressViewModel.toggleMetric] Toggling metric to: \(metricType)")
+        AppLogger.debug("[ProgressViewModel.toggleMetric] Toggling metric to: \(metricType)", category: "ProgressViewModel")
         selectedMetricType = metricType
-        print("📊 [ProgressViewModel] Metric type changed to: \(metricType)")
+        AppLogger.debug("[ProgressViewModel] Metric type changed to: \(metricType)", category: "ProgressViewModel")
     }
     
     private func loadExerciseTrends() async {
-        print("🔄 [ProgressViewModel.loadExerciseTrends] Starting exercise trends load")
+        AppLogger.debug("[ProgressViewModel.loadExerciseTrends] Starting exercise trends load", category: "ProgressViewModel")
         
         do {
             // Fetch all performed exercises
@@ -272,30 +272,30 @@ class ProgressViewModel: ObservableObject {
             }
             
             self.exerciseTrends = trends
-            print("✅ [ProgressViewModel.loadExerciseTrends] Successfully loaded \(trends.count) exercise trends")
+            AppLogger.info("[ProgressViewModel.loadExerciseTrends] Successfully loaded \(trends.count) exercise trends", category: "ProgressViewModel")
             
             // Load current weight from HealthKit
             await loadCurrentWeight()
             
         } catch {
-            print("❌ [ProgressViewModel.loadExerciseTrends] Error: \(error.localizedDescription)")
+            AppLogger.error("[ProgressViewModel.loadExerciseTrends] Error: \(error.localizedDescription)", category: "ProgressViewModel", error: error)
             self.error = error
         }
     }
     
     private func loadCurrentWeight() async {
-        print("🔄 [ProgressViewModel.loadCurrentWeight] Loading current weight from HealthKit")
+        AppLogger.debug("[ProgressViewModel.loadCurrentWeight] Loading current weight from HealthKit", category: "ProgressViewModel")
         
         await withCheckedContinuation { continuation in
             healthKitManager.fetchLatestBodyMassInPounds { [weak self] weight, error in
                 DispatchQueue.main.async {
                     if let error = error {
-                        print("❌ [ProgressViewModel.loadCurrentWeight] HealthKit error: \(error.localizedDescription)")
+                        AppLogger.error("[ProgressViewModel.loadCurrentWeight] HealthKit error: \(error.localizedDescription)", category: "ProgressViewModel", error: error)
                     } else if let weight = weight {
-                        print("✅ [ProgressViewModel.loadCurrentWeight] Current weight: \(weight) lbs")
+                        AppLogger.info("[ProgressViewModel.loadCurrentWeight] Current weight: \(weight) lbs", category: "ProgressViewModel")
                         self?.currentWeight = weight
                     } else {
-                        print("📊 [ProgressViewModel.loadCurrentWeight] No weight data available")
+                        AppLogger.debug("[ProgressViewModel.loadCurrentWeight] No weight data available", category: "ProgressViewModel")
                     }
                     continuation.resume()
                 }
@@ -306,62 +306,62 @@ class ProgressViewModel: ObservableObject {
     // MARK: - Photos Tab Methods
     
     private func loadPhotos() async {
-        print("🔄 [ProgressViewModel.loadPhotos] Starting photos load")
+        AppLogger.debug("[ProgressViewModel.loadPhotos] Starting photos load", category: "ProgressViewModel")
         
         guard !isLoadingPhotos else {
-            print("⚠️ [ProgressViewModel.loadPhotos] Already loading photos, skipping")
+            AppLogger.debug("[ProgressViewModel.loadPhotos] Already loading photos, skipping", category: "ProgressViewModel")
             return
         }
         
         isLoadingPhotos = true
         
         do {
-            print("🔄 [ProgressViewModel.loadPhotos] Creating FetchDescriptor for ProgressPhoto")
+            AppLogger.debug("[ProgressViewModel.loadPhotos] Creating FetchDescriptor for ProgressPhoto", category: "ProgressViewModel")
             let descriptor = FetchDescriptor<ProgressPhoto>(
                 sortBy: [SortDescriptor(\.date, order: .reverse)]
             )
             
-            print("🔄 [ProgressViewModel.loadPhotos] Fetching photos from modelContext")
+            AppLogger.debug("[ProgressViewModel.loadPhotos] Fetching photos from modelContext", category: "ProgressViewModel")
             let photos = try modelContext.fetch(descriptor)
-            print("🔄 [ProgressViewModel.loadPhotos] Fetched \(photos.count) photos from database")
+            AppLogger.debug("[ProgressViewModel.loadPhotos] Fetched \(photos.count) photos from database", category: "ProgressViewModel")
             
             // Group photos by angle
-            print("🔄 [ProgressViewModel.loadPhotos] Grouping photos by angle")
+            AppLogger.debug("[ProgressViewModel.loadPhotos] Grouping photos by angle", category: "ProgressViewModel")
             var groupedPhotos: [PhotoAngle: [ProgressPhoto]] = [:]
             
             for angle in PhotoAngle.allCases {
                 let photosForAngle = photos.filter { $0.angle == angle }
                 groupedPhotos[angle] = photosForAngle
-                print("🔄 [ProgressViewModel.loadPhotos] Found \(photosForAngle.count) photos for angle \(angle)")
+                AppLogger.debug("[ProgressViewModel.loadPhotos] Found \(photosForAngle.count) photos for angle \(angle)", category: "ProgressViewModel")
             }
             
-            print("🔄 [ProgressViewModel.loadPhotos] Updating photosByAngle property")
+            AppLogger.debug("[ProgressViewModel.loadPhotos] Updating photosByAngle property", category: "ProgressViewModel")
             photosByAngle = groupedPhotos
             
-            print("✅ [ProgressViewModel.loadPhotos] Successfully loaded \(photos.count) photos")
+            AppLogger.info("[ProgressViewModel.loadPhotos] Successfully loaded \(photos.count) photos", category: "ProgressViewModel")
             
             // Load body metrics for each photo
             if !photos.isEmpty {
-                print("🔄 [ProgressViewModel.loadPhotos] Loading body metrics for photos")
+                AppLogger.debug("[ProgressViewModel.loadPhotos] Loading body metrics for photos", category: "ProgressViewModel")
                 await loadPhotoMetrics(for: photos)
             } else {
-                print("🔄 [ProgressViewModel.loadPhotos] No photos to load metrics for")
+                AppLogger.debug("[ProgressViewModel.loadPhotos] No photos to load metrics for", category: "ProgressViewModel")
             }
             
             isLoadingPhotos = false
-            print("✅ [ProgressViewModel.loadPhotos] Photo loading completed successfully")
+            AppLogger.info("[ProgressViewModel.loadPhotos] Photo loading completed successfully", category: "ProgressViewModel")
             
         } catch {
-            print("❌ [ProgressViewModel.loadPhotos] Error: \(error)")
-            print("❌ [ProgressViewModel.loadPhotos] Error type: \(type(of: error))")
-            print("❌ [ProgressViewModel.loadPhotos] Error description: \(error.localizedDescription)")
+            AppLogger.error("[ProgressViewModel.loadPhotos] Error: \(error)", category: "ProgressViewModel", error: error)
+            AppLogger.error("[ProgressViewModel.loadPhotos] Error type: \(type(of: error))", category: "ProgressViewModel", error: error)
+            AppLogger.error("[ProgressViewModel.loadPhotos] Error description: \(error.localizedDescription)", category: "ProgressViewModel", error: error)
             self.error = error
             isLoadingPhotos = false
         }
     }
     
     private func loadPhotoMetrics(for photos: [ProgressPhoto]) async {
-        print("🔄 [ProgressViewModel.loadPhotoMetrics] Loading metrics for \(photos.count) photos")
+        AppLogger.debug("[ProgressViewModel.loadPhotoMetrics] Loading metrics for \(photos.count) photos", category: "ProgressViewModel")
         
         var metrics: [UUID: BodyMetrics] = [:]
         
@@ -387,28 +387,28 @@ class ProgressViewModel: ObservableObject {
         }
         
         photoMetrics = metrics
-        print("✅ [ProgressViewModel.loadPhotoMetrics] Loaded metrics for \(metrics.count) photos")
+        AppLogger.info("[ProgressViewModel.loadPhotoMetrics] Loaded metrics for \(metrics.count) photos", category: "ProgressViewModel")
     }
     
     private func addPhoto(angle: PhotoAngle, image: UIImage) async {
-        print("🔄 [ProgressViewModel.addPhoto] Adding photo for angle: \(angle)")
+        AppLogger.debug("[ProgressViewModel.addPhoto] Adding photo for angle: \(angle)", category: "ProgressViewModel")
         
         do {
             try photoService.save(image: image, angle: angle)
             
-            print("✅ [ProgressViewModel.addPhoto] Successfully saved photo")
+            AppLogger.info("[ProgressViewModel.addPhoto] Successfully saved photo", category: "ProgressViewModel")
             
             // Reload photos to update UI
             await loadPhotos()
             
         } catch {
-            print("❌ [ProgressViewModel.addPhoto] Error: \(error.localizedDescription)")
+            AppLogger.error("[ProgressViewModel.addPhoto] Error: \(error.localizedDescription)", category: "ProgressViewModel", error: error)
             self.error = error
         }
     }
     
     private func deletePhoto(_ photoID: UUID) async {
-        print("🔄 [ProgressViewModel.deletePhoto] Deleting photo: \(photoID)")
+        AppLogger.debug("[ProgressViewModel.deletePhoto] Deleting photo: \(photoID)", category: "ProgressViewModel")
         
         do {
             // Find the photo in our data
@@ -436,60 +436,60 @@ class ProgressViewModel: ObservableObject {
                 compareSelection.1 = nil
             }
             
-            print("✅ [ProgressViewModel.deletePhoto] Successfully deleted photo")
+            AppLogger.info("[ProgressViewModel.deletePhoto] Successfully deleted photo", category: "ProgressViewModel")
             
         } catch {
-            print("❌ [ProgressViewModel.deletePhoto] Error: \(error.localizedDescription)")
+            AppLogger.error("[ProgressViewModel.deletePhoto] Error: \(error.localizedDescription)", category: "ProgressViewModel", error: error)
             self.error = error
         }
     }
     
     private func selectForCompare(_ photoID: UUID) {
-        print("🔄 [ProgressViewModel.selectForCompare] Selecting photo for comparison: \(photoID)")
+        AppLogger.debug("[ProgressViewModel.selectForCompare] Selecting photo for comparison: \(photoID)", category: "ProgressViewModel")
         
         let (first, second) = compareSelection
         
         if first == nil {
             compareSelection.0 = photoID
-            print("📊 [ProgressViewModel] First comparison photo selected: \(photoID)")
+            AppLogger.debug("[ProgressViewModel] First comparison photo selected: \(photoID)", category: "ProgressViewModel")
         } else if second == nil && first != photoID {
             compareSelection.1 = photoID
-            print("📊 [ProgressViewModel] Second comparison photo selected: \(photoID)")
+            AppLogger.debug("[ProgressViewModel] Second comparison photo selected: \(photoID)", category: "ProgressViewModel")
         } else {
             // Reset and start fresh
             compareSelection = (photoID, nil)
-            print("📊 [ProgressViewModel] Comparison reset, first photo selected: \(photoID)")
+            AppLogger.debug("[ProgressViewModel] Comparison reset, first photo selected: \(photoID)", category: "ProgressViewModel")
         }
     }
     
     private func clearComparison() {
-        print("🔄 [ProgressViewModel.clearComparison] Clearing photo comparison")
+        AppLogger.debug("[ProgressViewModel.clearComparison] Clearing photo comparison", category: "ProgressViewModel")
         compareSelection = (nil, nil)
-        print("📊 [ProgressViewModel] Comparison cleared")
+        AppLogger.debug("[ProgressViewModel] Comparison cleared", category: "ProgressViewModel")
     }
     
     private func showImagePicker(for angle: PhotoAngle) {
-        print("🔄 [ProgressViewModel.showImagePicker] Showing image picker for angle: \(angle)")
+        AppLogger.debug("[ProgressViewModel.showImagePicker] Showing image picker for angle: \(angle)", category: "ProgressViewModel")
         selectedPhotoAngle = angle
         showImagePicker = true
     }
     
     private func hideImagePicker() {
-        print("🔄 [ProgressViewModel.hideImagePicker] Hiding image picker")
+        AppLogger.debug("[ProgressViewModel.hideImagePicker] Hiding image picker", category: "ProgressViewModel")
         showImagePicker = false
     }
     
     // MARK: - Data Loading
     
     private func loadInitialData() {
-        print("🔄 [ProgressViewModel.loadInitialData] Loading initial data")
+        AppLogger.debug("[ProgressViewModel.loadInitialData] Loading initial data", category: "ProgressViewModel")
         Task {
             await refreshData()
         }
     }
     
     private func refreshData() async {
-        print("🔄 [ProgressViewModel.refreshData] Refreshing all data")
+        AppLogger.debug("[ProgressViewModel.refreshData] Refreshing all data", category: "ProgressViewModel")
         state = .loading
         
         async let statsLoad: () = loadExerciseTrends()
@@ -503,7 +503,7 @@ class ProgressViewModel: ObservableObject {
         } else {
             state = .loaded
         }
-        print("✅ [ProgressViewModel.refreshData] All data refreshed")
+        AppLogger.info("[ProgressViewModel.refreshData] All data refreshed", category: "ProgressViewModel")
     }
     
     // MARK: - Helper Methods
@@ -534,7 +534,7 @@ class ProgressViewModel: ObservableObject {
     
     /// Edit an existing photo's date and manual weight, then reload.
     private func editPhoto(_ photoID: UUID, _ newDate: Date, _ manualWeight: Double?) async {
-        print("🔄 [ProgressViewModel.editPhoto] Editing photo: \(photoID)")
+        AppLogger.debug("[ProgressViewModel.editPhoto] Editing photo: \(photoID)", category: "ProgressViewModel")
         do {
             // Find the photo entity
             let allPhotos = photosByAngle.values.flatMap { $0 }
@@ -546,11 +546,11 @@ class ProgressViewModel: ObservableObject {
             photo.manualWeight = manualWeight
             // Save to SwiftData
             try modelContext.save()
-            print("✅ [ProgressViewModel.editPhoto] Photo updated successfully")
+            AppLogger.info("[ProgressViewModel.editPhoto] Photo updated successfully", category: "ProgressViewModel")
             // Reload data to reflect changes
             await loadPhotos()
         } catch {
-            print("❌ [ProgressViewModel.editPhoto] Error: \(error.localizedDescription)")
+            AppLogger.error("[ProgressViewModel.editPhoto] Error: \(error.localizedDescription)", category: "ProgressViewModel", error: error)
             self.error = error
         }
     }

@@ -142,17 +142,17 @@ class LoggingViewModel: ObservableObject {
     init(modelContext: ModelContext, timerFactory: TimerFactory = DefaultTimerFactory()) {
         self.modelContext = modelContext
         self.timerFactory = timerFactory
-        print("🔄 [LoggingViewModel.init] Initialized with dependencies")
+        AppLogger.info("[LoggingViewModel.init] Initialized with dependencies", category: "LoggingViewModel")
         
         loadAvailablePlans()
     }
     
     // MARK: - Auto-select current day after plans are loaded
     private func autoSelectCurrentDay() {
-        print("🔄 [LoggingViewModel.autoSelectCurrentDay] Attempting to auto-select current day")
+        AppLogger.info("[LoggingViewModel.autoSelectCurrentDay] Attempting to auto-select current day", category: "LoggingViewModel")
         
         guard !availableDays.isEmpty else {
-            print("⚠️ [LoggingViewModel.autoSelectCurrentDay] No available days yet")
+            AppLogger.debug("[LoggingViewModel.autoSelectCurrentDay] No available days yet", category: "LoggingViewModel")
             return
         }
         
@@ -160,17 +160,17 @@ class LoggingViewModel: ObservableObject {
         if let todayWeekday = Weekday(rawValue: today) {
             // Check if today is available in the current plan
             if availableDays.contains(where: { $0.weekday == todayWeekday }) {
-                print("🔄 [LoggingViewModel.autoSelectCurrentDay] Auto-selecting today: \(todayWeekday)")
+                AppLogger.info("[LoggingViewModel.autoSelectCurrentDay] Auto-selecting today: \(todayWeekday)", category: "LoggingViewModel")
                 handleIntent(.selectDay(todayWeekday))
             } else {
-                print("📊 [LoggingViewModel.autoSelectCurrentDay] Today (\(todayWeekday)) not available in plan, keeping manual selection")
+                AppLogger.debug("[LoggingViewModel.autoSelectCurrentDay] Today (\(todayWeekday)) not available in plan, keeping manual selection", category: "LoggingViewModel")
             }
         }
     }
     
     // MARK: - Intent Handling
     func handleIntent(_ intent: LoggingIntent) {
-        print("🔄 [LoggingViewModel.handleIntent] Processing intent: \(intent)")
+        AppLogger.info("[LoggingViewModel.handleIntent] Processing intent: \(intent)", category: "LoggingViewModel")
         
         switch intent {
         case .selectPlan(let planID):
@@ -204,7 +204,7 @@ class LoggingViewModel: ObservableObject {
     
     // MARK: - Data Loading Methods
     func loadAvailablePlans() {
-        print("🔄 [LoggingViewModel.loadAvailablePlans] Loading available plans")
+        AppLogger.info("[LoggingViewModel.loadAvailablePlans] Loading available plans", category: "LoggingViewModel")
         do {
             let fetchDescriptor = FetchDescriptor<WorkoutPlan>()
             let allPlans = try modelContext.fetch(fetchDescriptor)
@@ -217,12 +217,12 @@ class LoggingViewModel: ObservableObject {
                 return lhs.customName < rhs.customName // Then alphabetically
             }
             
-            print("✅ [LoggingViewModel.loadAvailablePlans] Loaded \(availablePlans.count) plans")
+            AppLogger.info("[LoggingViewModel.loadAvailablePlans] Loaded \(availablePlans.count) plans", category: "LoggingViewModel")
             
             // Check if current active plan still exists
             if let currentActivePlan = activePlan,
                !availablePlans.contains(where: { $0.id == currentActivePlan.id }) {
-                print("⚠️ [LoggingViewModel.loadAvailablePlans] Active plan was deleted - clearing state")
+                AppLogger.debug("[LoggingViewModel.loadAvailablePlans] Active plan was deleted - clearing state", category: "LoggingViewModel")
                 // Current active plan was deleted, clear the state
                 activePlan = nil
                 availableDays = []
@@ -234,34 +234,34 @@ class LoggingViewModel: ObservableObject {
             
             // Auto-select the first active plan if none selected
             if activePlan == nil, let newActivePlan = availablePlans.first(where: { $0.isActive }) {
-                print("🔄 [LoggingViewModel.loadAvailablePlans] Auto-selecting active plan: \(newActivePlan.customName)")
+                AppLogger.info("[LoggingViewModel.loadAvailablePlans] Auto-selecting active plan: \(newActivePlan.customName)", category: "LoggingViewModel")
                 handleIntent(.selectPlan(newActivePlan.id))
             } else if activePlan != nil {
                 // If we already have an active plan, auto-select current day
                 autoSelectCurrentDay()
             }
         } catch {
-            print("❌ [LoggingViewModel.loadAvailablePlans] Error: \(error.localizedDescription)")
+            AppLogger.error("[LoggingViewModel.loadAvailablePlans] Error: \(error.localizedDescription)", category: "LoggingViewModel")
             self.error = error
         }
     }
     
     func loadLastPerformedData() {
-        print("🔄 [LoggingViewModel.loadLastPerformedData] Loading last performed data")
+        AppLogger.info("[LoggingViewModel.loadLastPerformedData] Loading last performed data", category: "LoggingViewModel")
         
         guard selectedDay != nil else {
-            print("❌ [LoggingViewModel.loadLastPerformedData] No day selected")
+            AppLogger.error("[LoggingViewModel.loadLastPerformedData] No day selected", category: "LoggingViewModel")
             return
         }
         
         // This method would populate exercises with last performed values
         // Implementation would depend on your specific data access patterns
-        print("✅ [LoggingViewModel.loadLastPerformedData] Last performed data loaded")
+        AppLogger.info("[LoggingViewModel.loadLastPerformedData] Last performed data loaded", category: "LoggingViewModel")
     }
     
     // MARK: - Private Methods
     private func selectPlan(_ planID: UUID) {
-        print("🔄 [LoggingViewModel.selectPlan] Selecting plan: \(planID)")
+        AppLogger.info("[LoggingViewModel.selectPlan] Selecting plan: \(planID)", category: "LoggingViewModel")
         
         do {
             let fetchDescriptor = FetchDescriptor<WorkoutPlan>(
@@ -270,18 +270,18 @@ class LoggingViewModel: ObservableObject {
             let plans = try modelContext.fetch(fetchDescriptor)
             
             guard let plan = plans.first else {
-                print("❌ [LoggingViewModel.selectPlan] Plan not found")
+                AppLogger.error("[LoggingViewModel.selectPlan] Plan not found", category: "LoggingViewModel")
                 error = LoggingError.custom("Plan not found")
                 return
             }
             
             activePlan = plan
-            print("✅ [LoggingViewModel.selectPlan] Plan selected: \(plan.customName)")
-            print("📊 [LoggingViewModel] Active plan changed to: \(plan.customName)")
+            AppLogger.info("[LoggingViewModel.selectPlan] Plan selected: \(plan.customName)", category: "LoggingViewModel")
+            AppLogger.debug("[LoggingViewModel] Active plan changed to: \(plan.customName)", category: "LoggingViewModel")
             
             // Update available days from the selected plan's template
             availableDays = plan.template?.dayTemplates.sorted(by: { $0.weekday.rawValue < $1.weekday.rawValue }) ?? []
-            print("📊 [LoggingViewModel.selectPlan] Loaded \(availableDays.count) days for plan")
+            AppLogger.debug("[LoggingViewModel.selectPlan] Loaded \(availableDays.count) days for plan", category: "LoggingViewModel")
             
             // Auto-select current day if no day is currently selected
             if selectedDay == nil {
@@ -294,17 +294,17 @@ class LoggingViewModel: ObservableObject {
             }
             
         } catch {
-            print("❌ [LoggingViewModel.selectPlan] Error: \(error.localizedDescription)")
+            AppLogger.error("[LoggingViewModel.selectPlan] Error: \(error.localizedDescription)", category: "LoggingViewModel")
             self.error = error
         }
     }
     
     private func selectDay(_ weekday: Weekday) {
-        print("🔄 [LoggingViewModel.selectDay] Selecting day: \(weekday)")
+        AppLogger.info("[LoggingViewModel.selectDay] Selecting day: \(weekday)", category: "LoggingViewModel")
         
         guard let activePlan = activePlan,
               let template = activePlan.template else {
-            print("❌ [LoggingViewModel.selectDay] No active plan or template")
+            AppLogger.error("[LoggingViewModel.selectDay] No active plan or template", category: "LoggingViewModel")
             error = LoggingError.noPlanSelected
             return
         }
@@ -314,18 +314,18 @@ class LoggingViewModel: ObservableObject {
         selectedDay = dayTemplate
         isRestDay = dayTemplate?.isRest ?? false
         
-        print("📊 [LoggingViewModel] Selected day: \(weekday), isRestDay: \(isRestDay)")
+        AppLogger.debug("[LoggingViewModel] Selected day: \(weekday), isRestDay: \(isRestDay)", category: "LoggingViewModel")
         if let dayTemplate = dayTemplate {
-            print("🏃‍♂️ [LoggingViewModel.selectDay] Day template has \(dayTemplate.exerciseTemplates.count) exercises")
+            AppLogger.debug("[LoggingViewModel.selectDay] Day template has \(dayTemplate.exerciseTemplates.count) exercises", category: "LoggingViewModel")
             for template in dayTemplate.exerciseTemplates {
-                print("  - Exercise: \(template.exercise.name)")
+                AppLogger.debug("  - Exercise: \(template.exercise.name)", category: "LoggingViewModel")
             }
         } else {
-            print("❌ [LoggingViewModel.selectDay] No day template found for \(weekday)")
+            AppLogger.error("[LoggingViewModel.selectDay] No day template found for \(weekday)", category: "LoggingViewModel")
         }
         
         if isRestDay {
-            print("🏃‍♂️ [LoggingViewModel.selectDay] Rest day selected")
+            AppLogger.debug("[LoggingViewModel.selectDay] Rest day selected", category: "LoggingViewModel")
             // Clear any existing session and exercises for rest days
             session = nil
             exercises = []
@@ -335,11 +335,11 @@ class LoggingViewModel: ObservableObject {
     }
     
     private func createOrResumeSession() {
-        print("🔄 [LoggingViewModel.createOrResumeSession] Starting session creation/resume")
+        AppLogger.info("[LoggingViewModel.createOrResumeSession] Starting session creation/resume", category: "LoggingViewModel")
         
         guard let activePlan = activePlan,
               let selectedDay = selectedDay else {
-            print("❌ [LoggingViewModel.createOrResumeSession] Missing plan or day")
+            AppLogger.error("[LoggingViewModel.createOrResumeSession] Missing plan or day", category: "LoggingViewModel")
             return
         }
         
@@ -369,28 +369,28 @@ class LoggingViewModel: ObservableObject {
                 session.title.contains(selectedDay.weekday.fullName) || session.title.contains(selectedDay.weekday.abbreviation)
             }
             
-            print("🔍 [LoggingViewModel.createOrResumeSession] Found \(daySpecificSessions.count) sessions for current plan and day")
+            AppLogger.debug("[LoggingViewModel.createOrResumeSession] Found \(daySpecificSessions.count) sessions for current plan and day", category: "LoggingViewModel")
             
             if let existingSession = daySpecificSessions.first {
                 // Check if this session was already completed (has duration set)
                 if existingSession.duration != nil && existingSession.duration! > 0 {
-                    print("🔄 [LoggingViewModel.createOrResumeSession] Found completed session from same plan, creating fresh session instead")
+                    AppLogger.info("[LoggingViewModel.createOrResumeSession] Found completed session from same plan, creating fresh session instead", category: "LoggingViewModel")
                     createFreshSessionForSameDay(existingSession: existingSession)
                     return
                 }
                 
-                print("✅ [LoggingViewModel.createOrResumeSession] Resuming existing session for \(selectedDay.weekday)")
-                print("🔍 [LoggingViewModel.createOrResumeSession] Existing session has \(existingSession.sessionExercises.count) exercises")
+                AppLogger.info("[LoggingViewModel.createOrResumeSession] Resuming existing session for \(selectedDay.weekday)", category: "LoggingViewModel")
+                AppLogger.debug("[LoggingViewModel.createOrResumeSession] Existing session has \(existingSession.sessionExercises.count) exercises", category: "LoggingViewModel")
                 session = existingSession
                 sessionStartTime = existingSession.createdAt
                 
                 // Ensure session exercises exist for resumed sessions
                 if existingSession.sessionExercises.isEmpty {
-                    print("⚠️ [LoggingViewModel.createOrResumeSession] Resumed session has no exercises, creating them")
+                    AppLogger.debug("[LoggingViewModel.createOrResumeSession] Resumed session has no exercises, creating them", category: "LoggingViewModel")
                     createSessionExercises(for: existingSession, from: selectedDay)
                 }
             } else {
-                print("🔄 [LoggingViewModel.createOrResumeSession] Creating new session")
+                AppLogger.info("[LoggingViewModel.createOrResumeSession] Creating new session", category: "LoggingViewModel")
                 let newSession = WorkoutSession(
                     date: today,
                     title: "\(selectedDay.weekday.fullName) - \(activePlan.customName)",
@@ -401,8 +401,8 @@ class LoggingViewModel: ObservableObject {
                 session = newSession
                 sessionStartTime = Date()
                 
-                print("🔍 [LoggingViewModel.createOrResumeSession] New session created with ID: \(newSession.id)")
-                print("🔍 [LoggingViewModel.createOrResumeSession] Session title: '\(newSession.title)'")
+                AppLogger.debug("[LoggingViewModel.createOrResumeSession] New session created with ID: \(newSession.id)", category: "LoggingViewModel")
+                AppLogger.debug("[LoggingViewModel.createOrResumeSession] Session title: '\(newSession.title)'", category: "LoggingViewModel")
                 
                 // Create session exercises from day template
                 createSessionExercises(for: newSession, from: selectedDay)
@@ -410,33 +410,33 @@ class LoggingViewModel: ObservableObject {
                 // Save immediately to ensure the session persists
                 do {
                     try modelContext.save()
-                    print("✅ [LoggingViewModel.createOrResumeSession] New session saved successfully")
+                    AppLogger.info("[LoggingViewModel.createOrResumeSession] New session saved successfully", category: "LoggingViewModel")
                 } catch {
-                    print("❌ [LoggingViewModel.createOrResumeSession] Failed to save new session: \(error.localizedDescription)")
+                    AppLogger.error("[LoggingViewModel.createOrResumeSession] Failed to save new session", category: "LoggingViewModel", error: error)
                 }
             }
             
             updateExercisesUI()
-            print("✅ [LoggingViewModel.createOrResumeSession] Session ready")
+            AppLogger.info("[LoggingViewModel.createOrResumeSession] Session ready", category: "LoggingViewModel")
             
         } catch {
-            print("❌ [LoggingViewModel.createOrResumeSession] Error: \(error.localizedDescription)")
+            AppLogger.error("[LoggingViewModel.createOrResumeSession] Error", category: "LoggingViewModel", error: error)
             self.error = error
         }
     }
     
     private func createFreshSession() {
-        print("🔄 [LoggingViewModel.createFreshSession] Creating fresh session (no resume)")
+        AppLogger.info("[LoggingViewModel.createFreshSession] Creating fresh session (no resume)", category: "LoggingViewModel")
         
         guard let activePlan = activePlan,
               let selectedDay = selectedDay else {
-            print("❌ [LoggingViewModel.createFreshSession] Missing plan or day")
+            AppLogger.error("[LoggingViewModel.createFreshSession] Missing plan or day", category: "LoggingViewModel")
             return
         }
         
         let today = Date()
         
-        print("🔄 [LoggingViewModel.createFreshSession] Creating new session")
+        AppLogger.info("[LoggingViewModel.createFreshSession] Creating new session", category: "LoggingViewModel")
         let newSession = WorkoutSession(
             date: today,
             title: "\(selectedDay.weekday.fullName) - \(activePlan.customName)",
@@ -451,21 +451,21 @@ class LoggingViewModel: ObservableObject {
         createSessionExercises(for: newSession, from: selectedDay)
         
         updateExercisesUI()
-        print("✅ [LoggingViewModel.createFreshSession] Fresh session ready")
+        AppLogger.info("[LoggingViewModel.createFreshSession] Fresh session ready", category: "LoggingViewModel")
     }
     
     private func createFreshSessionForSameDay(existingSession: WorkoutSession) {
-        print("🔄 [LoggingViewModel.createFreshSessionForSameDay] Creating fresh session to replace completed one")
+        AppLogger.info("[LoggingViewModel.createFreshSessionForSameDay] Creating fresh session to replace completed one", category: "LoggingViewModel")
         
         guard let activePlan = activePlan,
               let selectedDay = selectedDay else {
-            print("❌ [LoggingViewModel.createFreshSessionForSameDay] Missing plan or day")
+            AppLogger.error("[LoggingViewModel.createFreshSessionForSameDay] Missing plan or day", category: "LoggingViewModel")
             return
         }
         
         // Delete the existing completed session since we're starting fresh
         // (This session is guaranteed to be from the same plan due to our filtering)
-        print("🔄 [LoggingViewModel.createFreshSessionForSameDay] Deleting existing session from same plan")
+        AppLogger.info("[LoggingViewModel.createFreshSessionForSameDay] Deleting existing session from same plan", category: "LoggingViewModel")
         modelContext.delete(existingSession)
         
         let today = Date()
@@ -485,17 +485,17 @@ class LoggingViewModel: ObservableObject {
         // Save immediately
         do {
             try modelContext.save()
-            print("✅ [LoggingViewModel.createFreshSessionForSameDay] Fresh session created and saved")
+            AppLogger.info("[LoggingViewModel.createFreshSessionForSameDay] Fresh session created and saved", category: "LoggingViewModel")
         } catch {
-            print("❌ [LoggingViewModel.createFreshSessionForSameDay] Failed to save: \(error.localizedDescription)")
+            AppLogger.error("[LoggingViewModel.createFreshSessionForSameDay] Failed to save", category: "LoggingViewModel", error: error)
         }
         
         updateExercisesUI()
-        print("✅ [LoggingViewModel.createFreshSessionForSameDay] Fresh session ready")
+        AppLogger.info("[LoggingViewModel.createFreshSessionForSameDay] Fresh session ready", category: "LoggingViewModel")
     }
     
     private func createSessionExercises(for session: WorkoutSession, from dayTemplate: DayTemplate) {
-        print("🔄 [LoggingViewModel.createSessionExercises] Creating exercises for session")
+        AppLogger.info("[LoggingViewModel.createSessionExercises] Creating exercises for session", category: "LoggingViewModel")
         
         for exerciseTemplate in dayTemplate.exerciseTemplates.sorted(by: { $0.position < $1.position }) {
             let sessionExercise = SessionExercise(
@@ -525,13 +525,13 @@ class LoggingViewModel: ObservableObject {
                 )
                 modelContext.insert(plannedSet)
                 sessionExercise.completedSets.append(plannedSet)
-                print("🏃‍♂️ [LoggingViewModel.createSessionExercises] Created planned set \(setIndex + 1) for \(exerciseTemplate.exercise.name)")
+                AppLogger.debug("[LoggingViewModel.createSessionExercises] Created planned set \(setIndex + 1) for \(exerciseTemplate.exercise.name)", category: "LoggingViewModel")
             }
             
-            print("🏃‍♂️ [LoggingViewModel.createSessionExercises] Added exercise: \(exerciseTemplate.exercise.name) with \(exerciseTemplate.setCount) planned sets")
+            AppLogger.debug("[LoggingViewModel.createSessionExercises] Added exercise: \(exerciseTemplate.exercise.name) with \(exerciseTemplate.setCount) planned sets", category: "LoggingViewModel")
         }
         
-        print("✅ [LoggingViewModel.createSessionExercises] Created \(dayTemplate.exerciseTemplates.count) session exercises")
+        AppLogger.info("[LoggingViewModel.createSessionExercises] Created \(dayTemplate.exerciseTemplates.count) session exercises", category: "LoggingViewModel")
     }
     
     private func updateExercisesUI() {
@@ -544,15 +544,15 @@ class LoggingViewModel: ObservableObject {
             .sorted(by: { $0.position < $1.position })
             .map { SessionExerciseUI(from: $0) }
         
-        print("📊 [LoggingViewModel.updateExercisesUI] Updated UI with \(exercises.count) exercises")
+        AppLogger.debug("[LoggingViewModel.updateExercisesUI] Updated UI with \(exercises.count) exercises", category: "LoggingViewModel")
     }
     
     private func editSet(exerciseID: UUID, setIndex: Int, reps: Int, weight: Double) {
-        print("🔄 [LoggingViewModel.editSet] Editing set for exercise: \(exerciseID)")
+        AppLogger.info("[LoggingViewModel.editSet] Editing set for exercise: \(exerciseID)", category: "LoggingViewModel")
         
         guard let session = session,
               let sessionExercise = session.sessionExercises.first(where: { $0.id == exerciseID }) else {
-            print("❌ [LoggingViewModel.editSet] Exercise not found")
+            AppLogger.error("[LoggingViewModel.editSet] Exercise not found", category: "LoggingViewModel")
             error = LoggingError.exerciseNotFound
             return
         }
@@ -575,7 +575,7 @@ class LoggingViewModel: ObservableObject {
         }
         
         guard setIndex < orderedSets.count else {
-            print("❌ [LoggingViewModel.editSet] Invalid set index")
+            AppLogger.error("[LoggingViewModel.editSet] Invalid set index", category: "LoggingViewModel")
             error = LoggingError.invalidSetIndex
             return
         }
@@ -593,19 +593,19 @@ class LoggingViewModel: ObservableObject {
         
         do {
             try modelContext.save()
-            print("✅ [LoggingViewModel.editSet] Set updated successfully")
+            AppLogger.info("[LoggingViewModel.editSet] Set updated successfully", category: "LoggingViewModel")
         } catch {
-            print("❌ [LoggingViewModel.editSet] Save error: \(error.localizedDescription)")
+            AppLogger.error("[LoggingViewModel.editSet] Save error", category: "LoggingViewModel", error: error)
             self.error = error
         }
     }
     
     private func addSet(exerciseID: UUID) {
-        print("🔄 [LoggingViewModel.addSet] Adding set for exercise: \(exerciseID)")
+        AppLogger.info("[LoggingViewModel.addSet] Adding set for exercise: \(exerciseID)", category: "LoggingViewModel")
         
         guard let session = session,
               let sessionExercise = session.sessionExercises.first(where: { $0.id == exerciseID }) else {
-            print("❌ [LoggingViewModel.addSet] Exercise not found")
+            AppLogger.error("[LoggingViewModel.addSet] Exercise not found", category: "LoggingViewModel")
             error = LoggingError.exerciseNotFound
             return
         }
@@ -626,26 +626,26 @@ class LoggingViewModel: ObservableObject {
         
         do {
             try modelContext.save()
-            print("✅ [LoggingViewModel.addSet] Set added successfully")
+            AppLogger.info("[LoggingViewModel.addSet] Set added successfully", category: "LoggingViewModel")
         } catch {
-            print("❌ [LoggingViewModel.addSet] Save error: \(error.localizedDescription)")
+            AppLogger.error("[LoggingViewModel.addSet] Save error", category: "LoggingViewModel", error: error)
             self.error = error
         }
     }
     
     private func toggleSetCompletion(exerciseID: UUID, setIndex: Int) {
-        print("🔄 [LoggingViewModel.toggleSetCompletion] Toggling completion for set \(setIndex) of exercise: \(exerciseID)")
+        AppLogger.info("[LoggingViewModel.toggleSetCompletion] Toggling completion for set \(setIndex) of exercise: \(exerciseID)", category: "LoggingViewModel")
         
         guard let session = session,
               let sessionExercise = session.sessionExercises.first(where: { $0.id == exerciseID }) else {
-            print("❌ [LoggingViewModel.toggleSetCompletion] Exercise not found")
+            AppLogger.error("[LoggingViewModel.toggleSetCompletion] Exercise not found", category: "LoggingViewModel")
             error = LoggingError.exerciseNotFound
             return
         }
         
         let orderedSets = sessionExercise.completedSets.sorted(by: { $0.position < $1.position })
         guard setIndex < orderedSets.count else {
-            print("❌ [LoggingViewModel.toggleSetCompletion] Invalid set index")
+            AppLogger.error("[LoggingViewModel.toggleSetCompletion] Invalid set index", category: "LoggingViewModel")
             error = LoggingError.invalidSetIndex
             return
         }
@@ -653,18 +653,18 @@ class LoggingViewModel: ObservableObject {
         let completedSet = orderedSets[setIndex]
         completedSet.isCompleted.toggle()
         
-        print("✅ [LoggingViewModel.toggleSetCompletion] Set \(setIndex + 1) completion toggled to: \(completedSet.isCompleted)")
+        AppLogger.info("[LoggingViewModel.toggleSetCompletion] Set \(setIndex + 1) completion toggled to: \(completedSet.isCompleted)", category: "LoggingViewModel")
         
         // Check if all sets are now completed and auto-complete the exercise
         let completedSetsCount = sessionExercise.completedSets.filter { $0.isCompleted }.count
         let totalSetsCount = sessionExercise.completedSets.count
         
         if completedSetsCount == totalSetsCount && !sessionExercise.isCompleted {
-            print("🎉 [LoggingViewModel.toggleSetCompletion] All sets completed - auto-completing exercise")
+            AppLogger.info("[LoggingViewModel.toggleSetCompletion] All sets completed - auto-completing exercise", category: "LoggingViewModel")
             sessionExercise.isCompleted = true
             sessionExercise.updateExerciseCacheOnCompletion()
         } else if completedSetsCount < totalSetsCount && sessionExercise.isCompleted {
-            print("⚠️ [LoggingViewModel.toggleSetCompletion] Not all sets completed - marking exercise as incomplete")
+            AppLogger.debug("[LoggingViewModel.toggleSetCompletion] Not all sets completed - marking exercise as incomplete", category: "LoggingViewModel")
             sessionExercise.isCompleted = false
         }
         
@@ -672,19 +672,19 @@ class LoggingViewModel: ObservableObject {
         
         do {
             try modelContext.save()
-            print("✅ [LoggingViewModel.toggleSetCompletion] Set completion status saved")
+            AppLogger.info("[LoggingViewModel.toggleSetCompletion] Set completion status saved", category: "LoggingViewModel")
         } catch {
-            print("❌ [LoggingViewModel.toggleSetCompletion] Save error: \(error.localizedDescription)")
+            AppLogger.error("[LoggingViewModel.toggleSetCompletion] Save error", category: "LoggingViewModel", error: error)
             self.error = error
         }
     }
     
     private func startRest(exerciseID: UUID, seconds: TimeInterval) {
-        print("🔄 [LoggingViewModel.startRest] Starting rest timer: \(seconds)s for exercise: \(exerciseID)")
+        AppLogger.info("[LoggingViewModel.startRest] Starting rest timer: \(seconds)s for exercise: \(exerciseID)", category: "LoggingViewModel")
         
         guard let session = session,
               let sessionExercise = session.sessionExercises.first(where: { $0.id == exerciseID }) else {
-            print("❌ [LoggingViewModel.startRest] Exercise not found")
+            AppLogger.error("[LoggingViewModel.startRest] Exercise not found", category: "LoggingViewModel")
             error = LoggingError.exerciseNotFound
             return
         }
@@ -702,15 +702,15 @@ class LoggingViewModel: ObservableObject {
             }
         }
         
-        print("🏃‍♂️ [LoggingViewModel.startRest] Rest timer started")
+        AppLogger.debug("[LoggingViewModel.startRest] Rest timer started", category: "LoggingViewModel")
     }
     
     private func cancelRest(exerciseID: UUID) {
-        print("🔄 [LoggingViewModel.cancelRest] Cancelling rest timer for exercise: \(exerciseID)")
+        AppLogger.info("[LoggingViewModel.cancelRest] Cancelling rest timer for exercise: \(exerciseID)", category: "LoggingViewModel")
         
         guard let session = session,
               let sessionExercise = session.sessionExercises.first(where: { $0.id == exerciseID }) else {
-            print("❌ [LoggingViewModel.cancelRest] Exercise not found")
+            AppLogger.error("[LoggingViewModel.cancelRest] Exercise not found", category: "LoggingViewModel")
             error = LoggingError.exerciseNotFound
             return
         }
@@ -723,7 +723,7 @@ class LoggingViewModel: ObservableObject {
         
         updateExercisesUI()
         
-        print("✅ [LoggingViewModel.cancelRest] Rest timer cancelled successfully")
+        AppLogger.info("[LoggingViewModel.cancelRest] Rest timer cancelled successfully", category: "LoggingViewModel")
     }
     
     private func tickTimer(exerciseID: UUID) {
@@ -738,7 +738,7 @@ class LoggingViewModel: ObservableObject {
         updateExercisesUI()
         
         if sessionExercise.restTimer! <= 0 {
-            print("✅ [LoggingViewModel.tickTimer] Rest timer completed")
+            AppLogger.info("[LoggingViewModel.tickTimer] Rest timer completed", category: "LoggingViewModel")
             restTimer?.invalidate()
             sessionExercise.restTimer = nil
             showTimerSheet = false
@@ -752,11 +752,11 @@ class LoggingViewModel: ObservableObject {
     }
     
     private func markExerciseComplete(exerciseID: UUID) {
-        print("🔄 [LoggingViewModel.markExerciseComplete] Marking exercise complete: \(exerciseID)")
+        AppLogger.info("[LoggingViewModel.markExerciseComplete] Marking exercise complete: \(exerciseID)", category: "LoggingViewModel")
         
         guard let session = session,
               let sessionExercise = session.sessionExercises.first(where: { $0.id == exerciseID }) else {
-            print("❌ [LoggingViewModel.markExerciseComplete] Exercise not found")
+            AppLogger.error("[LoggingViewModel.markExerciseComplete] Exercise not found", category: "LoggingViewModel")
             error = LoggingError.exerciseNotFound
             return
         }
@@ -764,7 +764,7 @@ class LoggingViewModel: ObservableObject {
         let totalSetsCount = sessionExercise.completedSets.count
         
         if totalSetsCount == 0 {
-            print("❌ [LoggingViewModel.markExerciseComplete] Cannot mark complete - no sets available")
+            AppLogger.error("[LoggingViewModel.markExerciseComplete] Cannot mark complete - no sets available", category: "LoggingViewModel")
             error = LoggingError.custom("This exercise has no sets. Please add at least one set before marking it as complete.")
             return
         }
@@ -784,25 +784,25 @@ class LoggingViewModel: ObservableObject {
         
         do {
             try modelContext.save()
-            print("✅ [LoggingViewModel.markExerciseComplete] Exercise marked complete with all \(totalSetsCount) sets completed")
-            print("📊 [LoggingViewModel] Exercise completion status updated")
+            AppLogger.info("[LoggingViewModel.markExerciseComplete] Exercise marked complete with all \(totalSetsCount) sets completed", category: "LoggingViewModel")
+            AppLogger.debug("[LoggingViewModel] Exercise completion status updated", category: "LoggingViewModel")
         } catch {
-            print("❌ [LoggingViewModel.markExerciseComplete] Save error: \(error.localizedDescription)")
+            AppLogger.error("[LoggingViewModel.markExerciseComplete] Save error", category: "LoggingViewModel", error: error)
             self.error = error
         }
     }
     
     private func finishSession() {
-        print("🔄 [LoggingViewModel.finishSession] Finishing session")
+        AppLogger.info("[LoggingViewModel.finishSession] Finishing session", category: "LoggingViewModel")
         
         guard let session = session else {
-            print("❌ [LoggingViewModel.finishSession] No session to finish")
+            AppLogger.error("[LoggingViewModel.finishSession] No session to finish", category: "LoggingViewModel")
             error = LoggingError.sessionNotFound
             return
         }
         
         guard canFinishSession else {
-            print("❌ [LoggingViewModel.finishSession] Session cannot be finished - not all exercises complete")
+            AppLogger.error("[LoggingViewModel.finishSession] Session cannot be finished - not all exercises complete", category: "LoggingViewModel")
             error = LoggingError.custom("Please complete all exercises before finishing the session")
             return
         }
@@ -828,19 +828,19 @@ class LoggingViewModel: ObservableObject {
         
         do {
             try modelContext.save()
-            print("✅ [LoggingViewModel.finishSession] Session completed successfully")
-            print("📊 [LoggingViewModel] Session duration: \(session.duration ?? 0) seconds")
-            print("🏃‍♂️ [LoggingViewModel.finishSession] Total volume: \(totalVolume) lbs")
+            AppLogger.info("[LoggingViewModel.finishSession] Session completed successfully", category: "LoggingViewModel")
+            AppLogger.debug("[LoggingViewModel] Session duration: \(session.duration ?? 0) seconds", category: "LoggingViewModel")
+            AppLogger.debug("[LoggingViewModel.finishSession] Total volume: \(totalVolume) lbs", category: "LoggingViewModel")
             
             // Reset state for next session - DON'T create a fresh session automatically
             self.session = nil
             self.exercises = []
             self.sessionStartTime = nil
             
-            print("✅ [LoggingViewModel.finishSession] Session state reset - ready for next workout")
+            AppLogger.info("[LoggingViewModel.finishSession] Session state reset - ready for next workout", category: "LoggingViewModel")
             
         } catch {
-            print("❌ [LoggingViewModel.finishSession] Save error: \(error.localizedDescription)")
+            AppLogger.error("[LoggingViewModel.finishSession] Save error", category: "LoggingViewModel", error: error)
             self.error = error
         }
     }
@@ -848,6 +848,6 @@ class LoggingViewModel: ObservableObject {
     // MARK: - Cleanup
     deinit {
         restTimer?.invalidate()
-        print("🔄 [LoggingViewModel.deinit] Cleaned up resources")
+        AppLogger.info("[LoggingViewModel.deinit] Cleaned up resources", category: "LoggingViewModel")
     }
 } 

@@ -1,6 +1,8 @@
 import Foundation
+import OSLog
 import SwiftData
 import Combine
+import OSLog
 
 @MainActor
 class LibraryViewModel: ObservableObject {
@@ -49,7 +51,7 @@ class LibraryViewModel: ObservableObject {
             )
             return try modelContext.fetch(descriptor)
         } catch {
-            print("❌ [LibraryViewModel.workoutPlans] Error: \(error.localizedDescription)")
+            AppLogger.error("[LibraryViewModel.workoutPlans] Error: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
             return []
         }
     }
@@ -60,7 +62,7 @@ class LibraryViewModel: ObservableObject {
     
     // MARK: - Public Methods for View Access
     func deleteExerciseTemplate(_ exerciseTemplate: ExerciseTemplate) {
-        print("🔄 [LibraryViewModel.deleteExerciseTemplate] Deleting exercise template for \(exerciseTemplate.exercise.name)")
+        AppLogger.debug("[LibraryViewModel.deleteExerciseTemplate] Deleting exercise template for \(exerciseTemplate.exercise.name)", category: "LibraryViewModel")
         
         // Remove from day template
         exerciseTemplate.dayTemplate?.exerciseTemplates.removeAll { $0.id == exerciseTemplate.id }
@@ -70,15 +72,15 @@ class LibraryViewModel: ObservableObject {
         
         do {
             try modelContext.save()
-            print("✅ [LibraryViewModel.deleteExerciseTemplate] Successfully deleted exercise template")
+            AppLogger.info("[LibraryViewModel.deleteExerciseTemplate] Successfully deleted exercise template", category: "LibraryViewModel")
         } catch {
-            print("❌ [LibraryViewModel.deleteExerciseTemplate] Error: \(error.localizedDescription)")
+            AppLogger.error("[LibraryViewModel.deleteExerciseTemplate] Error: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
             self.error = error
         }
     }
     
     func reorderExerciseTemplates(in dayTemplate: DayTemplate, from source: IndexSet, to destination: Int) {
-        print("🔄 [LibraryViewModel.reorderExerciseTemplates] Reordering exercises in \(dayTemplate.weekday)")
+        AppLogger.debug("[LibraryViewModel.reorderExerciseTemplates] Reordering exercises in \(dayTemplate.weekday)", category: "LibraryViewModel")
         
         let sortedExercises = dayTemplate.exerciseTemplates.sorted(by: { $0.position < $1.position })
         var reorderedExercises = sortedExercises
@@ -91,9 +93,9 @@ class LibraryViewModel: ObservableObject {
         
         do {
             try modelContext.save()
-            print("✅ [LibraryViewModel.reorderExerciseTemplates] Successfully reordered exercises")
+            AppLogger.info("[LibraryViewModel.reorderExerciseTemplates] Successfully reordered exercises", category: "LibraryViewModel")
         } catch {
-            print("❌ [LibraryViewModel.reorderExerciseTemplates] Error: \(error.localizedDescription)")
+            AppLogger.error("[LibraryViewModel.reorderExerciseTemplates] Error: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
             self.error = error
         }
     }
@@ -101,13 +103,13 @@ class LibraryViewModel: ObservableObject {
     // MARK: - Initialization
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
-        print("🔄 [LibraryViewModel.init] Initialized with ModelContext")
+        AppLogger.debug("[LibraryViewModel.init] Initialized with ModelContext", category: "LibraryViewModel")
         loadData()
     }
     
     // MARK: - Intent Handling
     func handleIntent(_ intent: LibraryIntent) {
-        print("🔄 [LibraryViewModel.handleIntent] Processing intent: \(intent)")
+        AppLogger.debug("[LibraryViewModel.handleIntent] Processing intent: \(intent)", category: "LibraryViewModel")
         
         switch intent {
         case .loadData:
@@ -147,7 +149,7 @@ class LibraryViewModel: ObservableObject {
     
     // MARK: - Data Loading
     private func loadData() {
-        print("🔄 [LibraryViewModel.loadData] Starting data load")
+        AppLogger.debug("[LibraryViewModel.loadData] Starting data load", category: "LibraryViewModel")
         state = .loading
         
         do {
@@ -155,12 +157,12 @@ class LibraryViewModel: ObservableObject {
             try loadExercises()
             try loadActivePlan()
             
-            print("✅ [LibraryViewModel.loadData] Successfully loaded all data")
-            print("📊 [LibraryViewModel] State changed to: loaded")
+            AppLogger.info("[LibraryViewModel.loadData] Successfully loaded all data", category: "LibraryViewModel")
+            AppLogger.debug("[LibraryViewModel] State changed to: loaded", category: "LibraryViewModel")
             state = .loaded
         } catch {
-            print("❌ [LibraryViewModel.loadData] Error: \(error.localizedDescription)")
-            print("📊 [LibraryViewModel] State changed to: error")
+            AppLogger.error("[LibraryViewModel.loadData] Error: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
+            AppLogger.debug("[LibraryViewModel] State changed to: error", category: "LibraryViewModel")
             self.error = error
             state = .error
         }
@@ -173,9 +175,9 @@ class LibraryViewModel: ObservableObject {
         
         do {
             templates = try modelContext.fetch(descriptor)
-            print("📊 [LibraryViewModel.loadTemplates] Loaded \(templates.count) templates")
+            AppLogger.debug("[LibraryViewModel.loadTemplates] Loaded \(templates.count) templates", category: "LibraryViewModel")
         } catch {
-            print("❌ [LibraryViewModel.loadTemplates] Error: \(error.localizedDescription)")
+            AppLogger.error("[LibraryViewModel.loadTemplates] Error: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
             templates = []
             throw error
         }
@@ -188,9 +190,9 @@ class LibraryViewModel: ObservableObject {
         
         do {
             exerciseCatalog = try modelContext.fetch(descriptor)
-            print("📊 [LibraryViewModel.loadExercises] Loaded \(exerciseCatalog.count) exercises")
+            AppLogger.debug("[LibraryViewModel.loadExercises] Loaded \(exerciseCatalog.count) exercises", category: "LibraryViewModel")
         } catch {
-            print("❌ [LibraryViewModel.loadExercises] Error: \(error.localizedDescription)")
+            AppLogger.error("[LibraryViewModel.loadExercises] Error: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
             exerciseCatalog = []
             throw error
         }
@@ -208,12 +210,12 @@ class LibraryViewModel: ObservableObject {
             activePlanID = activePlans.first?.id
             
             if let activePlanID = activePlanID {
-                print("📊 [LibraryViewModel.loadActivePlan] Found active plan: \(activePlanID)")
+                AppLogger.debug("[LibraryViewModel.loadActivePlan] Found active plan: \(activePlanID)", category: "LibraryViewModel")
             } else {
-                print("📊 [LibraryViewModel.loadActivePlan] No active plan found")
+                AppLogger.debug("[LibraryViewModel.loadActivePlan] No active plan found", category: "LibraryViewModel")
             }
         } catch {
-            print("❌ [LibraryViewModel.loadActivePlan] Error: \(error.localizedDescription)")
+            AppLogger.error("[LibraryViewModel.loadActivePlan] Error: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
             activePlanID = nil
             throw error
         }
@@ -221,7 +223,7 @@ class LibraryViewModel: ObservableObject {
     
     // MARK: - Template Operations
     private func createTemplate(name: String, summary: String) {
-        print("🔄 [LibraryViewModel.createTemplate] Creating template: \(name)")
+        AppLogger.debug("[LibraryViewModel.createTemplate] Creating template: \(name)", category: "LibraryViewModel")
         
         do {
             let template = try WorkoutTemplate.createAndSave(
@@ -231,22 +233,22 @@ class LibraryViewModel: ObservableObject {
             )
             
             templates.insert(template, at: 0) // Add to beginning for newest-first display
-            print("✅ [LibraryViewModel.createTemplate] Successfully created template: \(name)")
+            AppLogger.info("[LibraryViewModel.createTemplate] Successfully created template: \(name)", category: "LibraryViewModel")
             
             // Auto-show template sheet for editing
             showTemplateSheet = true
             
         } catch {
-            print("❌ [LibraryViewModel.createTemplate] Error: \(error.localizedDescription)")
+            AppLogger.error("[LibraryViewModel.createTemplate] Error: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
             self.error = error
         }
     }
     
     private func duplicateTemplate(id: UUID) {
-        print("🔄 [LibraryViewModel.duplicateTemplate] Duplicating template: \(id)")
+        AppLogger.debug("[LibraryViewModel.duplicateTemplate] Duplicating template: \(id)", category: "LibraryViewModel")
         
         guard let originalTemplate = templates.first(where: { $0.id == id }) else {
-            print("❌ [LibraryViewModel.duplicateTemplate] Template not found: \(id)")
+            AppLogger.error("[LibraryViewModel.duplicateTemplate] Template not found: \(id)", category: "LibraryViewModel")
             error = LibraryError.templateNotFound
             return
         }
@@ -296,26 +298,26 @@ class LibraryViewModel: ObservableObject {
             try duplicatedTemplate.validateAndSave(in: modelContext)
             templates.insert(duplicatedTemplate, at: 0)
             
-            print("✅ [LibraryViewModel.duplicateTemplate] Successfully duplicated template: \(uniqueName)")
+            AppLogger.info("[LibraryViewModel.duplicateTemplate] Successfully duplicated template: \(uniqueName)", category: "LibraryViewModel")
             
         } catch {
-            print("❌ [LibraryViewModel.duplicateTemplate] Error: \(error.localizedDescription)")
+            AppLogger.error("[LibraryViewModel.duplicateTemplate] Error: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
             self.error = error
         }
     }
     
     private func deleteTemplate(id: UUID) {
-        print("🔄 [LibraryViewModel.deleteTemplate] Deleting template: \(id)")
+        AppLogger.debug("[LibraryViewModel.deleteTemplate] Deleting template: \(id)", category: "LibraryViewModel")
         
         guard let template = templates.first(where: { $0.id == id }) else {
-            print("❌ [LibraryViewModel.deleteTemplate] Template not found: \(id)")
+            AppLogger.error("[LibraryViewModel.deleteTemplate] Template not found: \(id)", category: "LibraryViewModel")
             error = LibraryError.templateNotFound
             return
         }
         
         // Check if template is referenced by active plan
         if let activePlan = activePlan, activePlan.template?.id == id {
-            print("❌ [LibraryViewModel.deleteTemplate] Cannot delete template referenced by active plan")
+            AppLogger.error("[LibraryViewModel.deleteTemplate] Cannot delete template referenced by active plan", category: "LibraryViewModel")
             error = LibraryError.templateInUseByActivePlan
             return
         }
@@ -335,21 +337,21 @@ class LibraryViewModel: ObservableObject {
             // Remove from local array
             templates.removeAll { $0.id == id }
             
-            print("✅ [LibraryViewModel.deleteTemplate] Successfully deleted template: \(id)")
+            AppLogger.info("[LibraryViewModel.deleteTemplate] Successfully deleted template: \(id)", category: "LibraryViewModel")
             
         } catch {
-            print("❌ [LibraryViewModel.deleteTemplate] Error: \(error.localizedDescription)")
+            AppLogger.error("[LibraryViewModel.deleteTemplate] Error: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
             self.error = error
         }
     }
     
     // MARK: - Exercise Operations
     private func createExercise(name: String, category: ExerciseCategory, instructions: String, mediaAssetID: String?) {
-        print("🔄 [LibraryViewModel.createExercise] Creating exercise: \(name)")
+        AppLogger.debug("[LibraryViewModel.createExercise] Creating exercise: \(name)", category: "LibraryViewModel")
         
         // Check for duplicate names
         if exerciseCatalog.contains(where: { $0.name.lowercased() == name.lowercased() }) {
-            print("❌ [LibraryViewModel.createExercise] Duplicate exercise name: \(name)")
+            AppLogger.error("[LibraryViewModel.createExercise] Duplicate exercise name: \(name)", category: "LibraryViewModel")
             error = LibraryError.duplicateExerciseName(name)
             return
         }
@@ -368,19 +370,19 @@ class LibraryViewModel: ObservableObject {
             exerciseCatalog.append(exercise)
             exerciseCatalog.sort { $0.name < $1.name }
             
-            print("✅ [LibraryViewModel.createExercise] Successfully created exercise: \(name)")
+            AppLogger.info("[LibraryViewModel.createExercise] Successfully created exercise: \(name)", category: "LibraryViewModel")
             
         } catch {
-            print("❌ [LibraryViewModel.createExercise] Error: \(error.localizedDescription)")
+            AppLogger.error("[LibraryViewModel.createExercise] Error: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
             self.error = error
         }
     }
     
     private func deleteExercise(id: UUID) {
-        print("🔄 [LibraryViewModel.deleteExercise] Deleting exercise: \(id)")
+        AppLogger.debug("[LibraryViewModel.deleteExercise] Deleting exercise: \(id)", category: "LibraryViewModel")
         
         guard let exercise = exerciseCatalog.first(where: { $0.id == id }) else {
-            print("❌ [LibraryViewModel.deleteExercise] Exercise not found: \(id)")
+            AppLogger.error("[LibraryViewModel.deleteExercise] Exercise not found: \(id)", category: "LibraryViewModel")
             error = LibraryError.exerciseNotFound
             return
         }
@@ -392,7 +394,7 @@ class LibraryViewModel: ObservableObject {
             let referencingTemplates = allExerciseTemplates.filter { $0.exercise.id == id }
             
             if !referencingTemplates.isEmpty {
-                print("❌ [LibraryViewModel.deleteExercise] Exercise is referenced by \(referencingTemplates.count) templates")
+                AppLogger.error("[LibraryViewModel.deleteExercise] Exercise is referenced by \(referencingTemplates.count) templates", category: "LibraryViewModel")
                 error = LibraryError.exerciseInUseByTemplates
                 return
             }
@@ -402,20 +404,20 @@ class LibraryViewModel: ObservableObject {
             
             exerciseCatalog.removeAll { $0.id == id }
             
-            print("✅ [LibraryViewModel.deleteExercise] Successfully deleted exercise: \(id)")
+            AppLogger.info("[LibraryViewModel.deleteExercise] Successfully deleted exercise: \(id)", category: "LibraryViewModel")
             
         } catch {
-            print("❌ [LibraryViewModel.deleteExercise] Error: \(error.localizedDescription)")
+            AppLogger.error("[LibraryViewModel.deleteExercise] Error: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
             self.error = error
         }
     }
     
     // MARK: - Plan Operations
     private func activatePlan(templateID: UUID, customName: String, startDate: Date) {
-        print("🔄 [LibraryViewModel.activatePlan] Activating plan from template: \(templateID)")
+        AppLogger.debug("[LibraryViewModel.activatePlan] Activating plan from template: \(templateID)", category: "LibraryViewModel")
         
         guard let template = templates.first(where: { $0.id == templateID }) else {
-            print("❌ [LibraryViewModel.activatePlan] Template not found: \(templateID)")
+            AppLogger.error("[LibraryViewModel.activatePlan] Template not found: \(templateID)", category: "LibraryViewModel")
             error = LibraryError.templateNotFound
             return
         }
@@ -431,13 +433,13 @@ class LibraryViewModel: ObservableObject {
             let activePlans = try modelContext.fetch(activeDescriptor)
             for plan in activePlans {
                 plan.isActive = false
-                print("📊 [LibraryViewModel.activatePlan] Deactivated existing plan: \(plan.customName)")
+                AppLogger.info("[LibraryViewModel.activatePlan] Deactivated existing plan: \(plan.customName)", category: "LibraryViewModel")
             }
             
             // Save deactivation changes first to prevent conflicts
             if !activePlans.isEmpty {
                 try modelContext.save()
-                print("✅ [LibraryViewModel.activatePlan] Saved deactivation changes")
+                AppLogger.info("[LibraryViewModel.activatePlan] Saved deactivation changes", category: "LibraryViewModel")
             }
             
             // Create new active plan with validated data
@@ -460,23 +462,23 @@ class LibraryViewModel: ObservableObject {
             
             activePlanID = newPlan.id
             
-            print("✅ [LibraryViewModel.activatePlan] Successfully activated plan: \(finalName)")
-            print("📊 [LibraryViewModel.activatePlan] Plan ID: \(newPlan.id), Template: \(template.name)")
+            AppLogger.info("[LibraryViewModel.activatePlan] Successfully activated plan: \(finalName)", category: "LibraryViewModel")
+            AppLogger.info("[LibraryViewModel.activatePlan] Plan ID: \(newPlan.id), Template: \(template.name)", category: "LibraryViewModel")
             
         } catch {
-            print("❌ [LibraryViewModel.activatePlan] Error: \(error.localizedDescription)")
-            print("❌ [LibraryViewModel.activatePlan] Template ID: \(templateID), Custom Name: '\(customName)'")
-            print("❌ [LibraryViewModel.activatePlan] Stack trace: \(Thread.callStackSymbols)")
+            AppLogger.error("[LibraryViewModel.activatePlan] Error: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
+            AppLogger.error("[LibraryViewModel.activatePlan] Template ID: \(templateID), Custom Name: '\(customName)'", category: "LibraryViewModel")
+            AppLogger.error("[LibraryViewModel.activatePlan] Stack trace: \(Thread.callStackSymbols)", category: "LibraryViewModel")
             self.error = error
         }
     }
     
     private func deactivatePlan() {
-        print("🔄 [LibraryViewModel.deactivatePlan] Deactivating current plan")
+        AppLogger.debug("[LibraryViewModel.deactivatePlan] Deactivating current plan", category: "LibraryViewModel")
         
         guard let currentActivePlanID = activePlanID,
               let currentPlan = fetchActivePlan(with: currentActivePlanID) else {
-            print("❌ [LibraryViewModel.deactivatePlan] No active plan to deactivate")
+            AppLogger.error("[LibraryViewModel.deactivatePlan] No active plan to deactivate", category: "LibraryViewModel")
             error = LibraryError.noActivePlan
             return
         }
@@ -487,10 +489,10 @@ class LibraryViewModel: ObservableObject {
             
             activePlanID = nil
             
-            print("✅ [LibraryViewModel.deactivatePlan] Successfully deactivated plan: \(currentPlan.customName)")
+            AppLogger.info("[LibraryViewModel.deactivatePlan] Successfully deactivated plan: \(currentPlan.customName)", category: "LibraryViewModel")
             
         } catch {
-            print("❌ [LibraryViewModel.deactivatePlan] Error: \(error.localizedDescription)")
+            AppLogger.error("[LibraryViewModel.deactivatePlan] Error: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
             self.error = error
         }
     }
@@ -506,7 +508,7 @@ class LibraryViewModel: ObservableObject {
         do {
             return try modelContext.fetch(descriptor).first
         } catch {
-            print("❌ [LibraryViewModel.fetchActivePlan] Error: \(error.localizedDescription)")
+            AppLogger.error("[LibraryViewModel.fetchActivePlan] Error: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
             return nil
         }
     }
@@ -525,7 +527,7 @@ class LibraryViewModel: ObservableObject {
     
     // MARK: - JSON Import Methods
     func importExercises(from jsonData: Data) throws {
-        print("🔄 [LibraryViewModel.importExercises] Starting JSON import")
+        AppLogger.debug("[LibraryViewModel.importExercises] Starting JSON import", category: "LibraryViewModel")
         importErrorMessage = nil
         
         do {
@@ -546,62 +548,62 @@ class LibraryViewModel: ObservableObject {
                     exerciseCatalog.append(newExercise)
                     importedCount += 1
                 } else {
-                    print("📊 [LibraryViewModel.importExercises] Skipping duplicate exercise: \(exercise.name)")
+                    AppLogger.info("[LibraryViewModel.importExercises] Skipping duplicate exercise: \(exercise.name)", category: "LibraryViewModel")
                 }
             }
             
             try modelContext.save()
             exerciseCatalog.sort { $0.name < $1.name }
             
-            print("✅ [LibraryViewModel.importExercises] Successfully imported \(importedCount) exercises (skipped \(exercises.count - importedCount) duplicates)")
+            AppLogger.info("[LibraryViewModel.importExercises] Successfully imported \(importedCount) exercises (skipped \(exercises.count - importedCount) duplicates)", category: "LibraryViewModel")
             
         } catch let decodingError as DecodingError {
             let errorMessage = "JSON format error: \(decodingError.localizedDescription)"
-            print("❌ [LibraryViewModel.importExercises] Decoding error: \(errorMessage)")
+            AppLogger.error("[LibraryViewModel.importExercises] Decoding error: \(errorMessage)", category: "LibraryViewModel")
             importErrorMessage = errorMessage
             throw decodingError
         } catch {
             let errorMessage = "Import failed: \(error.localizedDescription)"
-            print("❌ [LibraryViewModel.importExercises] Error: \(errorMessage)")
+            AppLogger.error("[LibraryViewModel.importExercises] Error: \(errorMessage)", category: "LibraryViewModel")
             importErrorMessage = errorMessage
             throw error
         }
     }
     
     func createWorkoutTemplate(name: String) {
-        print("🔄 [LibraryViewModel.createWorkoutTemplate] Creating template: \(name)")
+        AppLogger.debug("[LibraryViewModel.createWorkoutTemplate] Creating template: \(name)", category: "LibraryViewModel")
         handleIntent(.createTemplate(name: name, summary: ""))
     }
     
     func createPlan(from template: WorkoutTemplate) {
-        print("🔄 [LibraryViewModel.createPlan] Creating plan from template: \(template.name)")
+        AppLogger.debug("[LibraryViewModel.createPlan] Creating plan from template: \(template.name)", category: "LibraryViewModel")
         let planName = "\(template.name) Plan"
         handleIntent(.activatePlan(templateID: template.id, customName: planName, startDate: Date()))
     }
     
     func deleteExercise(_ exercise: Exercise) {
-        print("🔄 [LibraryViewModel.deleteExercise] Deleting exercise: \(exercise.name)")
+        AppLogger.debug("[LibraryViewModel.deleteExercise] Deleting exercise: \(exercise.name)", category: "LibraryViewModel")
         handleIntent(.deleteExercise(id: exercise.id))
     }
     
     func deleteTemplate(_ template: WorkoutTemplate) {
-        print("🔄 [LibraryViewModel.deleteTemplate] Deleting template: \(template.name)")
+        AppLogger.debug("[LibraryViewModel.deleteTemplate] Deleting template: \(template.name)", category: "LibraryViewModel")
         handleIntent(.deleteTemplate(id: template.id))
     }
     
     func updateTemplate(_ template: WorkoutTemplate, name: String, summary: String) throws {
-        print("🔄 [LibraryViewModel.updateTemplate] Updating template: \(template.name)")
+        AppLogger.debug("[LibraryViewModel.updateTemplate] Updating template: \(template.name)", category: "LibraryViewModel")
         
         template.name = name
         template.summary = summary
         
         try modelContext.save()
-        print("✅ [LibraryViewModel.updateTemplate] Successfully updated template")
-        print("📊 [LibraryViewModel] Template updated: \(template.name)")
+        AppLogger.info("[LibraryViewModel.updateTemplate] Successfully updated template", category: "LibraryViewModel")
+        AppLogger.info("[LibraryViewModel] Template updated: \(template.name)", category: "LibraryViewModel")
     }
     
     func createExercise(name: String, category: ExerciseCategory, instructions: String) throws {
-        print("🔄 [LibraryViewModel.createExercise] Creating exercise: \(name)")
+        AppLogger.debug("[LibraryViewModel.createExercise] Creating exercise: \(name)", category: "LibraryViewModel")
         let newExercise = Exercise(
             name: name.trimmingCharacters(in: .whitespacesAndNewlines),
             category: category,
@@ -612,35 +614,35 @@ class LibraryViewModel: ObservableObject {
         try modelContext.save()
         exerciseCatalog.append(newExercise)
         exerciseCatalog.sort { $0.name < $1.name }
-        print("✅ [LibraryViewModel.createExercise] Successfully created exercise")
+        AppLogger.info("Successfully created exercise", category: "LibraryViewModel.createExercise")
     }
     
     func updateExercise(_ exercise: Exercise, name: String, category: ExerciseCategory, instructions: String) throws {
-        print("🔄 [LibraryViewModel.updateExercise] Updating exercise: \(exercise.name)")
+        AppLogger.debug("[LibraryViewModel.updateExercise] Updating exercise: \(exercise.name)", category: "LibraryViewModel")
         exercise.name = name.trimmingCharacters(in: .whitespacesAndNewlines)
         exercise.category = category
         exercise.instructions = instructions
         
         try modelContext.save()
         exerciseCatalog.sort { $0.name < $1.name }
-        print("✅ [LibraryViewModel.updateExercise] Successfully updated exercise")
+        AppLogger.info("[LibraryViewModel.updateExercise] Successfully updated exercise", category: "LibraryViewModel")
     }
     
     // MARK: - Template Detail Methods
     func toggleRestDay(for dayTemplate: DayTemplate) {
-        print("🔄 [LibraryViewModel.toggleRestDay] Toggling rest day for \(dayTemplate.weekday)")
+        AppLogger.debug("[LibraryViewModel.toggleRestDay] Toggling rest day for \(dayTemplate.weekday)", category: "LibraryViewModel")
         do {
             dayTemplate.isRest.toggle()
             try modelContext.save()
-            print("✅ [LibraryViewModel.toggleRestDay] Successfully toggled rest day")
+            AppLogger.info("[LibraryViewModel.toggleRestDay] Successfully toggled rest day", category: "LibraryViewModel")
         } catch {
-            print("❌ [LibraryViewModel.toggleRestDay] Error: \(error.localizedDescription)")
+            AppLogger.error("[LibraryViewModel.toggleRestDay] Error: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
             self.error = error
         }
     }
     
     func addExercises(_ exercises: [Exercise], to dayTemplate: DayTemplate) {
-        print("🔄 [LibraryViewModel.addExercises] Adding \(exercises.count) exercises to \(dayTemplate.weekday)")
+        AppLogger.debug("[LibraryViewModel.addExercises] Adding \(exercises.count) exercises to \(dayTemplate.weekday)", category: "LibraryViewModel")
         do {
             for exercise in exercises {
                 let exerciseTemplate = ExerciseTemplate(
@@ -655,15 +657,15 @@ class LibraryViewModel: ObservableObject {
                 dayTemplate.exerciseTemplates.append(exerciseTemplate)
             }
             try modelContext.save()
-            print("✅ [LibraryViewModel.addExercises] Successfully added exercises")
+            AppLogger.info("[LibraryViewModel.addExercises] Successfully added exercises", category: "LibraryViewModel")
         } catch {
-            print("❌ [LibraryViewModel.addExercises] Error: \(error.localizedDescription)")
+            AppLogger.error("[LibraryViewModel.addExercises] Error: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
             self.error = error
         }
     }
     
     func updateExerciseTemplate(_ exerciseTemplate: ExerciseTemplate, setCount: Int, reps: Int, weight: Double?, rest: TimeInterval, supersetID: UUID?) {
-        print("🔄 [LibraryViewModel.updateExerciseTemplate] Updating exercise template for \(exerciseTemplate.exercise.name)")
+        AppLogger.debug("[LibraryViewModel.updateExerciseTemplate] Updating exercise template for \(exerciseTemplate.exercise.name)", category: "LibraryViewModel")
         do {
             exerciseTemplate.setCount = setCount
             exerciseTemplate.reps = reps
@@ -671,16 +673,16 @@ class LibraryViewModel: ObservableObject {
             exerciseTemplate.supersetID = supersetID
             // Note: rest duration would need to be added to ExerciseTemplate model
             try modelContext.save()
-            print("✅ [LibraryViewModel.updateExerciseTemplate] Successfully updated exercise template")
+            AppLogger.info("[LibraryViewModel.updateExerciseTemplate] Successfully updated exercise template", category: "LibraryViewModel")
         } catch {
-            print("❌ [LibraryViewModel.updateExerciseTemplate] Error: \(error.localizedDescription)")
+            AppLogger.error("[LibraryViewModel.updateExerciseTemplate] Error: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
             self.error = error
         }
     }
     
     // MARK: - Workout Plan Editing Methods
     func updateWorkoutPlan(_ plan: WorkoutPlan, customName: String, durationWeeks: Int, isActive: Bool) throws {
-        print("🔄 [LibraryViewModel.updateWorkoutPlan] Updating plan: \(plan.customName)")
+        AppLogger.debug("[LibraryViewModel.updateWorkoutPlan] Updating plan: \(plan.customName)", category: "LibraryViewModel")
         
         // If setting this plan to active, deactivate all other plans first
         if isActive && !plan.isActive {
@@ -696,7 +698,7 @@ class LibraryViewModel: ObservableObject {
                     activePlan.isActive = false
                 }
             } catch {
-                print("❌ [LibraryViewModel.updateWorkoutPlan] Error deactivating existing plans: \(error.localizedDescription)")
+                AppLogger.error("[LibraryViewModel.updateWorkoutPlan] Error deactivating existing plans: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
                 throw error
             }
         }
@@ -706,22 +708,22 @@ class LibraryViewModel: ObservableObject {
         plan.isActive = isActive
         
         try modelContext.save()
-        print("✅ [LibraryViewModel.updateWorkoutPlan] Successfully updated plan")
-        print("📊 [LibraryViewModel] Plan updated: \(plan.customName) - Active: \(plan.isActive) - Duration: \(plan.durationWeeks) weeks")
+        AppLogger.info("[LibraryViewModel.updateWorkoutPlan] Successfully updated plan", category: "LibraryViewModel")
+        AppLogger.info("[LibraryViewModel] Plan updated: \(plan.customName) - Active: \(plan.isActive) - Duration: \(plan.durationWeeks) weeks", category: "LibraryViewModel")
     }
     
     func deleteWorkoutPlan(_ plan: WorkoutPlan) throws {
-        print("🔄 [LibraryViewModel.deleteWorkoutPlan] Deleting plan: \(plan.customName)")
+        AppLogger.debug("[LibraryViewModel.deleteWorkoutPlan] Deleting plan: \(plan.customName)", category: "LibraryViewModel")
         
         modelContext.delete(plan)
         try modelContext.save()
         
-        print("✅ [LibraryViewModel.deleteWorkoutPlan] Successfully deleted plan")
+        AppLogger.info("[LibraryViewModel.deleteWorkoutPlan] Successfully deleted plan", category: "LibraryViewModel")
     }
     
     // MARK: - JSON Import Methods
     func importWorkoutTemplate(from dto: WorkoutTemplateImportDTO) throws -> Int {
-        print("🔄 [LibraryViewModel.importWorkoutTemplate] Starting import of template: \(dto.name)")
+        AppLogger.debug("[LibraryViewModel.importWorkoutTemplate] Starting import of template: \(dto.name)", category: "LibraryViewModel")
         
         // Check for existing template with same name
         if workoutTemplates.contains(where: { $0.name == dto.name }) {
@@ -743,7 +745,7 @@ class LibraryViewModel: ObservableObject {
         
         // Process imported days
         for dayDTO in dto.days {
-            print("🔄 [LibraryViewModel.importWorkoutTemplate] Processing day: \(dayDTO.name)")
+            AppLogger.debug("[LibraryViewModel.importWorkoutTemplate] Processing day: \(dayDTO.name)", category: "LibraryViewModel")
             
             // Map dayIndex to Weekday enum
             guard let weekday = Weekday(rawValue: dayDTO.dayIndex) else {
@@ -762,7 +764,7 @@ class LibraryViewModel: ObservableObject {
             
             // Process exercises for this day
             for (index, exerciseDTO) in dayDTO.exercises.enumerated() {
-                print("🔄 [LibraryViewModel.importWorkoutTemplate] Processing exercise: \(exerciseDTO.name)")
+                AppLogger.debug("[LibraryViewModel.importWorkoutTemplate] Processing exercise: \(exerciseDTO.name)", category: "LibraryViewModel")
                 
                 // Find or create the exercise
                 let exercise = try findOrCreateExercise(name: exerciseDTO.name)
@@ -787,7 +789,7 @@ class LibraryViewModel: ObservableObject {
         // Create rest days for missing days (1-7 are valid weekdays)
         for dayIndex in 1...7 {
             if !importedDayIndices.contains(dayIndex) {
-                print("🔄 [LibraryViewModel.importWorkoutTemplate] Creating rest day for day index: \(dayIndex)")
+                AppLogger.debug("Creating rest day for day index: \(dayIndex)", category: "LibraryViewModel.importWorkoutTemplate")
                 
                 guard let weekday = Weekday(rawValue: dayIndex) else {
                     continue // Skip invalid weekday
@@ -803,7 +805,7 @@ class LibraryViewModel: ObservableObject {
                 modelContext.insert(restDayTemplate)
                 template.dayTemplates.append(restDayTemplate)
                 
-                print("✅ [LibraryViewModel.importWorkoutTemplate] Created rest day for \(weekday.fullName)")
+                AppLogger.info("Created rest day for \(weekday.fullName)", category: "LibraryViewModel.importWorkoutTemplate")
             }
         }
         
@@ -813,21 +815,21 @@ class LibraryViewModel: ObservableObject {
         // Update local state
         templates.insert(template, at: 0)
         
-        print("✅ [LibraryViewModel.importWorkoutTemplate] Successfully imported template: \(dto.name)")
+        AppLogger.info("Successfully imported template: \(dto.name)", category: "LibraryViewModel.importWorkoutTemplate")
         return 1
     }
     
     private func findOrCreateExercise(name: String) throws -> Exercise {
-        print("🔄 [LibraryViewModel.findOrCreateExercise] Looking for exercise: \(name)")
+        AppLogger.debug("Looking for exercise: \(name)", category: "LibraryViewModel.findOrCreateExercise")
         
         // First, try to find existing exercise
         if let existingExercise = exerciseCatalog.first(where: { $0.name.lowercased() == name.lowercased() }) {
-            print("✅ [LibraryViewModel.findOrCreateExercise] Found existing exercise: \(name)")
+            AppLogger.info("Found existing exercise: \(name)", category: "LibraryViewModel.findOrCreateExercise")
             return existingExercise
         }
         
         // Create new exercise with default category
-        print("🔄 [LibraryViewModel.findOrCreateExercise] Creating new exercise: \(name)")
+        AppLogger.debug("Creating new exercise: \(name)", category: "LibraryViewModel.findOrCreateExercise")
         let newExercise = Exercise(
             name: name,
             category: .strength, // Default category
@@ -838,7 +840,7 @@ class LibraryViewModel: ObservableObject {
         exerciseCatalog.append(newExercise)
         exerciseCatalog.sort { $0.name < $1.name }
         
-        print("✅ [LibraryViewModel.findOrCreateExercise] Created new exercise: \(name)")
+        AppLogger.info("Created new exercise: \(name)", category: "LibraryViewModel.findOrCreateExercise")
         return newExercise
     }
 }
