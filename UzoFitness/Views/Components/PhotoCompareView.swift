@@ -3,7 +3,9 @@ import UIKit
 
 struct PhotoCompareView: View {
     @ObservedObject var viewModel: ProgressViewModel
-    @State private var selectedPhoto: ProgressPhoto?  // Track which photo to show full screen
+    @State private var galleryPhotos: [ProgressPhoto] = []
+    @State private var galleryStartIndex: Int = 0
+    @State private var showGallery = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -36,8 +38,8 @@ struct PhotoCompareView: View {
                 .fill(.background)
                 .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
         )
-        .fullScreenCover(item: $selectedPhoto) { photo in
-            PhotoGalleryView(photos: [photo], index: 0)
+        .fullScreenCover(isPresented: $showGallery) {
+            PhotoGalleryView(photos: galleryPhotos, index: galleryStartIndex)
         }
     }
     
@@ -68,7 +70,7 @@ struct PhotoCompareView: View {
                     label: "Before"
                 )
                 .onTapGesture {
-                    selectedPhoto = photo
+                    prepareAndShowGallery(startingWith: photo)
                 }
             }
             
@@ -85,10 +87,22 @@ struct PhotoCompareView: View {
                     label: "After"
                 )
                 .onTapGesture {
-                    selectedPhoto = photo
+                    prepareAndShowGallery(startingWith: photo)
                 }
             }
         }
+    }
+
+    private func prepareAndShowGallery(startingWith startPhoto: ProgressPhoto) {
+        let (first, second) = viewModel.comparisonPhotos
+        
+        var photos: [ProgressPhoto] = []
+        if let first { photos.append(first) }
+        if let second { photos.append(second) }
+        
+        self.galleryPhotos = photos
+        self.galleryStartIndex = photos.firstIndex(where: { $0.id == startPhoto.id }) ?? 0
+        self.showGallery = true
     }
 }
 
