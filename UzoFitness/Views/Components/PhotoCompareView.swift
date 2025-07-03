@@ -3,6 +3,7 @@ import UIKit
 
 struct PhotoCompareView: View {
     @ObservedObject var viewModel: ProgressViewModel
+    @State private var selectedPhoto: ProgressPhoto?  // Track which photo to show full screen
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -35,6 +36,9 @@ struct PhotoCompareView: View {
                 .fill(.background)
                 .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
         )
+        .fullScreenCover(item: $selectedPhoto) { photo in
+            FullScreenPhotoView(photo: photo)
+        }
     }
     
     private var instructionView: some View {
@@ -63,6 +67,9 @@ struct PhotoCompareView: View {
                     metrics: viewModel.getMetricsForPhoto(photo.id),
                     label: "Before"
                 )
+                .onTapGesture {
+                    selectedPhoto = photo
+                }
             }
             
             // Comparison Arrow
@@ -77,6 +84,9 @@ struct PhotoCompareView: View {
                     metrics: viewModel.getMetricsForPhoto(photo.id),
                     label: "After"
                 )
+                .onTapGesture {
+                    selectedPhoto = photo
+                }
             }
         }
     }
