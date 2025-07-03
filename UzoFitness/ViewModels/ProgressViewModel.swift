@@ -389,18 +389,49 @@ class ProgressViewModel: ObservableObject {
         photoMetrics = metrics
         AppLogger.info("[ProgressViewModel.loadPhotoMetrics] Loaded metrics for \(metrics.count) photos", category: "ProgressViewModel")
     }
+
+    private func fetchMetrics(for photo: ProgressPhoto) async -> BodyMetrics {
+        await withCheckedContinuation { continuation in
+            healthKitManager.fetchBodyMassInPounds(on: photo.date) { weight, _ in
+                self.healthKitManager.fetchBodyFat(on: photo.date) { bodyFat, _ in
+                    DispatchQueue.main.async {
+                        let metrics = BodyMetrics(
+                            photoID: photo.id,
+                            weight: weight,
+                            bodyFat: bodyFat,
+                            date: photo.date
+                        )
+                        continuation.resume(returning: metrics)
+                    }
+                }
+            }
+        }
+    }
     
     private func addPhoto(angle: PhotoAngle, image: UIImage) async {
         AppLogger.debug("[ProgressViewModel.addPhoto] Adding photo for angle: \(angle)", category: "ProgressViewModel")
-        
+
         do {
             try photoService.save(image: image, angle: angle)
-            
+
             AppLogger.info("[ProgressViewModel.addPhoto] Successfully saved photo", category: "ProgressViewModel")
-            
-            // Reload photos to update UI
-            await loadPhotos()
-            
+
+            // Fetch the newly saved photo
+            let descriptor = FetchDescriptor<ProgressPhoto>(
+                predicate: #Predicate { $0.angle == angle },
+                sortBy: [SortDescriptor(\.date, order: .reverse)]
+            )
+
+            if let newPhoto = try modelContext.fetch(descriptor).first {
+                withAnimation {
+                    photosByAngle[angle, default: []].insert(newPhoto, at: 0)
+                }
+
+                // Update metrics just for this photo
+                let metrics = await fetchMetrics(for: newPhoto)
+                photoMetrics[newPhoto.id] = metrics
+            }
+
         } catch {
             AppLogger.error("[ProgressViewModel.addPhoto] Error: \(error.localizedDescription)", category: "ProgressViewModel", error: error)
             self.error = error
