@@ -1,11 +1,15 @@
 import SwiftUI
 import UIKit
 
+struct GalleryPresentation: Identifiable {
+    let id = UUID()
+    let photos: [ProgressPhoto]
+    let startIndex: Int
+}
+
 struct PhotoCompareView: View {
     @ObservedObject var viewModel: ProgressViewModel
-    @State private var galleryPhotos: [ProgressPhoto] = []
-    @State private var galleryStartIndex: Int = 0
-    @State private var showGallery = false
+    @State private var presentation: GalleryPresentation?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -38,8 +42,8 @@ struct PhotoCompareView: View {
                 .fill(.background)
                 .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
         )
-        .fullScreenCover(isPresented: $showGallery) {
-            PhotoGalleryView(photos: galleryPhotos, index: galleryStartIndex)
+        .fullScreenCover(item: $presentation, onDismiss: { presentation = nil }) { info in
+            PhotoGalleryView(photos: info.photos, index: info.startIndex)
         }
     }
     
@@ -95,14 +99,13 @@ struct PhotoCompareView: View {
 
     private func prepareAndShowGallery(startingWith startPhoto: ProgressPhoto) {
         let (first, second) = viewModel.comparisonPhotos
-        
+
         var photos: [ProgressPhoto] = []
         if let first { photos.append(first) }
         if let second { photos.append(second) }
-        
-        self.galleryPhotos = photos
-        self.galleryStartIndex = photos.firstIndex(where: { $0.id == startPhoto.id }) ?? 0
-        self.showGallery = true
+
+        let index = photos.firstIndex(where: { $0.id == startPhoto.id }) ?? 0
+        presentation = GalleryPresentation(photos: photos, startIndex: index)
     }
 }
 
