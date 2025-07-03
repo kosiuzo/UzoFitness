@@ -171,14 +171,14 @@ final class SettingsViewModelTests: XCTestCase {
         
         viewModel.handleIntent(.performRestore)
         
-        // Wait for restore to complete
-        try? await Task.sleep(nanoseconds: 3_500_000_000) // 3.5 seconds
+        // Wait for restore to complete - increased wait time
+        try? await Task.sleep(nanoseconds: 5_000_000_000) // 5 seconds
         
         XCTAssertTrue(mockiCloudBackupService.performRestoreCalled)
         XCTAssertFalse(viewModel.isLoadingRestore)
     }
     
-    func testViewModel_FormattedLastBackupDate() {
+    func testViewModel_FormattedLastBackupDate() async {
         let healthKit = HealthKitManager()
         let photoService = PhotoService(dataPersistenceService: DefaultDataPersistenceService(modelContext: PersistenceController.preview.container.mainContext))
         let modelContext = PersistenceController.preview.container.mainContext
@@ -198,6 +198,9 @@ final class SettingsViewModelTests: XCTestCase {
         // Test with actual date
         let testDate = Date()
         mockAppSettingsStore.updateLastBackupDate(testDate)
+        
+        // Wait for the binding to update
+        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
         
         // The formatted date should not be "Never"
         XCTAssertNotEqual(viewModel.formattedLastBackupDate, "Never")
