@@ -3,41 +3,50 @@ import UIKit
 
 struct PhotoCompareView: View {
     @ObservedObject var viewModel: ProgressViewModel
-    @State private var selectedPhoto: ProgressPhoto?  // Track which photo to show full screen
+    @State private var page = 0
+    @State private var selectedPhoto: ProgressPhoto?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Header
-            HStack {
-                Text("Photo Comparison")
-                    .font(.headline)
-                
-                Spacer()
-                
-                Button("Clear") {
-                    Task {
-                        viewModel.handleIntent(.clearComparison)
+            header
+            
+            if viewModel.comparisonPairs.isEmpty {
+                instructionView
+            } else {
+                TabView(selection: $page) {
+                    ForEach(viewModel.comparisonPairs.indices, id: \.self) { i in
+                        comparisonPairView(viewModel.comparisonPairs[i])
+                            .tag(i)
                     }
                 }
-                .font(.subheadline)
-                .foregroundColor(.accentColor)
-            }
-            
-            // Comparison Content
-            if viewModel.canCompare {
-                comparisonContent
-            } else {
-                instructionView
+                .tabViewStyle(.page(indexDisplayMode: .always))
             }
         }
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(.background)
+                .fill(Color(.systemGray6))
                 .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
         )
         .fullScreenCover(item: $selectedPhoto) { photo in
             FullScreenPhotoView(photo: photo)
+        }
+    }
+    
+    private var header: some View {
+        HStack {
+            Text("Photo Comparison")
+                .font(.headline)
+            
+            Spacer()
+            
+            Button("Clear") {
+                Task {
+                    viewModel.handleIntent(.clearComparison)
+                }
+            }
+            .font(.subheadline)
+            .foregroundColor(.accentColor)
         }
     }
     
@@ -56,38 +65,26 @@ struct PhotoCompareView: View {
         .frame(maxWidth: .infinity)
     }
     
-    private var comparisonContent: some View {
-        let (firstPhoto, secondPhoto) = viewModel.comparisonPhotos
-        
-        return HStack(spacing: 16) {
-            // First Photo
-            if let photo = firstPhoto {
-                PhotoCompareCard(
-                    photo: photo,
-                    metrics: viewModel.getMetricsForPhoto(photo.id),
-                    label: "Before"
-                )
-                .onTapGesture {
-                    selectedPhoto = photo
-                }
-            }
+    @ViewBuilder
+    private func comparisonPairView(_ pair: (ProgressPhoto, ProgressPhoto)) -> some View {
+        HStack(spacing: 16) {
+            PhotoCompareCard(
+                photo: pair.0,
+                metrics: viewModel.getMetricsForPhoto(pair.0.id),
+                label: "Before"
+            )
+            .onTapGesture { selectedPhoto = pair.0 }
             
-            // Comparison Arrow
             Image(systemName: "arrow.right")
                 .font(.title2)
                 .foregroundColor(.accentColor)
-            
-            // Second Photo
-            if let photo = secondPhoto {
-                PhotoCompareCard(
-                    photo: photo,
-                    metrics: viewModel.getMetricsForPhoto(photo.id),
-                    label: "After"
-                )
-                .onTapGesture {
-                    selectedPhoto = photo
-                }
-            }
+
+            PhotoCompareCard(
+                photo: pair.1,
+                metrics: viewModel.getMetricsForPhoto(pair.1.id),
+                label: "After"
+            )
+            .onTapGesture { selectedPhoto = pair.1 }
         }
     }
 }
