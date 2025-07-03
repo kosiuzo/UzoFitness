@@ -107,4 +107,4 @@ When building iOS interfaces, always ask:
 
 Remember: The best interface is often the one that gets out of the user's way and lets them focus on their task efficiently.
 
-How to build app to make sure changes work: xcodebuild -scheme MyFitnessApp -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5' build
+How to build app to make sure changes work: xcodebuild -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5' build
