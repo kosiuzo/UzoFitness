@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 @main
-struct MyFitnessAppApp: App {
+struct UzoFitnessApp: App {
     @StateObject private var persistence = PersistenceController.shared
 
     var body: some Scene {

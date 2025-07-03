@@ -106,4 +106,4 @@ We welcome pull requests!  Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) for 
 - Social sharing & challenges
 
 ## License
-© 2025 Kosi Uzodinma.  All rights reserved.
+This project is licensed under the [MIT License](LICENSE).

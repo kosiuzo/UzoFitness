@@ -64,6 +64,6 @@ Here is the complete, detailed markdown-formatted task list from your PRD:
 * Consistently run unit tests using:
 
   ```
-  xcodebuild -scheme MyFitnessApp -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5' build
+  xcodebuild -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5' build
   ```
 * Thoroughly test functionality via the Xcode simulator and TestFlight releases.
