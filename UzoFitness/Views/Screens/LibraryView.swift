@@ -156,9 +156,7 @@ struct WorkoutsTabView: View {
             VStack(spacing: 0) {
                 // Header with title and create button
                 HStack {
-                    Text("Workouts")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
+                    
                     
                     Spacer()
                     
@@ -243,6 +241,11 @@ struct WorkoutsTabView: View {
                             }
                             .foregroundStyle(.blue)
                         }
+
+                        Button("Import from JSON") {
+                            showingJSONImport = true
+                        }
+                        .buttonStyle(.bordered)
                     }
                 }
             }
