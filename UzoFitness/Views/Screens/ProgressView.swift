@@ -1,6 +1,10 @@
 import SwiftUI
 import SwiftData
 import Charts
+import PhotosUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct ProgressView: View {
     @StateObject private var viewModel: ProgressViewModel
@@ -33,13 +37,6 @@ struct ProgressView: View {
             .task {
                 AppLogger.info("[ProgressView] Task started - loading initial data", category: "ProgressView")
                 await viewModel.handleIntent(.refreshData)
-            }
-            .sheet(isPresented: $viewModel.showImagePicker) {
-                ImagePickerView { image in
-                    Task {
-                        await viewModel.handleIntent(.addPhoto(viewModel.selectedPhotoAngle, image))
-                    }
-                }
             }
             .sheet(isPresented: $showingDatePicker) {
                 CustomDateRangePickerView(
@@ -337,6 +334,8 @@ extension ToggleStyle where Self == CheckmarkToggleStyle {
 struct PicturesContentView: View {
     @ObservedObject var viewModel: ProgressViewModel
     let dateRange: DateRange
+    @State private var selectedPickerItem: PhotosPickerItem?
+    @State private var selectedPickerAngle: PhotoAngle?
     
     var body: some View {
         ScrollView {
@@ -355,6 +354,16 @@ struct PicturesContentView: View {
         }
         .refreshable {
             await viewModel.handleIntent(.loadPhotos)
+        }
+        .onChange(of: selectedPickerItem) { newItem in
+            guard let newItem = newItem, let angle = selectedPickerAngle else { return }
+            Task {
+                if let data = try? await newItem.loadTransferable(type: Data.self), let uiImage = UIImage(data: data) {
+                    await viewModel.handleIntent(.addPhoto(angle, uiImage))
+                }
+                selectedPickerItem = nil
+                selectedPickerAngle = nil
+            }
         }
     }
     
@@ -407,21 +416,24 @@ struct PicturesContentView: View {
     
     private var addPhotoSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Add Progress Photo")
-                .font(.headline)
-            
+            Text("Add Progress Photo").font(.headline)
+
             HStack(spacing: 12) {
                 ForEach(PhotoAngle.allCases, id: \.self) { angle in
-                    Button {
-                        Task {
-                            await viewModel.handleIntent(.showImagePicker(angle))
-                        }
-                    } label: {
+                    PhotosPicker(
+                        selection: Binding<PhotosPickerItem?>(
+                            get: { selectedPickerAngle == angle ? selectedPickerItem : nil },
+                            set: { newItem in
+                                selectedPickerItem = newItem
+                                selectedPickerAngle = angle
+                            }
+                        ),
+                        matching: .images,
+                        photoLibrary: .shared()
+                    ) {
                         VStack(spacing: 8) {
-                            Image(systemName: "camera.fill")
-                                .font(.title2)
-                            Text(angle.displayName)
-                                .font(.caption)
+                            Image(systemName: "camera.fill").font(.title2)
+                            Text(angle.displayName).font(.caption)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
