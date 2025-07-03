@@ -7,9 +7,8 @@ struct ProgressPhotoGrid: View {
     let photos: [ProgressPhoto]
     @ObservedObject var viewModel: ProgressViewModel
     
+    @State private var selectedPhoto: ProgressPhoto?
     @State private var photoToEdit: ProgressPhoto?
-    @State private var showGallery = false
-    @State private var galleryStartIndex = 0
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -57,19 +56,16 @@ struct ProgressPhotoGrid: View {
     }
     
     private var photoGrid: some View {
-        let sortedPhotos = photos.sorted { $0.date > $1.date }
         // Horizontal swipeable photo thumbnails (Task 6.2)
-        return ScrollView(.horizontal, showsIndicators: false) {
+        ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(sortedPhotos.indices, id: \.self) { idx in
-                    let photo = sortedPhotos[idx]
+                ForEach(photos.sorted { $0.date > $1.date }) { photo in
                     PhotoThumbnailView(
                         photo: photo,
                         isSelected: isSelected(photo),
                         metrics: viewModel.getMetricsForPhoto(photo.id),
                         onTap: {
-                            galleryStartIndex = idx
-                            showGallery = true
+                            selectedPhoto = photo
                         },
                         onEdit: {
                             photoToEdit = photo
@@ -85,8 +81,8 @@ struct ProgressPhotoGrid: View {
             }
             .padding(.vertical, 8)
         }
-        .fullScreenCover(isPresented: $showGallery) {
-            PhotoGalleryView(photos: sortedPhotos, index: galleryStartIndex)
+        .fullScreenCover(item: $selectedPhoto) { photo in
+            FullScreenPhotoView(photo: photo)
         }
     }
     
@@ -224,6 +220,57 @@ struct WeightOverlay: View {
 }
 
 // MARK: - Local File Image Helper
+
+struct LocalFileImage: View {
+    let url: URL?
+    @State private var image: UIImage?
+
+    var body: some View {
+        Group {
+            if let image = image {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } else {
+                Rectangle()
+                    .fill(Color(.systemGray5))
+                    .overlay {
+                        Image(systemName: "photo")
+                            .foregroundColor(.secondary)
+                    }
+            }
+        }
+        .task(id: url) {
+            await loadImage()
+        }
+    }
+
+    private func loadImage() async {
+        guard let url = url else {
+            if image != nil { await MainActor.run { image = nil } }
+            return
+        }
+
+        // Perform file-loading off the main thread.
+        let loadedImage = await Task.detached(priority: .userInitiated) { () -> UIImage? in
+            guard FileManager.default.fileExists(atPath: url.path) else {
+                AppLogger.error("[LocalFileImage] File does not exist at path: \(url.path)", category: "ProgressPhotoGrid")
+                return nil
+            }
+            do {
+                let data = try Data(contentsOf: url)
+                return UIImage(data: data)
+            } catch {
+                AppLogger.error("[LocalFileImage] Failed to load image data from \(url)", category: "ProgressPhotoGrid", error: error)
+                return nil
+            }
+        }.value
+        
+        await MainActor.run {
+            self.image = loadedImage
+        }
+    }
+}
 
 // MARK: - Full Screen Photo View
 

@@ -164,34 +164,6 @@ class ProgressViewModel: ObservableObject {
         return (firstPhoto, secondPhoto)
     }
     
-    var comparisonPairs: [(ProgressPhoto, ProgressPhoto)] {
-        var pairs: [(ProgressPhoto, ProgressPhoto)] = []
-        // Prioritize creating a pair from the user's explicit selection
-        if let first = comparisonPhotos.0, let second = comparisonPhotos.1 {
-            // Ensure the "before" photo is always the older one
-            if first.date < second.date {
-                pairs.append((first, second))
-            } else {
-                pairs.append((second, first))
-            }
-        }
-
-        // Generate chronological pairs for each angle
-        for angle in PhotoAngle.allCases {
-            let sortedPhotos = photosByAngle[angle, default: []].sorted { $0.date < $1.date }
-            if sortedPhotos.count >= 2 {
-                for i in 0..<(sortedPhotos.count - 1) {
-                    let pair = (sortedPhotos[i], sortedPhotos[i+1])
-                    // Avoid duplicating the user-selected pair if it's also a chronological pair
-                    if !pairs.contains(where: { $0.0.id == pair.0.id && $0.1.id == pair.1.id }) {
-                        pairs.append(pair)
-                    }
-                }
-            }
-        }
-        return pairs
-    }
-    
     // MARK: - Private Properties
     private let modelContext: ModelContext
     private let photoService: PhotoService
