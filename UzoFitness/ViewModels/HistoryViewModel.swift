@@ -127,9 +127,23 @@ class HistoryViewModel: ObservableObject {
     // MARK: - Initialization
     init() {
         // Initialize with empty context - will be set later
-        let container = try! ModelContainer(for: WorkoutSession.self)
-        self.modelContext = container.mainContext
-        AppLogger.debug("[HistoryViewModel.init] Initialized with temporary ModelContext", category: "HistoryViewModel")
+        do {
+            let container = try ModelContainer(for: WorkoutSession.self)
+            self.modelContext = container.mainContext
+            AppLogger.debug("[HistoryViewModel.init] Initialized with temporary ModelContext", category: "HistoryViewModel")
+        } catch {
+            AppLogger.error("[HistoryViewModel.init] Failed to create ModelContainer: \(error.localizedDescription)", category: "HistoryViewModel", error: error)
+            self.error = error
+            self.state = .error
+
+            let fallbackConfig = ModelConfiguration(isStoredInMemoryOnly: true)
+            if let fallback = try? ModelContainer(for: WorkoutSession.self, configurations: fallbackConfig) {
+                self.modelContext = fallback.mainContext
+                AppLogger.debug("[HistoryViewModel.init] Initialized with in-memory fallback context", category: "HistoryViewModel")
+            } else {
+                self.modelContext = PersistenceController.shared.context
+            }
+        }
     }
     
     func setModelContext(_ modelContext: ModelContext) {
