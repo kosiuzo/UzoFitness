@@ -160,23 +160,23 @@ struct WorkoutsTabView: View {
                     
                     Spacer()
                     
-                    Menu {
-                        Button {
-                            createNewWorkout() // Task 1.1: Streamlined workout creation
-                        } label: {
-                            Label("Create Workout", systemImage: "plus")
-                        }
+                    // Menu {
+                    //     Button {
+                    //         createNewWorkout() // Task 1.1: Streamlined workout creation
+                    //     } label: {
+                    //         Label("Create Workout", systemImage: "plus")
+                    //     }
                         
-                        Button {
-                            showingJSONImport = true
-                        } label: {
-                            Label("Import Workout from JSON", systemImage: "doc.text")
-                        }
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title2)
-                            .foregroundColor(.accentColor)
-                    }
+                    //     Button {
+                    //         showingJSONImport = true
+                    //     } label: {
+                    //         Label("Import Workout from JSON", systemImage: "doc.text")
+                    //     }
+                    // } label: {
+                    //     Image(systemName: "plus.circle.fill")
+                    //         .font(.title2)
+                    //         .foregroundColor(.accentColor)
+                    // }
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)

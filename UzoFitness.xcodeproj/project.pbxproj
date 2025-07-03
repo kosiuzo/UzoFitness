@@ -34,7 +34,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Resources/Info.plist,
-				ViewModels/ViewModelSpec.md,
 			);
 			target = F65E613A2DFFA78900A2D01C /* UzoFitness */;
 		};
