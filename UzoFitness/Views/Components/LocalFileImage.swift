@@ -36,14 +36,14 @@ struct LocalFileImage: View {
         // Perform file-loading off the main thread.
         let loadedImage = await Task.detached(priority: .userInitiated) { () -> UIImage? in
             guard FileManager.default.fileExists(atPath: url.path) else {
-                print("[LocalFileImage] File does not exist at path: \(url.path)")
+                AppLogger.debug("[LocalFileImage] File does not exist at path: \(url.path)", category: "LocalFileImage")
                 return nil
             }
             do {
                 let data = try Data(contentsOf: url)
                 return UIImage(data: data)
             } catch {
-                print("[LocalFileImage] Failed to load image data from \(url): \(error)")
+                AppLogger.error("[LocalFileImage] Failed to load image data from \(url)", category: "LocalFileImage", error: error)
                 return nil
             }
         }.value
