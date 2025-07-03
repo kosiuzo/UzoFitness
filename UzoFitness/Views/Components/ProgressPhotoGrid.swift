@@ -72,10 +72,14 @@ struct ProgressPhotoGrid: View {
                             photoToEdit = photo
                         },
                         onCompare: {
-                            viewModel.handleIntent(.selectForCompare(photo.id))
+                            Task {
+                                await viewModel.handleIntent(.selectForCompare(photo.id))
+                            }
                         },
                         onDelete: {
-                            viewModel.handleIntent(.deletePhoto(photo.id))
+                            Task {
+                                await viewModel.handleIntent(.deletePhoto(photo.id))
+                            }
                         }
                     )
                 }
@@ -148,12 +152,12 @@ struct PhotoThumbnailView: View {
                 .foregroundColor(.secondary)
             // Display weight if available
             if let metrics = metrics {
-                if let weight = metrics.weight {
+                if metrics.weight != nil {
                     Text(metrics.formattedWeight)
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }
-                if let bodyFat = metrics.bodyFat {
+                if metrics.bodyFat != nil {
                     Text(metrics.formattedBodyFat)
                         .font(.caption2)
                         .foregroundColor(.secondary)

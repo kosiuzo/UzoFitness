@@ -355,7 +355,7 @@ struct PicturesContentView: View {
         .refreshable {
             await viewModel.handleIntent(.loadPhotos)
         }
-        .onChange(of: selectedPickerItem) { newItem in
+        .onChange(of: selectedPickerItem) { _, newItem in
             guard let newItem = newItem, let angle = selectedPickerAngle else { return }
             Task {
                 if let data = try? await newItem.loadTransferable(type: Data.self), let uiImage = UIImage(data: data) {

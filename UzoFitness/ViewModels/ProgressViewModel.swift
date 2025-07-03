@@ -182,50 +182,48 @@ class ProgressViewModel: ObservableObject {
     }
     
     // MARK: - Intent Handling
-    func handleIntent(_ intent: ProgressIntent) {
+    func handleIntent(_ intent: ProgressIntent) async {
         AppLogger.debug("[ProgressViewModel.handleIntent] Processing intent: \(intent)", category: "ProgressViewModel")
         
-        Task {
-            switch intent {
-            case .selectExercise(let exerciseID):
-                await selectExercise(exerciseID)
-                
-            case .toggleMetric(let metricType):
-                toggleMetric(metricType)
-                
-            case .loadStats:
-                await loadExerciseTrends()
-                
-            case .loadPhotos:
-                await loadPhotos()
-                
-            case .addPhoto(let angle, let image):
-                await addPhoto(angle: angle, image: image)
-                
-            case .deletePhoto(let photoID):
-                await deletePhoto(photoID)
-                
-            case .selectForCompare(let photoID):
-                selectForCompare(photoID)
-                
-            case .clearComparison:
-                clearComparison()
-                
-            case .refreshData:
-                await refreshData()
-                
-            case .clearError:
-                error = nil
-                
-            case .showImagePicker(let angle):
-                showImagePicker(for: angle)
-                
-            case .hideImagePicker:
-                hideImagePicker()
-                
-            case .editPhoto(let photoID, let date, let weight):
-                await editPhoto(photoID, date, weight)
-            }
+        switch intent {
+        case .selectExercise(let exerciseID):
+            await selectExercise(exerciseID)
+            
+        case .toggleMetric(let metricType):
+            toggleMetric(metricType)
+            
+        case .loadStats:
+            await loadExerciseTrends()
+            
+        case .loadPhotos:
+            await loadPhotos()
+            
+        case .addPhoto(let angle, let image):
+            await addPhoto(angle: angle, image: image)
+            
+        case .deletePhoto(let photoID):
+            await deletePhoto(photoID)
+            
+        case .selectForCompare(let photoID):
+            selectForCompare(photoID)
+            
+        case .clearComparison:
+            clearComparison()
+            
+        case .refreshData:
+            await refreshData()
+            
+        case .clearError:
+            error = nil
+            
+        case .showImagePicker(let angle):
+            showImagePicker(for: angle)
+            
+        case .hideImagePicker:
+            hideImagePicker()
+            
+        case .editPhoto(let photoID, let date, let weight):
+            await editPhoto(photoID, date, weight)
         }
     }
     

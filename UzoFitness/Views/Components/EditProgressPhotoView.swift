@@ -63,7 +63,9 @@ struct EditProgressPhotoView: View {
         // If the text is empty or invalid, it correctly becomes nil.
         let newWeight = Double(weight.trimmingCharacters(in: .whitespaces))
         
-        viewModel.handleIntent(.editPhoto(photo.id, date, newWeight))
+        Task {
+            await viewModel.handleIntent(.editPhoto(photo.id, date, newWeight))
+        }
         dismiss()
     }
 } 

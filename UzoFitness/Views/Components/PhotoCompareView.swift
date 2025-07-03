@@ -22,7 +22,7 @@ struct PhotoCompareView: View {
                 
                 Button("Clear") {
                     Task {
-                        viewModel.handleIntent(.clearComparison)
+                        await viewModel.handleIntent(.clearComparison)
                     }
                 }
                 .font(.subheadline)
