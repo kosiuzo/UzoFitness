@@ -56,7 +56,6 @@
 +
 +* **`Assets.xcassets`** – Image and color assets used by the app.
 +* **`UzoFitness.entitlements`** – Capability settings (HealthKit, Photos, iCloud, etc.).
-+* **`UzoFitnessCore`** – A Swift Package that currently contains a basic library target. It can host shared utilities or cross‑platform code.
 +* **Tests** – Unit tests live in `UzoFitnessTests` and UI tests in `UzoFitnessUITests`.
 +
 +---
