@@ -35,7 +35,8 @@ struct LibraryView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .navigationTitle("Library")
+            .navigationTitle("") // Task 1.2: Remove "Library" title
+            .navigationBarHidden(true)
             .task {
                 AppLogger.info("[LibraryView] Task started - loading data", category: "LibraryView")
                 viewModel.handleIntent(.loadData)
@@ -147,116 +148,164 @@ struct WorkoutsTabView: View {
     @State private var showingTemplateCreator = false
     @State private var showingPlanCreator = false
     @State private var showingJSONImport = false
-
+    @State private var navigationPath = NavigationPath()
 
     
     var body: some View {
-        VStack(spacing: 0) {
-            // List of workouts
-            if viewModel.workoutTemplates.isEmpty {
-                VStack(spacing: 16) {
-                    ContentUnavailableView(
-                        "No Workouts",
-                        systemImage: "figure.strengthtraining.traditional",
-                        description: Text("Add workouts to get started")
-                    )
+        NavigationStack(path: $navigationPath) {
+            VStack(spacing: 0) {
+                // Header with title and create button
+                HStack {
+                    Text("Workouts")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
                     
-                    Button("Import from JSON") {
-                        showingJSONImport = true
+                    Spacer()
+                    
+                    Menu {
+                        Button {
+                            createNewWorkout() // Task 1.1: Streamlined workout creation
+                        } label: {
+                            Label("Create Workout", systemImage: "plus")
+                        }
+                        
+                        Button {
+                            showingJSONImport = true
+                        } label: {
+                            Label("Import Workout from JSON", systemImage: "doc.text")
+                        }
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title2)
+                            .foregroundColor(.accentColor)
                     }
-                    .buttonStyle(.borderedProminent)
                 }
-            } else {
-                List {
-                    // Workout Templates Section
-                    Section("My Workouts") {
-                        ForEach(viewModel.workoutTemplates) { template in
-                            NavigationLink(destination: TemplateDetailView(template: template, viewModel: viewModel)) {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(template.name)
-                                        .font(.headline)
-                                    Text(template.summary)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+                
+                // List of workouts
+                if viewModel.workoutTemplates.isEmpty {
+                    VStack(spacing: 16) {
+                        ContentUnavailableView(
+                            "No Workouts",
+                            systemImage: "figure.strengthtraining.traditional",
+                            description: Text("Create your first workout to get started")
+                        )
+                        
+                        Button("Create Workout") {
+                            createNewWorkout() // Task 1.1: Streamlined workout creation
+                        }
+                        .buttonStyle(.borderedProminent)
+                        
+                        Button("Import from JSON") {
+                            showingJSONImport = true
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                } else {
+                    List {
+                        // Workout Templates Section
+                        Section("My Workouts") {
+                            ForEach(viewModel.workoutTemplates) { template in
+                                NavigationLink(value: template) {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(template.name)
+                                            .font(.headline)
+                                        if !template.summary.isEmpty {
+                                            Text(template.summary)
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
                                 }
                             }
-                        }
-                        
-                        Button("Add Workout") {
-                            showingTemplateCreator = true
-                        }
-                        .foregroundStyle(.blue)
-                    }
-                    
-                    // Workout Plans Section
-                    Section("My Schedule") {
-                        if viewModel.workoutPlans.isEmpty {
-                            Text("No schedules")
-                                .foregroundStyle(.secondary)
-                                .italic()
-                        } else {
-                            ForEach(viewModel.workoutPlans) { plan in
-                                WorkoutPlanRowView(plan: plan, viewModel: viewModel)
+                            
+                            Button("Add Workout") {
+                                createNewWorkout() // Task 1.1: Streamlined workout creation
                             }
+                            .foregroundStyle(.blue)
                         }
                         
-                        Button("Schedule Workout") {
-                            showingPlanCreator = true
+                        // Workout Plans Section
+                        Section("My Schedule") {
+                            if viewModel.workoutPlans.isEmpty {
+                                Text("No schedules")
+                                    .foregroundStyle(.secondary)
+                                    .italic()
+                            } else {
+                                ForEach(viewModel.workoutPlans) { plan in
+                                    WorkoutPlanRowView(plan: plan, viewModel: viewModel)
+                                }
+                            }
+                            
+                            Button("Schedule Workout") {
+                                showingPlanCreator = true
+                            }
+                            .foregroundStyle(.blue)
                         }
-                        .foregroundStyle(.blue)
+                    }
+                }
+            }
+            .navigationDestination(for: WorkoutTemplate.self) { template in
+                TemplateDetailView(template: template, viewModel: viewModel)
+            }
+            .navigationDestination(for: String.self) { identifier in
+                if identifier == "new_workout" {
+                    // Navigate directly to the newly created workout's detail view
+                    if let latestTemplate = viewModel.workoutTemplates.first {
+                        TemplateDetailView(template: latestTemplate, viewModel: viewModel)
                     }
                 }
             }
         }
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Menu {
-                    Button {
-                        showingTemplateCreator = true
-                    } label: {
-                        Label("Create Workout", systemImage: "plus")
-                    }
-                    
-                    Button {
-                        showingJSONImport = true
-                    } label: {
-                        Label("Import Workout from JSON", systemImage: "doc.text")
-                    }
-                } label: {
-                    Image(systemName: "plus")
-                        .foregroundColor(.accentColor)
-                }
-            }
-        }
+        // Task 1.1 & 1.3: Streamlined template creation with immediate navigation
         .alert("Create Workout", isPresented: $showingTemplateCreator) {
-            TemplateNameInputView { name in
-                viewModel.createWorkoutTemplate(name: name)
+            StreamlinedTemplateNameInputView { name in
+                createWorkoutAndNavigate(name: name)
             }
         }
         .actionSheet(isPresented: $showingPlanCreator) {
             ActionSheet(
                 title: Text("Create Plan From Workout"),
                 buttons: viewModel.workoutTemplates.map { template in
-                .default(Text(template.name)) {
-                    viewModel.createPlan(from: template)
-                }
-            } + [.cancel()]
-        )
-    }
-    .sheet(isPresented: $showingJSONImport) {
-        WorkoutTemplateJSONImportView(viewModel: viewModel)
-    }
-    .alert("Error", isPresented: .constant(viewModel.error != nil)) {
-        Button("OK") {
-            viewModel.error = nil
+                    .default(Text(template.name)) {
+                        viewModel.createPlan(from: template)
+                    }
+                } + [.cancel()]
+            )
         }
-    } message: {
-        if let error = viewModel.error {
-            Text(error.localizedDescription)
+        .sheet(isPresented: $showingJSONImport) {
+            WorkoutTemplateJSONImportView(viewModel: viewModel)
+        }
+        .alert("Error", isPresented: .constant(viewModel.error != nil)) {
+            Button("OK") {
+                viewModel.error = nil
+            }
+        } message: {
+            if let error = viewModel.error {
+                Text(error.localizedDescription)
+            }
+        }
+    }
+    
+    // MARK: - Helper Methods
+    private func createNewWorkout() {
+        showingTemplateCreator = true
+    }
+    
+    // Task 1.1: Create workout and immediately navigate to weekly schedule
+    private func createWorkoutAndNavigate(name: String) {
+        // Create the workout template
+        viewModel.createWorkoutTemplate(name: name)
+        
+        // Navigate directly to the newly created workout's detail view
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            if let newTemplate = viewModel.workoutTemplates.first(where: { $0.name == name }) {
+                navigationPath.append(newTemplate)
+            }
         }
     }
 
-}
 }
 
 // MARK: - Supporting Views
@@ -296,6 +345,29 @@ struct TemplateNameInputView: View {
             }
         }
         .disabled(templateName.isEmpty)
+        Button("Cancel", role: .cancel) {
+            dismiss()
+        }
+    }
+}
+
+// MARK: - StreamlinedTemplateNameInputView (Task 1.3: Simplified validation - only name required)
+struct StreamlinedTemplateNameInputView: View {
+    let onSave: (String) -> Void
+    @State private var templateName = ""
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        TextField("Workout Name", text: $templateName)
+            .autocapitalization(.words)
+        Button("Create & Setup") {
+            let trimmedName = templateName.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmedName.isEmpty {
+                onSave(trimmedName)
+                dismiss()
+            }
+        }
+        .disabled(templateName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         Button("Cancel", role: .cancel) {
             dismiss()
         }

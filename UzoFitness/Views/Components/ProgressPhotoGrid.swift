@@ -56,28 +56,30 @@ struct ProgressPhotoGrid: View {
     }
     
     private var photoGrid: some View {
-        LazyVGrid(columns: [
-            GridItem(.adaptive(minimum: 100), spacing: 8)
-        ], spacing: 8) {
-            ForEach(photos.sorted { $0.date > $1.date }) { photo in
-                PhotoThumbnailView(
-                    photo: photo,
-                    isSelected: isSelected(photo),
-                    metrics: viewModel.getMetricsForPhoto(photo.id),
-                    onTap: {
-                        selectedPhoto = photo
-                    },
-                    onEdit: {
-                        photoToEdit = photo
-                    },
-                    onCompare: {
-                        viewModel.handleIntent(.selectForCompare(photo.id))
-                    },
-                    onDelete: {
-                        viewModel.handleIntent(.deletePhoto(photo.id))
-                    }
-                )
+        // Horizontal swipeable photo thumbnails (Task 6.2)
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(photos.sorted { $0.date > $1.date }) { photo in
+                    PhotoThumbnailView(
+                        photo: photo,
+                        isSelected: isSelected(photo),
+                        metrics: viewModel.getMetricsForPhoto(photo.id),
+                        onTap: {
+                            selectedPhoto = photo
+                        },
+                        onEdit: {
+                            photoToEdit = photo
+                        },
+                        onCompare: {
+                            viewModel.handleIntent(.selectForCompare(photo.id))
+                        },
+                        onDelete: {
+                            viewModel.handleIntent(.deletePhoto(photo.id))
+                        }
+                    )
+                }
             }
+            .padding(.vertical, 8)
         }
         .fullScreenCover(item: $selectedPhoto) { photo in
             FullScreenPhotoView(photo: photo)
@@ -118,10 +120,6 @@ struct PhotoThumbnailView: View {
         VStack(spacing: 4) {
             ZStack {
                 LocalFileImage(url: photoURL)
-                
-                if let weight = weightToDisplay {
-                    WeightOverlay(weight: weight)
-                }
             }
             .frame(width: 100, height: 100)
             .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -140,9 +138,23 @@ struct PhotoThumbnailView: View {
                 }
             }
             
+            // Date below thumbnail
             Text(dateFormatter.string(from: photo.date))
                 .font(.caption2)
                 .foregroundColor(.secondary)
+            // Display weight if available
+            if let metrics = metrics {
+                if let weight = metrics.weight {
+                    Text(metrics.formattedWeight)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                if let bodyFat = metrics.bodyFat {
+                    Text(metrics.formattedBodyFat)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+            }
         }
         .alert("Delete Photo", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) {}

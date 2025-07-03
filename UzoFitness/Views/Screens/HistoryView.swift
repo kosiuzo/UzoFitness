@@ -25,16 +25,17 @@ struct HistoryView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // Header with streak
+                // Header with streak (more compact)
                 headerView
                 
-                // Calendar
+                // Calendar (shifted upward)
                 calendarView
                 
-                // Bottom sheet with workout details
-                bottomSheetView
+                // Fixed lower-half detail view (Task 2.1)
+                fixedDetailView
             }
-            .navigationTitle("History")
+            .navigationTitle("") // Task 2.2: Remove "History" title
+            .navigationBarHidden(true)
             .task {
                 await loadWorkoutData()
             }
@@ -49,44 +50,44 @@ struct HistoryView: View {
         }
     }
     
-    // MARK: - Header View
+    // MARK: - Header View (Task 2.3: More compact for upward calendar shift)
     private var headerView: some View {
-        VStack(spacing: 16) {
-            HStack(spacing: 32) {
-                VStack(alignment: .leading, spacing: 4) {
+        VStack(spacing: 12) {
+            HStack(spacing: 24) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text("Current Streak")
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundColor(.secondary)
                     
                     Text("\(streakCount)")
-                        .font(.largeTitle)
+                        .font(.title)
                         .fontWeight(.bold)
                         .foregroundColor(.primary)
                     
                     Text(streakCount == 1 ? "day" : "days")
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundColor(.secondary)
                 }
                 
                 Spacer()
                 
-                VStack(alignment: .trailing, spacing: 4) {
+                VStack(alignment: .trailing, spacing: 2) {
                     Text("Total Workouts")
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundColor(.secondary)
                     
                     Text("\(totalWorkoutDays)")
-                        .font(.title2)
+                        .font(.headline)
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
                     
                     Text("days trained")
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundColor(.secondary)
                 }
             }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 20)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
             
             // Error message if any
             if let errorMessage = errorMessage {
@@ -95,7 +96,7 @@ struct HistoryView: View {
                         .foregroundColor(.orange)
                     
                     Text(errorMessage)
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundColor(.secondary)
                     
                     Spacer()
@@ -103,24 +104,24 @@ struct HistoryView: View {
                     Button("Retry") {
                         Task { await loadWorkoutData() }
                     }
-                    .font(.caption)
+                    .font(.caption2)
                     .foregroundColor(.blue)
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 8)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 6)
             }
         }
-        .background(.regularMaterial)
+        .background(Color(.systemGray6))
     }
     
-    // MARK: - Calendar View
+    // MARK: - Calendar View (Task 2.4: Adjusted sizing for clear visibility)
     private var calendarView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             // Month navigation
             HStack {
                 Button(action: previousMonth) {
                     Image(systemName: "chevron.left")
-                        .font(.title2)
+                        .font(.title3)
                         .foregroundColor(.primary)
                 }
                 .disabled(isLoading)
@@ -128,25 +129,25 @@ struct HistoryView: View {
                 Spacer()
                 
                 Text(monthYearString)
-                    .font(.headline)
+                    .font(.subheadline)
                     .fontWeight(.semibold)
                 
                 Spacer()
                 
                 Button(action: nextMonth) {
                     Image(systemName: "chevron.right")
-                        .font(.title2)
+                        .font(.title3)
                         .foregroundColor(canNavigateToNextMonth ? .primary : .secondary)
                 }
                 .disabled(!canNavigateToNextMonth || isLoading)
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
             
             // Loading indicator
             if isLoading {
                 SwiftUI.ProgressView()
-                    .scaleEffect(0.8)
-                    .padding(.vertical, 8)
+                    .scaleEffect(0.7)
+                    .padding(.vertical, 4)
             }
             
             // Calendar grid
@@ -158,21 +159,20 @@ struct HistoryView: View {
                     selectedDate = date
                 }
             )
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
             .disabled(isLoading)
         }
-        .padding(.vertical, 16)
-        .background(Color.gray.opacity(0.1))
+        .padding(.vertical, 12)
+        .background(Color(.systemBackground))
     }
     
-    // MARK: - Bottom Sheet View
-    private var bottomSheetView: some View {
+    // MARK: - Fixed Detail View (Task 2.1: Replace bottom sheet with fixed lower-half)
+    private var fixedDetailView: some View {
         VStack(spacing: 0) {
-            // Handle
-            RoundedRectangle(cornerRadius: 2)
-                .fill(Color.secondary.opacity(0.3))
-                .frame(width: 36, height: 4)
-                .padding(.top, 12)
+            // Subtle divider
+            Rectangle()
+                .fill(Color.secondary.opacity(0.2))
+                .frame(height: 1)
             
             // Content
             if let selectedDate = selectedDate {
@@ -181,9 +181,8 @@ struct HistoryView: View {
                 emptyStateView
             }
         }
-        .background(.regularMaterial)
-        .clipShape(UnevenRoundedRectangle(topLeadingRadius: 16, topTrailingRadius: 16))
-        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: -2)
+        .frame(maxHeight: .infinity) // Takes up remaining space (lower half)
+        .background(Color(.systemGray6))
     }
     
     // MARK: - Selected Date Content
@@ -227,24 +226,25 @@ struct HistoryView: View {
     
     // MARK: - Empty States
     private var emptyStateView: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 16) {
             Image(systemName: "calendar")
-                .font(.system(size: 48))
+                .font(.system(size: 36))
                 .foregroundColor(.secondary.opacity(0.6))
             
-            VStack(spacing: 8) {
+            VStack(spacing: 6) {
                 Text("Select a date")
-                    .font(.headline)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
                     .foregroundColor(.primary)
                 
                 Text("Tap on a date to see your workout history")
-                    .font(.body)
+                    .font(.caption)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
             }
         }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 60)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, 20)
     }
     
     private var noWorkoutsView: some View {
@@ -306,18 +306,13 @@ struct HistoryView: View {
             )
             let allSessions = try modelContext.fetch(sessionDescriptor)
             
-            // Filter out sessions that have no completed sets
-            // Show any session that has at least one completed set, regardless of whether it was formally finished
+            // Filter out sessions with no exercises logged
             workoutSessions = allSessions.filter { session in
-                let hasCompletedSets = session.sessionExercises.contains { sessionExercise in
-                    sessionExercise.completedSets.contains { $0.isCompleted }
+                let hasExercises = !session.sessionExercises.isEmpty
+                if !hasExercises {
+                    AppLogger.debug("[HistoryView.loadWorkoutData] Filtering out session with no exercises: \(session.title)", category: "HistoryView")
                 }
-                
-                if !hasCompletedSets && !session.sessionExercises.isEmpty {
-                    AppLogger.debug("[HistoryView.loadWorkoutData] Filtering out session with no completed sets: \(session.title)", category: "HistoryView")
-                }
-                
-                return hasCompletedSets
+                return hasExercises
             }
             
             // Calculate streak and total days

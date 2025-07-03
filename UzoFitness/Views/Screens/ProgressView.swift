@@ -28,8 +28,8 @@ struct ProgressView: View {
                 // Content based on selected segment
                 contentView
             }
-            .navigationTitle("Progress")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationTitle("")
+            .navigationBarHidden(true)
             .task {
                 AppLogger.info("[ProgressView] Task started - loading initial data", category: "ProgressView")
                 await viewModel.handleIntent(.refreshData)
