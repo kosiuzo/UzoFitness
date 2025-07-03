@@ -346,7 +346,7 @@ struct PicturesContentView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .padding(.top, 100)
                 } else if viewModel.totalPhotos == 0 {
-                    emptyPhotosView
+                    photosContent
                 } else {
                     photosContent
                 }
