@@ -37,7 +37,7 @@ struct PhotoCompareView: View {
                 .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
         )
         .fullScreenCover(item: $selectedPhoto) { photo in
-            FullScreenPhotoView(photo: photo)
+            PhotoGalleryView(photos: [photo], index: 0)
         }
     }
     

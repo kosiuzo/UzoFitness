@@ -59,7 +59,8 @@ struct ProgressPhotoGrid: View {
         // Horizontal swipeable photo thumbnails (Task 6.2)
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(photos.sorted { $0.date > $1.date }) { photo in
+                let sortedPhotos = photos.sorted { $0.date > $1.date }
+                ForEach(sortedPhotos) { photo in
                     PhotoThumbnailView(
                         photo: photo,
                         isSelected: isSelected(photo),
@@ -82,7 +83,10 @@ struct ProgressPhotoGrid: View {
             .padding(.vertical, 8)
         }
         .fullScreenCover(item: $selectedPhoto) { photo in
-            FullScreenPhotoView(photo: photo)
+            let sortedPhotos = photos.sorted { $0.date > $1.date }
+            if let index = sortedPhotos.firstIndex(where: { $0.id == photo.id }) {
+                PhotoGalleryView(photos: sortedPhotos, index: index)
+            }
         }
     }
     
@@ -193,121 +197,6 @@ struct PhotoThumbnailView: View {
         let formatter = DateFormatter()
         formatter.dateStyle = .short
         return formatter
-    }
-}
-
-// MARK: - Weight Overlay View
-
-struct WeightOverlay: View {
-    let weight: Double
-    
-    var body: some View {
-        VStack {
-            Spacer()
-            HStack {
-                Spacer()
-                Text(String(format: "%.1f lbs", weight))
-                    .font(.caption2)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 3)
-                    .background(Color.black.opacity(0.5), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
-                    .padding(5)
-            }
-        }
-    }
-}
-
-// MARK: - Local File Image Helper
-
-struct LocalFileImage: View {
-    let url: URL?
-    @State private var image: UIImage?
-
-    var body: some View {
-        Group {
-            if let image = image {
-                Image(uiImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-            } else {
-                Rectangle()
-                    .fill(Color(.systemGray5))
-                    .overlay {
-                        Image(systemName: "photo")
-                            .foregroundColor(.secondary)
-                    }
-            }
-        }
-        .task(id: url) {
-            await loadImage()
-        }
-    }
-
-    private func loadImage() async {
-        guard let url = url else {
-            if image != nil { await MainActor.run { image = nil } }
-            return
-        }
-
-        // Perform file-loading off the main thread.
-        let loadedImage = await Task.detached(priority: .userInitiated) { () -> UIImage? in
-            guard FileManager.default.fileExists(atPath: url.path) else {
-                AppLogger.error("[LocalFileImage] File does not exist at path: \(url.path)", category: "ProgressPhotoGrid")
-                return nil
-            }
-            do {
-                let data = try Data(contentsOf: url)
-                return UIImage(data: data)
-            } catch {
-                AppLogger.error("[LocalFileImage] Failed to load image data from \(url)", category: "ProgressPhotoGrid", error: error)
-                return nil
-            }
-        }.value
-        
-        await MainActor.run {
-            self.image = loadedImage
-        }
-    }
-}
-
-// MARK: - Full Screen Photo View
-
-struct FullScreenPhotoView: View {
-    let photo: ProgressPhoto
-    @Environment(\.dismiss) private var dismiss
-
-    private var photoURL: URL? {
-        if let url = URL(string: photo.assetIdentifier), url.isFileURL { return url }
-        
-        if let appSupportDir = try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: false) {
-            let persistentURL = appSupportDir.appendingPathComponent("ProgressPhotos/\(photo.assetIdentifier)")
-            if FileManager.default.fileExists(atPath: persistentURL.path) {
-                return persistentURL
-            }
-        }
-        
-        let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
-        return cacheDir?.appendingPathComponent(photo.assetIdentifier)
-    }
-
-    var body: some View {
-        ZStack(alignment: .topTrailing) {
-            Color.black.ignoresSafeArea()
-
-            LocalFileImage(url: photoURL)
-                .aspectRatio(contentMode: .fit)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            Button(action: { dismiss() }) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.largeTitle)
-                    .symbolRenderingMode(.palette)
-                    .foregroundStyle(.white, Color.black.opacity(0.6))
-                    .padding()
-            }
-        }
     }
 }
 
