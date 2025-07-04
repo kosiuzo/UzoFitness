@@ -485,6 +485,7 @@ struct ExerciseEditorView: View {
 struct TemplateDetailView: View {
     let template: WorkoutTemplate
     @ObservedObject var viewModel: LibraryViewModel
+    @Environment(\.dismiss) private var dismiss
     
     @State private var name: String
     @State private var summary: String
@@ -583,6 +584,7 @@ struct TemplateDetailView: View {
         .alert("Delete Workout", isPresented: $showingDeleteConfirmation) {
             Button("Delete", role: .destructive) {
                 viewModel.deleteTemplate(template)
+                dismiss()
             }
             Button("Cancel", role: .cancel) { }
         } message: {

@@ -16,6 +16,7 @@ class LibraryViewModel: ObservableObject {
     @Published var state: LoadingState = .idle
     @Published var selectedSegment: LibrarySegment = .workouts
     @Published var importErrorMessage: String?
+    @Published var workoutPlans: [WorkoutPlan] = []
     
     // MARK: - Computed Properties
     var activePlan: WorkoutPlan? {
@@ -42,18 +43,6 @@ class LibraryViewModel: ObservableObject {
     
     var workoutTemplates: [WorkoutTemplate] {
         sortedTemplates
-    }
-    
-    var workoutPlans: [WorkoutPlan] {
-        do {
-            let descriptor = FetchDescriptor<WorkoutPlan>(
-                sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
-            )
-            return try modelContext.fetch(descriptor)
-        } catch {
-            AppLogger.error("[LibraryViewModel.workoutPlans] Error: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
-            return []
-        }
     }
     
     // MARK: - Private Properties
@@ -156,6 +145,7 @@ class LibraryViewModel: ObservableObject {
             try loadTemplates()
             try loadExercises()
             try loadActivePlan()
+            loadWorkoutPlans()
             
             AppLogger.info("[LibraryViewModel.loadData] Successfully loaded all data", category: "LibraryViewModel")
             AppLogger.debug("[LibraryViewModel] State changed to: loaded", category: "LibraryViewModel")
@@ -218,6 +208,19 @@ class LibraryViewModel: ObservableObject {
             AppLogger.error("[LibraryViewModel.loadActivePlan] Error: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
             activePlanID = nil
             throw error
+        }
+    }
+    
+    private func loadWorkoutPlans() {
+        do {
+            let descriptor = FetchDescriptor<WorkoutPlan>(
+                sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+            )
+            workoutPlans = try modelContext.fetch(descriptor)
+            AppLogger.debug("[LibraryViewModel.loadWorkoutPlans] Loaded \(workoutPlans.count) workout plans", category: "LibraryViewModel")
+        } catch {
+            AppLogger.error("[LibraryViewModel.loadWorkoutPlans] Error: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
+            workoutPlans = []
         }
     }
     
@@ -462,6 +465,9 @@ class LibraryViewModel: ObservableObject {
             
             activePlanID = newPlan.id
             
+            // Refresh the workout plans list to update the UI
+            loadWorkoutPlans()
+            
             AppLogger.info("[LibraryViewModel.activatePlan] Successfully activated plan: \(finalName)", category: "LibraryViewModel")
             AppLogger.info("[LibraryViewModel.activatePlan] Plan ID: \(newPlan.id), Template: \(template.name)", category: "LibraryViewModel")
             
@@ -488,6 +494,9 @@ class LibraryViewModel: ObservableObject {
             try modelContext.save()
             
             activePlanID = nil
+            
+            // Refresh the workout plans list to update the UI
+            loadWorkoutPlans()
             
             AppLogger.info("[LibraryViewModel.deactivatePlan] Successfully deactivated plan: \(currentPlan.customName)", category: "LibraryViewModel")
             
@@ -717,6 +726,9 @@ class LibraryViewModel: ObservableObject {
         
         modelContext.delete(plan)
         try modelContext.save()
+        
+        // Refresh the workout plans list to update the UI
+        loadWorkoutPlans()
         
         AppLogger.info("[LibraryViewModel.deleteWorkoutPlan] Successfully deleted plan", category: "LibraryViewModel")
     }
