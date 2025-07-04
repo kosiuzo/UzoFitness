@@ -1,5 +1,10 @@
 import SwiftUI
-import UIKit
+import Photos
+@testable import UzoFitness
+// Explicitly import types from their files
+// If using a project without modules, use @testable import UzoFitness if needed
+// Otherwise, add file-level imports for clarity
+// These are for type resolution only
 
 struct GalleryPresentation: Identifiable {
     let id = UUID()
@@ -156,11 +161,26 @@ struct PhotoCompareCard: View {
     }
     
     private var photoURL: URL? {
-        if let url = URL(string: photo.assetIdentifier), url.isFileURL {
+        // First, check Application Support/ProgressPhotos (persistent home)
+        if let appSupportDir = try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: false) {
+            let persistentURL = appSupportDir.appendingPathComponent("ProgressPhotos/")
+            let fileURL = persistentURL.appendingPathComponent(photo.assetIdentifier)
+            if FileManager.default.fileExists(atPath: fileURL.path) {
+                return fileURL
+            }
+        }
+        // Fallback: if assetIdentifier is an absolute file URL string
+        if let url = URL(string: photo.assetIdentifier), url.isFileURL, FileManager.default.fileExists(atPath: url.path) {
             return url
         }
-        let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
-        return cacheDir?.appendingPathComponent(photo.assetIdentifier)
+        // Final fallback: check the original cache directory
+        if let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first {
+            let legacyURL = cacheDir.appendingPathComponent(photo.assetIdentifier)
+            if FileManager.default.fileExists(atPath: legacyURL.path) {
+                return legacyURL
+            }
+        }
+        return nil
     }
     
     private var dateFormatter: DateFormatter {

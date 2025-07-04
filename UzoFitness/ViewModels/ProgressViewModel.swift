@@ -199,7 +199,10 @@ class ProgressViewModel: ObservableObject {
             await loadPhotos()
             
         case .addPhoto(let angle, let image):
-            await addPhoto(angle: angle, image: image)
+            await addPhoto(angle: angle, image: image, date: nil)
+            
+        case .addPhotoWithDate(let angle, let image, let date):
+            await addPhoto(angle: angle, image: image, date: date)
             
         case .deletePhoto(let photoID):
             await deletePhoto(photoID)
@@ -388,11 +391,11 @@ class ProgressViewModel: ObservableObject {
         AppLogger.info("[ProgressViewModel.loadPhotoMetrics] Loaded metrics for \(metrics.count) photos", category: "ProgressViewModel")
     }
     
-    private func addPhoto(angle: PhotoAngle, image: UIImage) async {
+    private func addPhoto(angle: PhotoAngle, image: UIImage, date: Date? = nil) async {
         AppLogger.debug("[ProgressViewModel.addPhoto] Adding photo for angle: \(angle)", category: "ProgressViewModel")
         
         do {
-            try photoService.save(image: image, angle: angle)
+            try photoService.save(image: image, angle: angle, date: date ?? Date())
             
             AppLogger.info("[ProgressViewModel.addPhoto] Successfully saved photo", category: "ProgressViewModel")
             
@@ -562,6 +565,7 @@ enum ProgressIntent {
     case loadStats
     case loadPhotos
     case addPhoto(PhotoAngle, UIImage)
+    case addPhotoWithDate(PhotoAngle, UIImage, Date)
     case deletePhoto(UUID)
     case selectForCompare(UUID)
     case clearComparison

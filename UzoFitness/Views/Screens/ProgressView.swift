@@ -358,8 +358,15 @@ struct PicturesContentView: View {
         .onChange(of: selectedPickerItem) { _, newItem in
             guard let newItem = newItem, let angle = selectedPickerAngle else { return }
             Task {
+                var creationDate: Date? = nil
+                if let id = newItem.itemIdentifier {
+                    let assets = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil)
+                    if let asset = assets.firstObject {
+                        creationDate = asset.creationDate
+                    }
+                }
                 if let data = try? await newItem.loadTransferable(type: Data.self), let uiImage = UIImage(data: data) {
-                    await viewModel.handleIntent(.addPhoto(angle, uiImage))
+                    await viewModel.handleIntent(.addPhotoWithDate(angle, uiImage, creationDate ?? Date()))
                 }
                 selectedPickerItem = nil
                 selectedPickerAngle = nil
