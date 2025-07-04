@@ -5,6 +5,7 @@
 //  Created by Kosi Uzodinma on 6/18/25.
 //
 
+import Foundation
 import UIKit
 import SwiftData
 import PhotosUI
@@ -222,7 +223,7 @@ final class PhotoService {
             id: UUID(),
             date: date,
             angle: angle,
-            assetIdentifier: url.absoluteString
+            assetIdentifier: filename
         )
         try dataPersistenceService.insert(photo)
         try dataPersistenceService.save()

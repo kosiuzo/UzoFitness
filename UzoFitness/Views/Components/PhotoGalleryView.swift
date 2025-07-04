@@ -30,17 +30,18 @@ struct PhotoGalleryView: View {
     }
 
     private func url(for photo: ProgressPhoto) -> URL? {
-        // First, check for an absolute file URL string, which is the current format.
-        if let url = URL(string: photo.assetIdentifier), url.isFileURL {
-            return url
+        // Always resolve as filename in Application Support/ProgressPhotos
+        if let appSupportDir = try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: false) {
+            let persistentURL = appSupportDir.appendingPathComponent("ProgressPhotos/")
+            let fileURL = persistentURL.appendingPathComponent(photo.assetIdentifier)
+            if FileManager.default.fileExists(atPath: fileURL.path) {
+                return fileURL
+            }
         }
 
-        // Fallback for older data: check Application Support (the new persistent home).
-        if let appSupportDir = try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: false) {
-            let persistentURL = appSupportDir.appendingPathComponent("ProgressPhotos/\(photo.assetIdentifier)")
-            if FileManager.default.fileExists(atPath: persistentURL.path) {
-                return persistentURL
-            }
+        // Fallback: if assetIdentifier is an absolute file URL string
+        if let url = URL(string: photo.assetIdentifier), url.isFileURL, FileManager.default.fileExists(atPath: url.path) {
+            return url
         }
 
         // Final fallback for very old data: check the original cache directory.
