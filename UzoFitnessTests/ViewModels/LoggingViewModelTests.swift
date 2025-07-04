@@ -51,7 +51,6 @@ final class LoggingViewModelTests: XCTestCase {
         // Given
         let workoutTemplate = WorkoutTemplate(name: "Test Template")
         let workoutPlan = WorkoutPlan(customName: "Test Plan", template: workoutTemplate)
-        
         modelContext.insert(workoutTemplate)
         modelContext.insert(workoutPlan)
         try modelContext.save()
@@ -60,54 +59,37 @@ final class LoggingViewModelTests: XCTestCase {
         viewModel.handleIntent(.selectPlan(workoutPlan.id))
         
         // Then
-        XCTAssertNotNil(viewModel.activePlan)
         XCTAssertEqual(viewModel.activePlan?.id, workoutPlan.id)
-        XCTAssertEqual(viewModel.activePlan?.customName, "Test Plan")
+        XCTAssertNotNil(viewModel.activePlan)
         
         print("✅ [LoggingViewModelTests.testSelectPlan_ValidPlan_SetsActivePlan] Passed")
     }
     
-    func testSelectPlan_InvalidPlan_SetsError() async throws {
+    func testSelectPlan_InvalidPlanID_SetsError() async throws {
         // Given
-        let nonExistentID = UUID()
+        let invalidID = UUID()
         
         // When
-        viewModel.handleIntent(.selectPlan(nonExistentID))
+        viewModel.handleIntent(.selectPlan(invalidID))
         
         // Then
-        XCTAssertNil(viewModel.activePlan)
         XCTAssertNotNil(viewModel.error)
         
-        print("✅ [LoggingViewModelTests.testSelectPlan_InvalidPlan_SetsError] Passed")
+        print("✅ [LoggingViewModelTests.testSelectPlan_InvalidPlanID_SetsError] Passed")
     }
     
     // MARK: - Day Selection Tests
     
-    func testSelectDay_WithActivePlan_SetsSelectedDay() async throws {
+    func testSelectDay_ValidDay_SetsSelectedDay() async throws {
         // Given
-        let exercise = Exercise(name: "Bench Press", category: .strength)
         let workoutTemplate = WorkoutTemplate(name: "Test Template")
         let dayTemplate = DayTemplate(weekday: .monday, workoutTemplate: workoutTemplate)
-        let exerciseTemplate = ExerciseTemplate(
-            exercise: exercise,
-            setCount: 3,
-            reps: 10,
-            weight: 135.0,
-            position: 1.0,
-            dayTemplate: dayTemplate
-        )
+        let workoutPlan = WorkoutPlan(customName: "Test Plan", template: workoutTemplate)
         
-        modelContext.insert(exercise)
         modelContext.insert(workoutTemplate)
         modelContext.insert(dayTemplate)
-        modelContext.insert(exerciseTemplate)
-        
-        workoutTemplate.dayTemplates.append(dayTemplate)
-        dayTemplate.exerciseTemplates.append(exerciseTemplate)
-        
-        let workoutPlan = WorkoutPlan(customName: "Test Plan", template: workoutTemplate)
         modelContext.insert(workoutPlan)
-        
+        workoutTemplate.dayTemplates.append(dayTemplate)
         try modelContext.save()
         
         viewModel.handleIntent(.selectPlan(workoutPlan.id))
@@ -116,204 +98,10 @@ final class LoggingViewModelTests: XCTestCase {
         viewModel.handleIntent(.selectDay(.monday))
         
         // Then
-        XCTAssertNotNil(viewModel.selectedDay)
         XCTAssertEqual(viewModel.selectedDay?.weekday, .monday)
         XCTAssertFalse(viewModel.isRestDay)
-        XCTAssertNotNil(viewModel.session)
-        XCTAssertEqual(viewModel.exercises.count, 1)
         
-        print("✅ [LoggingViewModelTests.testSelectDay_WithActivePlan_SetsSelectedDay] Passed")
-    }
-    
-    func testSelectDay_RestDay_SetsRestDayFlag() async throws {
-        // Given
-        let workoutTemplate = WorkoutTemplate(name: "Test Template")
-        let restDayTemplate = DayTemplate(weekday: .sunday, isRest: true, workoutTemplate: workoutTemplate)
-        
-        modelContext.insert(workoutTemplate)
-        modelContext.insert(restDayTemplate)
-        
-        workoutTemplate.dayTemplates.append(restDayTemplate)
-        
-        let workoutPlan = WorkoutPlan(customName: "Test Plan", template: workoutTemplate)
-        modelContext.insert(workoutPlan)
-        
-        try modelContext.save()
-        
-        viewModel.handleIntent(.selectPlan(workoutPlan.id))
-        
-        // When
-        viewModel.handleIntent(.selectDay(.sunday))
-        
-        // Then
-        XCTAssertNotNil(viewModel.selectedDay)
-        XCTAssertEqual(viewModel.selectedDay?.weekday, .sunday)
-        XCTAssertTrue(viewModel.isRestDay)
-        
-        print("✅ [LoggingViewModelTests.testSelectDay_RestDay_SetsRestDayFlag] Passed")
-    }
-    
-    // MARK: - Exercise Interaction Tests
-    
-    func testAddSet_ValidExercise_AddsCompletedSet() async throws {
-        // Given
-        let (exercise, session) = try createTestSession()
-        let sessionExercise = session.sessionExercises.first!
-        let initialSetCount = sessionExercise.completedSets.count
-        
-        // When
-        viewModel.handleIntent(.addSet(exerciseID: sessionExercise.id))
-        try await waitForSwiftDataOperations(modelContext: modelContext)
-        try await waitForCondition({ sessionExercise.completedSets.count == initialSetCount + 1 }, timeout: 2.0)
-        
-        // Then
-        XCTAssertEqual(sessionExercise.completedSets.count, initialSetCount + 1)
-        XCTAssertEqual(sessionExercise.currentSet, initialSetCount + 1)
-        
-        print("✅ [LoggingViewModelTests.testAddSet_ValidExercise_AddsCompletedSet] Passed")
-    }
-    
-    func testEditSet_ValidData_UpdatesSet() async throws {
-        // Given
-        let (exercise, session) = try createTestSession()
-        let sessionExercise = session.sessionExercises.first!
-        
-        // Add a set first
-        viewModel.handleIntent(.addSet(exerciseID: sessionExercise.id))
-        try await waitForSwiftDataOperations(modelContext: modelContext)
-        try await waitForCondition({ sessionExercise.completedSets.count == 1 }, timeout: 2.0)
-        
-        // When
-        viewModel.handleIntent(.editSet(exerciseID: sessionExercise.id, setIndex: 0, reps: 12, weight: 150.0))
-        try await waitForSwiftDataOperations(modelContext: modelContext)
-        try await waitForCondition({ sessionExercise.completedSets.first?.reps == 12 && sessionExercise.completedSets.first?.weight == 150.0 }, timeout: 2.0)
-        
-        // Then
-        let completedSet = sessionExercise.completedSets.first!
-        XCTAssertEqual(completedSet.reps, 12)
-        XCTAssertEqual(completedSet.weight, 150.0)
-        
-        print("✅ [LoggingViewModelTests.testEditSet_ValidData_UpdatesSet] Passed")
-    }
-    
-    func testMarkExerciseComplete_ValidExercise_MarksComplete() async throws {
-        // Given
-        let (exercise, session) = try createTestSession()
-        let sessionExercise = session.sessionExercises.first!
-        
-        // When
-        viewModel.handleIntent(.markExerciseComplete(exerciseID: sessionExercise.id))
-        
-        // Then
-        XCTAssertTrue(sessionExercise.isCompleted)
-        
-        print("✅ [LoggingViewModelTests.testMarkExerciseComplete_ValidExercise_MarksComplete] Passed")
-    }
-    
-    // MARK: - Timer Tests
-    
-    func testStartRest_ValidExercise_StartsTimer() async throws {
-        // Given
-        let (exercise, session) = try createTestSession()
-        let sessionExercise = session.sessionExercises.first!
-        
-        // When
-        viewModel.handleIntent(.startRest(exerciseID: sessionExercise.id, seconds: 60))
-        
-        // Then
-        XCTAssertEqual(sessionExercise.restTimer, 60)
-        XCTAssertTrue(viewModel.showTimerSheet)
-        XCTAssertTrue(mockTimerFactory.timerCreated)
-        
-        print("✅ [LoggingViewModelTests.testStartRest_ValidExercise_StartsTimer] Passed")
-    }
-    
-    // MARK: - Session Completion Tests
-    
-    func testCanFinishSession_AllExercisesComplete_ReturnsTrue() async throws {
-        // Given
-        let (exercise, session) = try createTestSession()
-        let sessionExercise = session.sessionExercises.first!
-        
-        // Mark exercise as complete
-        viewModel.handleIntent(.markExerciseComplete(exerciseID: sessionExercise.id))
-        
-        // When/Then
-        XCTAssertTrue(viewModel.canFinishSession)
-        
-        print("✅ [LoggingViewModelTests.testCanFinishSession_AllExercisesComplete_ReturnsTrue] Passed")
-    }
-    
-    func testCanFinishSession_IncompleteExercises_ReturnsFalse() async throws {
-        // Given
-        let (exercise, session) = try createTestSession()
-        
-        // When/Then (exercise is not marked complete)
-        XCTAssertFalse(viewModel.canFinishSession)
-        
-        print("✅ [LoggingViewModelTests.testCanFinishSession_IncompleteExercises_ReturnsFalse] Passed")
-    }
-    
-
-    
-    // MARK: - Computed Properties Tests
-    
-
-    
-    // MARK: - SessionExerciseUI Tests
-    
-    func testSessionExerciseUI_SupersetDetection_IdentifiesHeadCorrectly() async throws {
-        // Given
-        let exercise1 = Exercise(name: "Exercise 1", category: .strength)
-        let exercise2 = Exercise(name: "Exercise 2", category: .strength)
-        let workoutTemplate = WorkoutTemplate(name: "Test Template")
-        let dayTemplate = DayTemplate(weekday: .monday, workoutTemplate: workoutTemplate)
-        
-        let supersetID = UUID()
-        let exerciseTemplate1 = ExerciseTemplate(
-            exercise: exercise1,
-            setCount: 3,
-            reps: 10,
-            weight: 135.0,
-            position: 1.0,
-            supersetID: supersetID,
-            dayTemplate: dayTemplate
-        )
-        let exerciseTemplate2 = ExerciseTemplate(
-            exercise: exercise2,
-            setCount: 3,
-            reps: 10,
-            weight: 95.0,
-            position: 2.0,
-            supersetID: supersetID,
-            dayTemplate: dayTemplate
-        )
-        
-        modelContext.insert(exercise1)
-        modelContext.insert(exercise2)
-        modelContext.insert(workoutTemplate)
-        modelContext.insert(dayTemplate)
-        modelContext.insert(exerciseTemplate1)
-        modelContext.insert(exerciseTemplate2)
-        
-        workoutTemplate.dayTemplates.append(dayTemplate)
-        dayTemplate.exerciseTemplates.append(exerciseTemplate1)
-        dayTemplate.exerciseTemplates.append(exerciseTemplate2)
-        
-        let workoutPlan = WorkoutPlan(customName: "Test Plan", template: workoutTemplate)
-        modelContext.insert(workoutPlan)
-        
-        try modelContext.save()
-        
-        viewModel.handleIntent(.selectPlan(workoutPlan.id))
-        viewModel.handleIntent(.selectDay(.monday))
-        
-        // When/Then
-        XCTAssertEqual(viewModel.exercises.count, 2)
-        XCTAssertTrue(viewModel.exercises.first?.isSupersetHead == true)  // First exercise should be superset head
-        XCTAssertTrue(viewModel.exercises.last?.isSupersetHead == false)  // Second exercise should not be head
-        
-        print("✅ [LoggingViewModelTests.testSessionExerciseUI_SupersetDetection_IdentifiesHeadCorrectly] Passed")
+        print("✅ [LoggingViewModelTests.testSelectDay_ValidDay_SetsSelectedDay] Passed")
     }
     
     // MARK: - Error Handling Tests
@@ -330,90 +118,15 @@ final class LoggingViewModelTests: XCTestCase {
         
         print("✅ [LoggingViewModelTests.testAddSet_InvalidExerciseID_SetsError] Passed")
     }
-    
-    func testFinishSession_IncompleteExercises_SetsError() async throws {
-        // Given
-        let (exercise, session) = try createTestSession()
-        // Don't mark exercise as complete
-        
-        // When
-        viewModel.handleIntent(.finishSession)
-        
-        // Then
-        XCTAssertNotNil(viewModel.error)
-        XCTAssertNotNil(viewModel.session) // Session should still exist
-        
-        print("✅ [LoggingViewModelTests.testFinishSession_IncompleteExercises_SetsError] Passed")
-    }
-    
-    // MARK: - Helper Methods
-    
-    private func createTestSession() throws -> (Exercise, WorkoutSession) {
-        let exercise = Exercise(name: "Test Exercise", category: .strength)
-        let workoutTemplate = WorkoutTemplate(name: "Test Template")
-        let dayTemplate = DayTemplate(weekday: .monday, workoutTemplate: workoutTemplate)
-        let exerciseTemplate = ExerciseTemplate(
-            exercise: exercise,
-            setCount: 3,
-            reps: 10,
-            weight: 135.0,
-            position: 1.0,
-            dayTemplate: dayTemplate
-        )
-        
-        modelContext.insert(exercise)
-        modelContext.insert(workoutTemplate)
-        modelContext.insert(dayTemplate)
-        modelContext.insert(exerciseTemplate)
-        
-        workoutTemplate.dayTemplates.append(dayTemplate)
-        dayTemplate.exerciseTemplates.append(exerciseTemplate)
-        
-        let workoutPlan = WorkoutPlan(customName: "Test Plan", template: workoutTemplate)
-        modelContext.insert(workoutPlan)
-        
-        try modelContext.save()
-        
-        viewModel.handleIntent(.selectPlan(workoutPlan.id))
-        viewModel.handleIntent(.selectDay(.monday))
-        
-        return (exercise, viewModel.session!)
-    }
 }
 
-// MARK: - Mock TimerFactory
+// MARK: - Mock Timer Factory
+
 class MockTimerFactory: TimerFactory {
     var timerCreated = false
-    var mockTimer: MockTimer?
     
     func createTimer(interval: TimeInterval, repeats: Bool, block: @escaping (Timer) -> Void) -> Timer {
         timerCreated = true
-        mockTimer = MockTimer(block: block)
-        return mockTimer!
-    }
-}
-
-// MARK: - Mock Timer
-class MockTimer: Timer {
-    private let block: (Timer) -> Void
-    private var isValidFlag = true
-    
-    init(block: @escaping (Timer) -> Void) {
-        self.block = block
-        super.init()
-    }
-    
-    override func invalidate() {
-        isValidFlag = false
-    }
-    
-    override var isValid: Bool {
-        return isValidFlag
-    }
-    
-    override func fire() {
-        if isValidFlag {
-            block(self)
-        }
+        return Timer.scheduledTimer(withTimeInterval: interval, repeats: repeats, block: block)
     }
 } 

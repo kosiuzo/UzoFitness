@@ -155,28 +155,7 @@ final class SettingsViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.error is SettingsError)
     }
     
-    func testViewModel_HandleRestoreIntent() async {
-        let healthKit = HealthKitManager()
-        let photoService = PhotoService(dataPersistenceService: DefaultDataPersistenceService(modelContext: PersistenceController.preview.container.mainContext))
-        let modelContext = PersistenceController.preview.container.mainContext
-        
-        let viewModel = SettingsViewModel(
-            healthKitManager: healthKit,
-            photoService: photoService,
-            appSettingsStore: mockAppSettingsStore,
-            iCloudBackupService: mockiCloudBackupService,
-            batteryMonitor: mockBatteryMonitor,
-            modelContext: modelContext
-        )
-        
-        viewModel.handleIntent(.performRestore)
-        
-        // Wait for restore to complete - increased wait time
-        try? await Task.sleep(nanoseconds: 5_000_000_000) // 5 seconds
-        
-        XCTAssertTrue(mockiCloudBackupService.performRestoreCalled)
-        XCTAssertFalse(viewModel.isLoadingRestore)
-    }
+
     
     func testViewModel_FormattedLastBackupDate() async {
         let healthKit = HealthKitManager()

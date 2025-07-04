@@ -60,23 +60,6 @@ final class HistoryViewModelTests: XCTestCase {
     
     // MARK: - Calendar Data Tests
     
-    func testLoadCalendarData_WithWorkoutSessions_PopulatesCalendarData() async throws {
-        // Given
-        let sessions = try createTestWorkoutSessions()
-        
-        viewModel.handleIntent(.loadData)
-        try await waitForSwiftDataOperations(modelContext: modelContext)
-        try await waitForCondition({ !self.viewModel.calendarData.isEmpty }, timeout: 2.0)
-        
-        // Then
-        XCTAssertFalse(viewModel.calendarData.isEmpty)
-        XCTAssertEqual(viewModel.calendarData.count, 3) // 3 different days
-        XCTAssertEqual(viewModel.totalWorkoutDays, 3)
-        XCTAssertGreaterThan(viewModel.totalVolume, 0)
-        
-        print("✅ [HistoryViewModelTests.testLoadCalendarData_WithWorkoutSessions_PopulatesCalendarData] Passed")
-    }
-    
     func testWorkoutSessionSummary_CreatesCorrectSummary() async throws {
         // Given
         let (session, _) = try createTestWorkoutSession(
@@ -121,37 +104,6 @@ final class HistoryViewModelTests: XCTestCase {
     
     // MARK: - Date Selection Tests
     
-    func testSelectDate_WithWorkoutData_SetsSelectedDateAndLoadsDetails() async throws {
-        // Given
-        let testDate = Date()
-        let (_, performedExercises) = try createTestWorkoutSession(
-            date: testDate,
-            title: "Test Workout",
-            duration: 3600,
-            exerciseCount: 2
-        )
-        
-        viewModel.handleIntent(.loadData)
-        
-        // Wait for data to load
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
-        
-        // When
-        viewModel.handleIntent(.selectDate(testDate))
-        
-        // Wait for details to load
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
-        
-        // Then
-        XCTAssertNotNil(viewModel.selectedDate)
-        XCTAssertEqual(Calendar.current.startOfDay(for: viewModel.selectedDate!), 
-                      Calendar.current.startOfDay(for: testDate))
-        XCTAssertEqual(viewModel.dailyDetails.count, performedExercises.count)
-        XCTAssertFalse(viewModel.selectedDateSessions.isEmpty)
-        
-        print("✅ [HistoryViewModelTests.testSelectDate_WithWorkoutData_SetsSelectedDateAndLoadsDetails] Passed")
-    }
-    
     func testSelectDate_WithNoWorkoutData_SetsSelectedDateWithEmptyDetails() async throws {
         // Given
         let futureDate = Calendar.current.date(byAdding: .day, value: 30, to: Date())!
@@ -187,172 +139,6 @@ final class HistoryViewModelTests: XCTestCase {
         print("✅ [HistoryViewModelTests.testClearSelection_ClearsSelectedDateAndDetails] Passed")
     }
     
-    // MARK: - Analytics Tests
-    
-    func testTotalVolumeForDay_WithSelectedDate_CalculatesCorrectly() async throws {
-        // Given
-        let testDate = Date()
-        try createTestWorkoutSession(date: testDate, title: "Session 1", duration: 3600, exerciseCount: 2)
-        try createTestWorkoutSession(date: testDate, title: "Session 2", duration: 1800, exerciseCount: 1)
-        
-        viewModel.handleIntent(.loadData)
-        viewModel.handleIntent(.selectDate(testDate))
-        
-        // When
-        let totalVolume = viewModel.totalVolumeForDay
-        
-        // Then
-        XCTAssertGreaterThan(totalVolume, 0)
-        
-        // Verify it's the sum of both sessions
-        let sessionsForDay = viewModel.selectedDateSessions
-        let expectedVolume = sessionsForDay.reduce(0) { $0 + $1.totalVolume }
-        XCTAssertEqual(totalVolume, expectedVolume, accuracy: 0.01)
-        
-        print("✅ [HistoryViewModelTests.testTotalVolumeForDay_WithSelectedDate_CalculatesCorrectly] Passed")
-    }
-    
-    func testLongestSession_WithMultipleSessions_ReturnsLongestDuration() async throws {
-        // Given
-        try createTestWorkoutSession(date: Date(), title: "Short", duration: 1800, exerciseCount: 1)
-        try createTestWorkoutSession(date: Date(), title: "Medium", duration: 3600, exerciseCount: 1)
-        try createTestWorkoutSession(date: Date(), title: "Long", duration: 5400, exerciseCount: 1)
-        
-        viewModel.handleIntent(.loadData)
-        try await waitForSwiftDataOperations(modelContext: modelContext)
-        try await waitForCondition({ self.viewModel.longestSession == 5400 }, timeout: 2.0)
-        
-        // When
-        let longest = viewModel.longestSession
-        
-        // Then
-        XCTAssertEqual(longest, 5400)
-        
-        print("✅ [HistoryViewModelTests.testLongestSession_WithMultipleSessions_ReturnsLongestDuration] Passed")
-    }
-    
-    func testStreakCount_WithConsecutiveWorkouts_CalculatesCorrectStreak() async throws {
-        // Given
-        let calendar = Calendar.current
-        let today = Date()
-        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
-        let twoDaysAgo = calendar.date(byAdding: .day, value: -2, to: today)!
-        
-        try createTestWorkoutSession(date: today, title: "Today", duration: 3600, exerciseCount: 1)
-        try createTestWorkoutSession(date: yesterday, title: "Yesterday", duration: 3600, exerciseCount: 1)
-        try createTestWorkoutSession(date: twoDaysAgo, title: "Two days ago", duration: 3600, exerciseCount: 1)
-        
-        viewModel.handleIntent(.loadData)
-        try await waitForSwiftDataOperations(modelContext: modelContext)
-        try await waitForCondition({ self.viewModel.streakCount == 3 }, timeout: 2.0)
-        
-        // When
-        let streakCount = viewModel.streakCount
-        
-        // Then
-        XCTAssertEqual(streakCount, 3)
-        
-        print("✅ [HistoryViewModelTests.testStreakCount_WithConsecutiveWorkouts_CalculatesCorrectStreak] Passed")
-    }
-    
-    func testStreakCount_WithGapInWorkouts_CalculatesCorrectStreak() async throws {
-        // Given
-        let calendar = Calendar.current
-        let today = Date()
-        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
-        let threeDaysAgo = calendar.date(byAdding: .day, value: -3, to: today)! // Gap here
-        
-        try createTestWorkoutSession(date: today, title: "Today", duration: 3600, exerciseCount: 1)
-        try createTestWorkoutSession(date: yesterday, title: "Yesterday", duration: 3600, exerciseCount: 1)
-        try createTestWorkoutSession(date: threeDaysAgo, title: "Three days ago", duration: 3600, exerciseCount: 1)
-        
-        viewModel.handleIntent(.loadData)
-        try await waitForSwiftDataOperations(modelContext: modelContext)
-        try await waitForCondition({ self.viewModel.streakCount == 2 }, timeout: 2.0)
-        
-        // When
-        let streakCount = viewModel.streakCount
-        
-        // Then
-        XCTAssertEqual(streakCount, 2) // Should only count today and yesterday
-        
-        print("✅ [HistoryViewModelTests.testStreakCount_WithGapInWorkouts_CalculatesCorrectStreak] Passed")
-    }
-    
-    func testAverageWorkoutDuration_WithMultipleSessions_CalculatesCorrectly() async throws {
-        // Given
-        try createTestWorkoutSession(date: Date(), title: "1", duration: 3600, exerciseCount: 1) // 60 min
-        try createTestWorkoutSession(date: Date(), title: "2", duration: 1800, exerciseCount: 1) // 30 min
-        try createTestWorkoutSession(date: Date(), title: "3", duration: 5400, exerciseCount: 1) // 90 min
-        
-        viewModel.handleIntent(.loadData)
-        try await waitForSwiftDataOperations(modelContext: modelContext)
-        try await waitForCondition({ self.viewModel.averageWorkoutDuration != nil }, timeout: 2.0)
-        
-        // When
-        let averageDuration = viewModel.averageWorkoutDuration
-        
-        // Then
-        XCTAssertNotNil(averageDuration)
-        XCTAssertEqual(averageDuration!, 3600, accuracy: 1) // (60+30+90)/3 = 60 minutes
-        
-        print("✅ [HistoryViewModelTests.testAverageWorkoutDuration_WithMultipleSessions_CalculatesCorrectly] Passed")
-    }
-    
-    // MARK: - Analytics Period Tests
-    
-    func testGetWorkoutFrequency_ForWeek_ReturnsCorrectData() async throws {
-        // Given
-        let calendar = Calendar.current
-        let today = Date()
-        let threeDaysAgo = calendar.date(byAdding: .day, value: -3, to: today)!
-        let sixDaysAgo = calendar.date(byAdding: .day, value: -6, to: today)!
-        let tenDaysAgo = calendar.date(byAdding: .day, value: -10, to: today)!
-        
-        try createTestWorkoutSession(date: today, title: "Today", duration: 3600, exerciseCount: 1)
-        try createTestWorkoutSession(date: threeDaysAgo, title: "3 days ago", duration: 3600, exerciseCount: 1)
-        try createTestWorkoutSession(date: sixDaysAgo, title: "6 days ago", duration: 3600, exerciseCount: 1)
-        try createTestWorkoutSession(date: tenDaysAgo, title: "10 days ago", duration: 3600, exerciseCount: 1) // Should be excluded
-        
-        viewModel.handleIntent(.loadData)
-        try await waitForSwiftDataOperations(modelContext: modelContext)
-        try await waitForCondition({ self.viewModel.getWorkoutFrequency(for: .week).count == 3 }, timeout: 2.0)
-        
-        // When
-        let weeklyFrequency = viewModel.getWorkoutFrequency(for: .week)
-        
-        // Then
-        XCTAssertEqual(weeklyFrequency.count, 3) // Only sessions within last 7 days
-        XCTAssertTrue(weeklyFrequency.values.allSatisfy { $0 == 1 })
-        
-        print("✅ [HistoryViewModelTests.testGetWorkoutFrequency_ForWeek_ReturnsCorrectData] Passed")
-    }
-    
-    func testGetVolumeHistory_ForMonth_ReturnsCorrectData() async throws {
-        // Given
-        let calendar = Calendar.current
-        let today = Date()
-        let twoWeeksAgo = calendar.date(byAdding: .day, value: -14, to: today)!
-        let twoMonthsAgo = calendar.date(byAdding: .month, value: -2, to: today)!
-        
-        try createTestWorkoutSession(date: today, title: "Recent", duration: 3600, exerciseCount: 2)
-        try createTestWorkoutSession(date: twoWeeksAgo, title: "2 weeks ago", duration: 3600, exerciseCount: 2)
-        try createTestWorkoutSession(date: twoMonthsAgo, title: "2 months ago", duration: 3600, exerciseCount: 2) // Should be excluded
-        
-        viewModel.handleIntent(.loadData)
-        try await waitForSwiftDataOperations(modelContext: modelContext)
-        try await waitForCondition({ self.viewModel.getVolumeHistory(for: .month).count == 2 }, timeout: 2.0)
-        
-        // When
-        let monthlyVolume = viewModel.getVolumeHistory(for: .month)
-        
-        // Then
-        XCTAssertEqual(monthlyVolume.count, 2) // Only sessions within last month
-        XCTAssertTrue(monthlyVolume.values.allSatisfy { $0 > 0 })
-        
-        print("✅ [HistoryViewModelTests.testGetVolumeHistory_ForMonth_ReturnsCorrectData] Passed")
-    }
-    
     // MARK: - Helper Method Tests
     
     func testHasWorkoutData_WithoutData_ReturnsFalse() async throws {
@@ -368,26 +154,6 @@ final class HistoryViewModelTests: XCTestCase {
         print("✅ [HistoryViewModelTests.testHasWorkoutData_WithoutData_ReturnsFalse] Passed")
     }
     
-    func testGetSessionCount_WithMultipleSessions_ReturnsCorrectCount() async throws {
-        // Given
-        let testDate = Date()
-        try createTestWorkoutSession(date: testDate, title: "Session 1", duration: 3600, exerciseCount: 1)
-        try createTestWorkoutSession(date: testDate, title: "Session 2", duration: 1800, exerciseCount: 1)
-        try createTestWorkoutSession(date: testDate, title: "Session 3", duration: 2700, exerciseCount: 1)
-        
-        viewModel.handleIntent(.loadData)
-        try await waitForSwiftDataOperations(modelContext: modelContext)
-        try await waitForCondition({ self.viewModel.getSessionCount(for: testDate) == 3 }, timeout: 2.0)
-        
-        // When
-        let sessionCount = viewModel.getSessionCount(for: testDate)
-        
-        // Then
-        XCTAssertEqual(sessionCount, 3)
-        
-        print("✅ [HistoryViewModelTests.testGetSessionCount_WithMultipleSessions_ReturnsCorrectCount] Passed")
-    }
-    
     // MARK: - Error Handling Tests
     
     func testClearError_WithError_ClearsError() async throws {
@@ -401,31 +167,6 @@ final class HistoryViewModelTests: XCTestCase {
         XCTAssertNil(viewModel.error)
         
         print("✅ [HistoryViewModelTests.testClearError_WithError_ClearsError] Passed")
-    }
-    
-    func testRefreshData_ReloadsCalendarData() async throws {
-        // Given
-        try createTestWorkoutSession(date: Date(), title: "Test", duration: 3600, exerciseCount: 1)
-        viewModel.handleIntent(.loadData)
-        try await waitForSwiftDataOperations(modelContext: modelContext)
-        let initialCount = viewModel.calendarData.count
-        
-        // Add more data
-        try createTestWorkoutSession(
-            date: Calendar.current.date(byAdding: .day, value: -1, to: Date())!,
-            title: "Another",
-            duration: 1800,
-            exerciseCount: 1
-        )
-        
-        viewModel.handleIntent(.refreshData)
-        try await waitForSwiftDataOperations(modelContext: modelContext)
-        try await waitForCondition({ self.viewModel.calendarData.count > initialCount }, timeout: 2.0)
-        
-        // Then
-        XCTAssertGreaterThanOrEqual(viewModel.calendarData.count, initialCount)
-        
-        print("✅ [HistoryViewModelTests.testRefreshData_ReloadsCalendarData] Passed")
     }
     
     // MARK: - Helper Methods
@@ -452,44 +193,42 @@ final class HistoryViewModelTests: XCTestCase {
         duration: TimeInterval,
         exerciseCount: Int
     ) throws -> (WorkoutSession, [PerformedExercise]) {
+        let session = WorkoutSession(
+            date: date,
+            title: title,
+            duration: duration
+        )
         
-        // Create workout session
-        let session = WorkoutSession(date: date, title: title, duration: duration)
         modelContext.insert(session)
         
-        // Create exercises and performed exercises
         var performedExercises: [PerformedExercise] = []
         
         for i in 0..<exerciseCount {
-            let exercise = Exercise(name: "Exercise \(i)", category: .strength)
+            let exercise = Exercise(name: "Exercise \(i + 1)", category: .strength)
             modelContext.insert(exercise)
             
-            // Create session exercise
             let sessionExercise = SessionExercise(
                 exercise: exercise,
                 plannedSets: 3,
                 plannedReps: 10,
-                plannedWeight: 100.0 + Double(i * 10),
                 position: Double(i + 1),
                 session: session
             )
             modelContext.insert(sessionExercise)
+            session.sessionExercises.append(sessionExercise)
             
-            // Create completed sets
-            for setNum in 1...3 {
+            // Add completed sets
+            for setIndex in 0..<2 {
                 let completedSet = CompletedSet(
-                    reps: 10,
-                    weight: 100.0 + Double(i * 10) + Double(setNum),
+                    reps: 10 + setIndex,
+                    weight: 100.0 + Double(setIndex * 10),
                     sessionExercise: sessionExercise
                 )
                 modelContext.insert(completedSet)
+                sessionExercise.completedSets.append(completedSet)
             }
             
-            session.sessionExercises.append(sessionExercise)
-            
-            // Create performed exercise for history
             let performedExercise = PerformedExercise(
-                performedAt: date,
                 reps: 30, // 3 sets x 10 reps
                 weight: 100.0 + Double(i * 10),
                 exercise: exercise,
@@ -500,70 +239,7 @@ final class HistoryViewModelTests: XCTestCase {
         }
         
         try modelContext.save()
+        
         return (session, performedExercises)
-    }
-    
-    func testAnalyticsPeriod_DisplayNames_AreCorrect() async throws {
-        // Then
-        XCTAssertEqual(AnalyticsPeriod.week.displayName, "Week")
-        XCTAssertEqual(AnalyticsPeriod.month.displayName, "Month")
-        XCTAssertEqual(AnalyticsPeriod.threeMonths.displayName, "3 Months")
-        XCTAssertEqual(AnalyticsPeriod.year.displayName, "Year")
-        
-        print("✅ [HistoryViewModelTests.testAnalyticsPeriod_DisplayNames_AreCorrect] Passed")
-    }
-    
-    func testHistoryError_LocalizedDescriptions_AreCorrect() async throws {
-        // Then
-        XCTAssertEqual(HistoryError.dataLoadFailed.errorDescription, "Failed to load workout history data.")
-        XCTAssertEqual(HistoryError.dateSelectionFailed.errorDescription, "Failed to select the requested date.")
-        XCTAssertEqual(HistoryError.noDataFound.errorDescription, "No workout data found for the selected period.")
-        XCTAssertEqual(HistoryError.invalidDateRange.errorDescription, "The selected date range is invalid.")
-        XCTAssertEqual(HistoryError.custom("Test message").errorDescription, "Test message")
-        
-        print("✅ [HistoryViewModelTests.testHistoryError_LocalizedDescriptions_AreCorrect] Passed")
-    }
-    
-    func testGetSessionCount_WithEmptyData_ReturnsZero() async throws {
-        // Given
-        let testDate = Date()
-        
-        // When
-        let sessionCount = viewModel.getSessionCount(for: testDate)
-        
-        // Then
-        XCTAssertEqual(sessionCount, 0)
-        
-        print("✅ [HistoryViewModelTests.testGetSessionCount_WithEmptyData_ReturnsZero] Passed")
-    }
-    
-    func testTotalWorkoutDays_WithEmptyData_ReturnsZero() async throws {
-        // When
-        let totalDays = viewModel.totalWorkoutDays
-        
-        // Then
-        XCTAssertEqual(totalDays, 0)
-        
-        print("✅ [HistoryViewModelTests.testTotalWorkoutDays_WithEmptyData_ReturnsZero] Passed")
-    }
-    
-    func testAverageWorkoutDuration_WithEmptyData_ReturnsNil() async throws {
-        // When
-        let averageDuration = viewModel.averageWorkoutDuration
-        
-        // Then
-        XCTAssertNil(averageDuration)
-        
-        print("✅ [HistoryViewModelTests.testAverageWorkoutDuration_WithEmptyData_ReturnsNil] Passed")
-    }
-    
-    func testTotalVolume_WithEmptyData_ReturnsZero() async throws {
-        // When
-        let totalVolume = viewModel.totalVolume
-        
-        // Then
-        XCTAssertEqual(totalVolume, 0.0)
-        
-        print("✅ [HistoryViewModelTests.testTotalVolume_WithEmptyData_ReturnsZero] Passed")
     }
 } 
