@@ -63,33 +63,55 @@ struct ExercisesTabView: View {
                         description: Text("Add exercises to get started")
                     )
                     
+                    Button("Add Exercise") {
+                        showingExerciseEditor = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                    
                     Button("Import from JSON") {
                         showingJSONImport = true
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.bordered)
                 }
             } else {
-                List {
-                    ForEach(viewModel.exercises) { exercise in
-                        ExerciseRowView(exercise: exercise)
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                selectedExerciseForEdit = exercise
-                                showingExerciseEditor = true
-                            }
-                            .swipeActions(edge: .trailing) {
-                                Button("Delete", role: .destructive) {
-                                    viewModel.deleteExercise(exercise)
-                                }
-                                
-                                Button("Edit") {
+                VStack(spacing: 0) {
+                    // Add Exercise Button
+                    HStack {
+                        Spacer()
+                        
+                        Button {
+                            showingExerciseEditor = true
+                        } label: {
+                            Label("Add Exercise", systemImage: "plus.circle.fill")
+                                .font(.headline)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                    }
+                    
+                    List {
+                        ForEach(viewModel.exercises) { exercise in
+                            ExerciseRowView(exercise: exercise)
+                                .contentShape(Rectangle())
+                                .onTapGesture {
                                     selectedExerciseForEdit = exercise
                                     showingExerciseEditor = true
                                 }
-                                .tint(.blue)
-                            }
+                                .swipeActions(edge: .trailing) {
+                                    Button("Delete", role: .destructive) {
+                                        viewModel.deleteExercise(exercise)
+                                    }
+                                    
+                                    Button("Edit") {
+                                        selectedExerciseForEdit = exercise
+                                        showingExerciseEditor = true
+                                    }
+                                    .tint(.blue)
+                                }
+                        }
+                        .onDelete(perform: deleteExercises)
                     }
-                    .onDelete(perform: deleteExercises)
                 }
             }
         }
@@ -156,27 +178,8 @@ struct WorkoutsTabView: View {
             VStack(spacing: 0) {
                 // Header with title and create button
                 HStack {
-                    
-                    
                     Spacer()
-                    
-                    // Menu {
-                    //     Button {
-                    //         createNewWorkout() // Task 1.1: Streamlined workout creation
-                    //     } label: {
-                    //         Label("Create Workout", systemImage: "plus")
-                    //     }
-                        
-                    //     Button {
-                    //         showingJSONImport = true
-                    //     } label: {
-                    //         Label("Import Workout from JSON", systemImage: "doc.text")
-                    //     }
-                    // } label: {
-                    //     Image(systemName: "plus.circle.fill")
-                    //         .font(.title2)
-                    //         .foregroundColor(.accentColor)
-                    // }
+                    // Toolbar/menu button will be conditionally added below
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)
@@ -201,51 +204,61 @@ struct WorkoutsTabView: View {
                         .buttonStyle(.bordered)
                     }
                 } else {
-                    List {
-                        // Workout Templates Section
-                        Section("My Workouts") {
-                            ForEach(viewModel.workoutTemplates) { template in
-                                NavigationLink(value: template) {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(template.name)
-                                            .font(.headline)
-                                        if !template.summary.isEmpty {
-                                            Text(template.summary)
-                                                .font(.caption)
-                                                .foregroundStyle(.secondary)
+                    VStack(spacing: 0) {
+                        HStack {
+                            Spacer()
+                            Button {
+                                showingJSONImport = true
+                            } label: {
+                                Label("Import from JSON", systemImage: "doc.text")
+                                    .font(.headline)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                        }
+                        
+                        List {
+                            // Workout Templates Section
+                            Section("My Workouts") {
+                                ForEach(viewModel.workoutTemplates) { template in
+                                    NavigationLink(value: template) {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(template.name)
+                                                .font(.headline)
+                                            if (!template.summary.isEmpty) {
+                                                Text(template.summary)
+                                                    .font(.caption)
+                                                    .foregroundStyle(.secondary)
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            
-                            Button("Add Workout") {
-                                createNewWorkout() // Task 1.1: Streamlined workout creation
-                            }
-                            .foregroundStyle(.blue)
-                        }
-                        
-                        // Workout Plans Section
-                        Section("My Schedule") {
-                            if viewModel.workoutPlans.isEmpty {
-                                Text("No schedules")
-                                    .foregroundStyle(.secondary)
-                                    .italic()
-                            } else {
-                                ForEach(viewModel.workoutPlans) { plan in
-                                    WorkoutPlanRowView(plan: plan, viewModel: viewModel)
+                                
+                                Button("Add Workout") {
+                                    createNewWorkout() // Task 1.1: Streamlined workout creation
                                 }
+                                .foregroundStyle(.blue)
                             }
                             
-                            Button("Schedule Workout") {
-                                showingPlanCreator = true
+                            // Workout Plans Section
+                            Section("My Schedule") {
+                                if viewModel.workoutPlans.isEmpty {
+                                    Text("No schedules")
+                                        .foregroundStyle(.secondary)
+                                        .italic()
+                                } else {
+                                    ForEach(viewModel.workoutPlans) { plan in
+                                        WorkoutPlanRowView(plan: plan, viewModel: viewModel)
+                                    }
+                                }
+                                
+                                Button("Schedule Workout") {
+                                    showingPlanCreator = true
+                                }
+                                .foregroundStyle(.blue)
                             }
-                            .foregroundStyle(.blue)
                         }
-
-                        Button("Import from JSON") {
-                            showingJSONImport = true
-                        }
-                        .buttonStyle(.bordered)
                     }
                 }
             }
