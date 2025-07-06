@@ -204,6 +204,9 @@ class ProgressViewModel: ObservableObject {
         case .addPhotoWithDate(let angle, let image, let date):
             await addPhoto(angle: angle, image: image, date: date)
             
+        case .addPhotosBatch(let photos):
+            await addPhotosBatch(photos)
+            
         case .deletePhoto(let photoID):
             await deletePhoto(photoID)
             
@@ -393,19 +396,108 @@ class ProgressViewModel: ObservableObject {
     
     private func addPhoto(angle: PhotoAngle, image: UIImage, date: Date? = nil) async {
         AppLogger.debug("[ProgressViewModel.addPhoto] Adding photo for angle: \(angle)", category: "ProgressViewModel")
-        
+
+        // Generate a candidate assetIdentifier (simulate what PhotoService will use)
+        // Since PhotoService generates a new UUID for filename, but we want to deduplicate by the original assetIdentifier from the picker,
+        // we need to pass the assetIdentifier from the picker (which is done in the multi-upload flow).
+        // For now, deduplicate by image data hash and angle.
+        // But since we don't have the assetIdentifier here, let's deduplicate by image data and angle.
+        // If assetIdentifier is available in the calling context, pass it as a parameter for more robust deduplication.
+
+        // Try to get JPEG data for hash
+        guard let data = image.jpegData(compressionQuality: 0.8) else {
+            AppLogger.error("[ProgressViewModel.addPhoto] Error: Could not convert image to data", category: "ProgressViewModel")
+            return
+        }
+        let imageHash = data.hashValue
+        let existing = photosByAngle[angle]?.first { existingPhoto in
+            // Try to load the file and compare data hashes
+            let url = getPhotoURL(for: existingPhoto)
+            if let url = url, let existingData = try? Data(contentsOf: url) {
+                return existingData.hashValue == imageHash
+            }
+            return false
+        }
+        if existing != nil {
+            AppLogger.info("[ProgressViewModel.addPhoto] Duplicate photo detected, skipping save", category: "ProgressViewModel")
+            return
+        }
         do {
             try photoService.save(image: image, angle: angle, date: date ?? Date())
-            
             AppLogger.info("[ProgressViewModel.addPhoto] Successfully saved photo", category: "ProgressViewModel")
-            
             // Reload photos to update UI
             await loadPhotos()
-            
         } catch {
             AppLogger.error("[ProgressViewModel.addPhoto] Error: \(error.localizedDescription)", category: "ProgressViewModel", error: error)
             self.error = error
         }
+    }
+
+    private func addPhotosBatch(_ photos: [(angle: PhotoAngle, image: UIImage, date: Date)]) async {
+        AppLogger.debug("[ProgressViewModel.addPhotosBatch] Adding \(photos.count) photos in batch", category: "ProgressViewModel")
+        
+        var addedCount = 0
+        
+        for (angle, image, date) in photos {
+            // Check for duplicates using the same logic as addPhoto
+            guard let data = image.jpegData(compressionQuality: 0.8) else {
+                AppLogger.error("[ProgressViewModel.addPhotosBatch] Error: Could not convert image to data", category: "ProgressViewModel")
+                continue
+            }
+            
+            let imageHash = data.hashValue
+            let existing = photosByAngle[angle]?.first { existingPhoto in
+                let url = getPhotoURL(for: existingPhoto)
+                if let url = url, let existingData = try? Data(contentsOf: url) {
+                    return existingData.hashValue == imageHash
+                }
+                return false
+            }
+            
+            if existing != nil {
+                AppLogger.info("[ProgressViewModel.addPhotosBatch] Duplicate photo detected, skipping save", category: "ProgressViewModel")
+                continue
+            }
+            
+            do {
+                try photoService.save(image: image, angle: angle, date: date)
+                addedCount += 1
+                AppLogger.debug("[ProgressViewModel.addPhotosBatch] Successfully saved photo \(addedCount) of \(photos.count)", category: "ProgressViewModel")
+            } catch {
+                AppLogger.error("[ProgressViewModel.addPhotosBatch] Error saving photo: \(error.localizedDescription)", category: "ProgressViewModel", error: error)
+                self.error = error
+            }
+        }
+        
+        // Only reload photos once after all photos are added
+        if addedCount > 0 {
+            AppLogger.info("[ProgressViewModel.addPhotosBatch] Successfully added \(addedCount) photos, reloading UI", category: "ProgressViewModel")
+            await loadPhotos()
+        }
+    }
+
+    /// Helper to get the file URL for a ProgressPhoto (matches logic in PhotoThumbnailView/PhotoCompareView)
+    private func getPhotoURL(for photo: ProgressPhoto) -> URL? {
+        // First, check Application Support/ProgressPhotos (persistent home)
+        if let appSupportDir = try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: false) {
+            let persistentURL = appSupportDir.appendingPathComponent("ProgressPhotos/")
+            let fileURL = persistentURL.appendingPathComponent(photo.assetIdentifier)
+            if FileManager.default.fileExists(atPath: fileURL.path) {
+                return fileURL
+            }
+        }
+        // Fallback: if assetIdentifier is an absolute file URL
+        if let url = URL(string: photo.assetIdentifier), url.isFileURL, FileManager.default.fileExists(atPath: url.path) {
+            return url
+        }
+        // Fallback: check cache directory
+        if let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first {
+            let cacheURL = cacheDir.appendingPathComponent(photo.assetIdentifier)
+            if FileManager.default.fileExists(atPath: cacheURL.path) {
+                return cacheURL
+            }
+        }
+        return nil
     }
     
     private func deletePhoto(_ photoID: UUID) async {
@@ -566,6 +658,7 @@ enum ProgressIntent {
     case loadPhotos
     case addPhoto(PhotoAngle, UIImage)
     case addPhotoWithDate(PhotoAngle, UIImage, Date)
+    case addPhotosBatch([(angle: PhotoAngle, image: UIImage, date: Date)])
     case deletePhoto(UUID)
     case selectForCompare(UUID)
     case clearComparison

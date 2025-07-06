@@ -334,7 +334,7 @@ extension ToggleStyle where Self == CheckmarkToggleStyle {
 struct PicturesContentView: View {
     @ObservedObject var viewModel: ProgressViewModel
     let dateRange: DateRange
-    @State private var selectedPickerItem: PhotosPickerItem?
+    @State private var selectedPickerItems: [PhotosPickerItem] = []
     @State private var selectedPickerAngle: PhotoAngle?
     
     var body: some View {
@@ -355,20 +355,42 @@ struct PicturesContentView: View {
         .refreshable {
             await viewModel.handleIntent(.loadPhotos)
         }
-        .onChange(of: selectedPickerItem) { _, newItem in
-            guard let newItem = newItem, let angle = selectedPickerAngle else { return }
+        .onChange(of: selectedPickerItems) { _, newItems in
+            guard let angle = selectedPickerAngle else { return }
+            
             Task {
-                var creationDate: Date? = nil
-                if let id = newItem.itemIdentifier {
-                    let assets = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil)
-                    if let asset = assets.firstObject {
-                        creationDate = asset.creationDate
+                var photosToAdd: [(angle: PhotoAngle, image: UIImage, date: Date)] = []
+                
+                // Process all items first to collect photos to add
+                for item in newItems {
+                    var creationDate: Date? = nil
+                    var assetIdentifier: String? = nil
+                    
+                    if let id = item.itemIdentifier {
+                        assetIdentifier = id
+                        let assets = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil)
+                        if let asset = assets.firstObject {
+                            creationDate = asset.creationDate
+                        }
+                    }
+                    
+                    if let data = try? await item.loadTransferable(type: Data.self), let uiImage = UIImage(data: data) {
+                        // Check for duplicate by assetIdentifier and angle
+                        if let assetIdentifier = assetIdentifier, viewModel.photosByAngle[angle]?.contains(where: { $0.assetIdentifier == assetIdentifier && $0.angle == angle }) == true {
+                            continue // skip duplicate
+                        }
+                        
+                        photosToAdd.append((angle: angle, image: uiImage, date: creationDate ?? Date()))
                     }
                 }
-                if let data = try? await newItem.loadTransferable(type: Data.self), let uiImage = UIImage(data: data) {
-                    await viewModel.handleIntent(.addPhotoWithDate(angle, uiImage, creationDate ?? Date()))
+                
+                // Add all photos in batch
+                if !photosToAdd.isEmpty {
+                    await viewModel.handleIntent(.addPhotosBatch(photosToAdd))
                 }
-                selectedPickerItem = nil
+                
+                // Clear the selection after processing
+                selectedPickerItems = []
                 selectedPickerAngle = nil
             }
         }
@@ -428,13 +450,14 @@ struct PicturesContentView: View {
             HStack(spacing: 12) {
                 ForEach(PhotoAngle.allCases, id: \.self) { angle in
                     PhotosPicker(
-                        selection: Binding<PhotosPickerItem?>(
-                            get: { selectedPickerAngle == angle ? selectedPickerItem : nil },
-                            set: { newItem in
-                                selectedPickerItem = newItem
+                        selection: Binding<[PhotosPickerItem]>(
+                            get: { selectedPickerAngle == angle ? selectedPickerItems : [] },
+                            set: { newItems in
+                                selectedPickerItems = newItems
                                 selectedPickerAngle = angle
                             }
                         ),
+                        maxSelectionCount: 10,
                         matching: .images,
                         photoLibrary: .shared()
                     ) {
@@ -480,3 +503,4 @@ struct ProgressView_Previews: PreviewProvider {
         .modelContainer(PersistenceController.preview.container)
     }
 }
+
