@@ -50,6 +50,9 @@ enum LoggingIntent {
     case cancelRest(exerciseID: UUID)
     case markExerciseComplete(exerciseID: UUID)
     case finishSession
+    case selectCurrentExercise(UUID)
+    case advanceToNextExercise
+    case advanceToNextSet
 }
 
 // MARK: - ViewState Enum
@@ -131,6 +134,42 @@ class LoggingViewModel: ObservableObject {
         }
     }
     
+    // MARK: - Current Exercise Tracking
+    var currentExercise: SessionExerciseUI? {
+        guard let session = session,
+              let currentExerciseID = session.currentExerciseID else { return nil }
+        return exercises.first { $0.id == currentExerciseID }
+    }
+    
+    var currentSetNumber: Int {
+        session?.currentSetNumber ?? 0
+    }
+    
+    var isSupersetActive: Bool {
+        session?.isSupersetActive ?? false
+    }
+    
+    var currentSupersetExercises: [SessionExerciseUI] {
+        guard isSupersetActive,
+              let currentExercise = currentExercise,
+              let supersetID = currentExercise.supersetID else { return [] }
+        
+        return exercises.filter { $0.supersetID == supersetID }
+            .sorted(by: { $0.position < $1.position })
+    }
+    
+    var nextExerciseInSuperset: SessionExerciseUI? {
+        guard isSupersetActive,
+              let currentExercise = currentExercise,
+              let supersetID = currentExercise.supersetID else { return nil }
+        
+        let supersetExercises = currentSupersetExercises
+        guard let currentIndex = supersetExercises.firstIndex(where: { $0.id == currentExercise.id }) else { return nil }
+        
+        let nextIndex = currentIndex + 1
+        return nextIndex < supersetExercises.count ? supersetExercises[nextIndex] : nil
+    }
+    
     // MARK: - Private Properties
     private let modelContext: ModelContext
     private let timerFactory: TimerFactory
@@ -199,6 +238,15 @@ class LoggingViewModel: ObservableObject {
             
         case .finishSession:
             finishSession()
+            
+        case .selectCurrentExercise(let exerciseID):
+            selectCurrentExercise(exerciseID)
+            
+        case .advanceToNextExercise:
+            advanceToNextExercise()
+            
+        case .advanceToNextSet:
+            advanceToNextSet()
         }
     }
     
@@ -394,7 +442,10 @@ class LoggingViewModel: ObservableObject {
                 let newSession = WorkoutSession(
                     date: today,
                     title: "\(selectedDay.weekday.fullName) - \(activePlan.customName)",
-                    plan: activePlan
+                    plan: activePlan,
+                    currentExerciseID: nil,
+                    currentSetNumber: 0,
+                    isSupersetActive: false
                 )
                 
                 modelContext.insert(newSession)
@@ -440,7 +491,10 @@ class LoggingViewModel: ObservableObject {
         let newSession = WorkoutSession(
             date: today,
             title: "\(selectedDay.weekday.fullName) - \(activePlan.customName)",
-            plan: activePlan
+            plan: activePlan,
+            currentExerciseID: nil,
+            currentSetNumber: 0,
+            isSupersetActive: false
         )
         
         modelContext.insert(newSession)
@@ -472,7 +526,10 @@ class LoggingViewModel: ObservableObject {
         let newSession = WorkoutSession(
             date: today,
             title: "\(selectedDay.weekday.fullName) - \(activePlan.customName)",
-            plan: activePlan
+            plan: activePlan,
+            currentExerciseID: nil,
+            currentSetNumber: 0,
+            isSupersetActive: false
         )
         
         modelContext.insert(newSession)
@@ -532,6 +589,22 @@ class LoggingViewModel: ObservableObject {
         }
         
         AppLogger.info("[LoggingViewModel.createSessionExercises] Created \(dayTemplate.exerciseTemplates.count) session exercises", category: "LoggingViewModel")
+        
+        // Initialize current exercise if not already set
+        if session.currentExerciseID == nil && !session.sessionExercises.isEmpty {
+            let firstExercise = session.sessionExercises.sorted(by: { $0.position < $1.position }).first!
+            session.currentExerciseID = firstExercise.id
+            session.currentSetNumber = 0
+            
+            // Check if this is part of a superset
+            if firstExercise.supersetID != nil {
+                session.isSupersetActive = true
+                AppLogger.info("[LoggingViewModel.createSessionExercises] Initialized superset with first exercise: \(firstExercise.exercise.name)", category: "LoggingViewModel")
+            } else {
+                session.isSupersetActive = false
+                AppLogger.info("[LoggingViewModel.createSessionExercises] Initialized with first exercise: \(firstExercise.exercise.name)", category: "LoggingViewModel")
+            }
+        }
     }
     
     private func updateExercisesUI() {
@@ -655,6 +728,12 @@ class LoggingViewModel: ObservableObject {
         
         AppLogger.info("[LoggingViewModel.toggleSetCompletion] Set \(setIndex + 1) completion toggled to: \(completedSet.isCompleted)", category: "LoggingViewModel")
         
+        // Update current set number if this is the current exercise
+        if session.currentExerciseID == exerciseID {
+            session.currentSetNumber = setIndex + 1
+            AppLogger.debug("[LoggingViewModel.toggleSetCompletion] Updated current set number to: \(session.currentSetNumber)", category: "LoggingViewModel")
+        }
+        
         // Check if all sets are now completed and auto-complete the exercise
         let completedSetsCount = sessionExercise.completedSets.filter { $0.isCompleted }.count
         let totalSetsCount = sessionExercise.completedSets.count
@@ -663,6 +742,9 @@ class LoggingViewModel: ObservableObject {
             AppLogger.info("[LoggingViewModel.toggleSetCompletion] All sets completed - auto-completing exercise", category: "LoggingViewModel")
             sessionExercise.isCompleted = true
             sessionExercise.updateExerciseCacheOnCompletion()
+            
+            // Handle superset transitions
+            handleSupersetTransition(for: sessionExercise)
         } else if completedSetsCount < totalSetsCount && sessionExercise.isCompleted {
             AppLogger.debug("[LoggingViewModel.toggleSetCompletion] Not all sets completed - marking exercise as incomplete", category: "LoggingViewModel")
             sessionExercise.isCompleted = false
@@ -841,6 +923,127 @@ class LoggingViewModel: ObservableObject {
             
         } catch {
             AppLogger.error("[LoggingViewModel.finishSession] Save error", category: "LoggingViewModel", error: error)
+            self.error = error
+        }
+    }
+    
+    private func selectCurrentExercise(_ exerciseID: UUID) {
+        AppLogger.info("[LoggingViewModel.selectCurrentExercise] Selecting current exercise: \(exerciseID)", category: "LoggingViewModel")
+        
+        guard let session = session,
+              let _ = session.sessionExercises.first(where: { $0.id == exerciseID }) else {
+            AppLogger.error("[LoggingViewModel.selectCurrentExercise] Exercise not found", category: "LoggingViewModel")
+            error = LoggingError.exerciseNotFound
+            return
+        }
+        
+        // Update current exercise
+        session.currentExerciseID = exerciseID
+        updateExercisesUI()
+        
+        AppLogger.info("[LoggingViewModel.selectCurrentExercise] Current exercise updated", category: "LoggingViewModel")
+    }
+    
+    private func advanceToNextExercise() {
+        AppLogger.info("[LoggingViewModel.advanceToNextExercise] Advancing to next exercise", category: "LoggingViewModel")
+        
+        guard let session = session,
+              let _ = currentExercise else {
+            AppLogger.error("[LoggingViewModel.advanceToNextExercise] No current exercise", category: "LoggingViewModel")
+            error = LoggingError.exerciseNotFound
+            return
+        }
+        
+        // Find the next exercise in the superset
+        if let nextExercise = nextExerciseInSuperset {
+            // Update current exercise
+            session.currentExerciseID = nextExercise.id
+            updateExercisesUI()
+            
+            AppLogger.info("[LoggingViewModel.advanceToNextExercise] Next exercise selected", category: "LoggingViewModel")
+        } else {
+            AppLogger.error("[LoggingViewModel.advanceToNextExercise] No next exercise found", category: "LoggingViewModel")
+            error = LoggingError.exerciseNotFound
+        }
+    }
+    
+    private func advanceToNextSet() {
+        AppLogger.info("[LoggingViewModel.advanceToNextSet] Advancing to next set", category: "LoggingViewModel")
+        
+        guard let session = session,
+              let currentExercise = currentExercise else {
+            AppLogger.error("[LoggingViewModel.advanceToNextSet] No current exercise", category: "LoggingViewModel")
+            error = LoggingError.exerciseNotFound
+            return
+        }
+        
+        // Find the next set in the current exercise
+        let orderedSets = currentExercise.sets.sorted(by: { $0.position < $1.position })
+        let currentSetIndex = session.currentSetNumber - 1
+        let currentSet = orderedSets.first { $0.position == currentSetIndex }
+        
+        if let nextSet = orderedSets.first(where: { $0.position > currentSetIndex }) {
+            // Update current set
+            session.currentSetNumber = Int(nextSet.position)
+            updateExercisesUI()
+            
+            AppLogger.info("[LoggingViewModel.advanceToNextSet] Next set selected", category: "LoggingViewModel")
+        } else {
+            AppLogger.error("[LoggingViewModel.advanceToNextSet] No next set found", category: "LoggingViewModel")
+            error = LoggingError.exerciseNotFound
+        }
+    }
+    
+    private func handleSupersetTransition(for completedExercise: SessionExercise) {
+        AppLogger.info("[LoggingViewModel.handleSupersetTransition] Handling superset transition for: \(completedExercise.exercise.name)", category: "LoggingViewModel")
+        
+        guard let session = session,
+              let supersetID = completedExercise.supersetID else {
+            AppLogger.debug("[LoggingViewModel.handleSupersetTransition] No superset ID - not part of superset", category: "LoggingViewModel")
+            return
+        }
+        
+        // Check if this is part of a superset
+        let supersetExercises = session.sessionExercises.filter { $0.supersetID == supersetID }
+            .sorted(by: { $0.position < $1.position })
+        
+        guard supersetExercises.count > 1 else {
+            AppLogger.debug("[LoggingViewModel.handleSupersetTransition] Only one exercise in superset - no transition needed", category: "LoggingViewModel")
+            return
+        }
+        
+        // Find the next exercise in the superset
+        guard let currentIndex = supersetExercises.firstIndex(where: { $0.id == completedExercise.id }) else {
+            AppLogger.error("[LoggingViewModel.handleSupersetTransition] Could not find current exercise in superset", category: "LoggingViewModel")
+            return
+        }
+        
+        let nextIndex = currentIndex + 1
+        
+        if nextIndex < supersetExercises.count {
+            // Move to next exercise in superset
+            let nextExercise = supersetExercises[nextIndex]
+            session.currentExerciseID = nextExercise.id
+            session.currentSetNumber = 0
+            session.isSupersetActive = true
+            
+            AppLogger.info("[LoggingViewModel.handleSupersetTransition] Advanced to next exercise in superset: \(nextExercise.exercise.name)", category: "LoggingViewModel")
+        } else {
+            // Superset is complete
+            session.isSupersetActive = false
+            session.currentExerciseID = nil
+            session.currentSetNumber = 0
+            
+            AppLogger.info("[LoggingViewModel.handleSupersetTransition] Superset completed", category: "LoggingViewModel")
+        }
+        
+        updateExercisesUI()
+        
+        do {
+            try modelContext.save()
+            AppLogger.info("[LoggingViewModel.handleSupersetTransition] Superset transition saved", category: "LoggingViewModel")
+        } catch {
+            AppLogger.error("[LoggingViewModel.handleSupersetTransition] Save error", category: "LoggingViewModel", error: error)
             self.error = error
         }
     }
