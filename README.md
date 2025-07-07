@@ -76,6 +76,167 @@ Key principles:
 3. **Track Progress** – Go to the *Progress* tab to record or import progress photos and review body metrics.
 4. **Sync Health** – In *Settings* toggle **Sync with Apple Health**.  The app will read the latest body-mass & body-fat samples automatically.
 
+### Adding a Workout Template via JSON
+You can import a custom workout template using JSON. To do this:
+
+1. Go to the *Workouts* tab.
+2. Tap the **Import** button (usually labeled as "Import JSON" or similar).
+3. Paste or select your JSON file in the import dialog.
+4. Confirm to add the template to your library.
+
+**Sample Workout Template JSON (with day names):**
+```json
+{
+  "name": "Push Pull Legs Template",
+  "summary": "A 3-day template using day names instead of indices",
+  "days": [
+    {
+      "dayName": "Monday",
+      "name": "Push Day",
+      "exercises": [
+        {
+          "name": "Bench Press",
+          "sets": 4,
+          "reps": 8,
+          "weight": 185.0
+        },
+        {
+          "name": "Overhead Press",
+          "sets": 3,
+          "reps": 10,
+          "weight": 95.0
+        },
+        {
+          "name": "Dips",
+          "sets": 3,
+          "reps": 12,
+          "supersetGroup": 1
+        },
+        {
+          "name": "Close Grip Push-ups",
+          "sets": 3,
+          "reps": 15,
+          "supersetGroup": 1
+        }
+      ]
+    },
+    {
+      "dayName": "Wednesday",
+      "name": "Pull Day",
+      "exercises": [
+        {
+          "name": "Pull-ups",
+          "sets": 4,
+          "reps": 6
+        },
+        {
+          "name": "Barbell Rows",
+          "sets": 4,
+          "reps": 8,
+          "weight": 135.0
+        },
+        {
+          "name": "Face Pulls",
+          "sets": 3,
+          "reps": 15,
+          "weight": 30.0,
+          "supersetGroup": 2
+        },
+        {
+          "name": "Hammer Curls",
+          "sets": 3,
+          "reps": 12,
+          "weight": 25.0,
+          "supersetGroup": 2
+        }
+      ]
+    },
+    {
+      "dayName": "Friday",
+      "name": "Legs Day",
+      "exercises": [
+        {
+          "name": "Squats",
+          "sets": 4,
+          "reps": 10,
+          "weight": 225.0
+        },
+        {
+          "name": "Romanian Deadlifts",
+          "sets": 3,
+          "reps": 8,
+          "weight": 185.0
+        },
+        {
+          "name": "Walking Lunges",
+          "sets": 3,
+          "reps": 20
+        },
+        {
+          "name": "Calf Raises",
+          "sets": 4,
+          "reps": 15,
+          "weight": 45.0
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Alternative: Sample Workout Template JSON (with day indices - legacy format):**
+```json
+{
+  "name": "Legacy Format Template",
+  "summary": "Using dayIndex (1-7) for backward compatibility",
+  "days": [
+    {
+      "dayIndex": 1,
+      "name": "Sunday Workout",
+      "exercises": [
+        {
+          "name": "Push-ups",
+          "sets": 3,
+          "reps": 15
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Importing Exercises Only via JSON
+You can also import a list of exercises directly using JSON. This is useful for quickly adding multiple exercises to your exercise catalog.
+
+1. Go to the *Workouts* tab and switch to the **Exercises** segment.
+2. Tap the **Import from JSON** button (or use the plus menu and select "Import from JSON").
+3. Paste or select your JSON file containing an array of exercises.
+4. Confirm to add the exercises to your library.
+
+**Sample Exercises JSON:**
+```json
+[
+  {
+    "name": "Push-ups",
+    "category": "strength",
+    "instructions": "Start in a plank position with hands shoulder-width apart. Lower your body until your chest nearly touches the floor, then push back up.",
+    "mediaAssetID": null
+  },
+  {
+    "name": "Squats",
+    "category": "strength",
+    "instructions": "Stand with feet shoulder-width apart. Lower your body as if sitting back into a chair, keeping your chest up and weight on your heels.",
+    "mediaAssetID": null
+  },
+  {
+    "name": "Mountain Climbers",
+    "category": "cardio",
+    "instructions": "Start in plank position. Alternate bringing knees to chest rapidly.",
+    "mediaAssetID": null
+  }
+]
+```
+
 ## Project Structure
 ```
 UzoFitness/

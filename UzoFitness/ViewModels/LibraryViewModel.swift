@@ -752,16 +752,25 @@ class LibraryViewModel: ObservableObject {
         
         modelContext.insert(template)
         
-        // Create a set of day indices from the imported data
-        let importedDayIndices = Set(dto.days.map { $0.dayIndex })
+        // Create a set of weekdays from the imported data
+        let importedWeekdays = Set(dto.days.compactMap { $0.weekday })
+        
+        // Create superset ID mapping for this template to maintain grouping
+        var supersetIDMapping: [Int: UUID] = [:]
         
         // Process imported days
         for dayDTO in dto.days {
             AppLogger.debug("[LibraryViewModel.importWorkoutTemplate] Processing day: \(dayDTO.name)", category: "LibraryViewModel")
             
-            // Map dayIndex to Weekday enum
-            guard let weekday = Weekday(rawValue: dayDTO.dayIndex) else {
-                throw ImportError.invalidDayIndex(dayDTO.dayIndex)
+            // Get weekday from either dayName or dayIndex
+            guard let weekday = dayDTO.weekday else {
+                if let dayName = dayDTO.dayName {
+                    throw ImportError.invalidDayName(dayName)
+                } else if let dayIndex = dayDTO.dayIndex {
+                    throw ImportError.invalidDayIndex(dayIndex)
+                } else {
+                    throw ImportError.missingDayIdentifier
+                }
             }
             
             let dayTemplate = DayTemplate(
@@ -781,7 +790,22 @@ class LibraryViewModel: ObservableObject {
                 // Find or create the exercise
                 let exercise = try findOrCreateExercise(name: exerciseDTO.name)
                 
-                // Create exercise template with auto-generated UUID
+                // Handle superset grouping - create or reuse UUID for each superset group
+                var supersetID: UUID? = nil
+                if let supersetGroup = exerciseDTO.supersetGroup {
+                    if let existingID = supersetIDMapping[supersetGroup] {
+                        // Reuse existing UUID for this superset group
+                        supersetID = existingID
+                    } else {
+                        // Create new UUID for this superset group and store it
+                        let newID = UUID()
+                        supersetIDMapping[supersetGroup] = newID
+                        supersetID = newID
+                    }
+                    AppLogger.debug("[LibraryViewModel.importWorkoutTemplate] Assigned superset group \(supersetGroup) to UUID: \(supersetID!)", category: "LibraryViewModel")
+                }
+                
+                // Create exercise template with proper superset ID
                 let exerciseTemplate = ExerciseTemplate(
                     id: UUID(), // Always auto-generate new UUID
                     exercise: exercise,
@@ -789,7 +813,7 @@ class LibraryViewModel: ObservableObject {
                     reps: exerciseDTO.reps,
                     weight: exerciseDTO.weight,
                     position: Double(index + 1),
-                    supersetID: exerciseDTO.supersetGroup.map { _ in UUID() }, // Convert superset group to UUID
+                    supersetID: supersetID,
                     dayTemplate: dayTemplate
                 )
                 
@@ -798,14 +822,10 @@ class LibraryViewModel: ObservableObject {
             }
         }
         
-        // Create rest days for missing days (1-7 are valid weekdays)
-        for dayIndex in 1...7 {
-            if !importedDayIndices.contains(dayIndex) {
-                AppLogger.debug("Creating rest day for day index: \(dayIndex)", category: "LibraryViewModel.importWorkoutTemplate")
-                
-                guard let weekday = Weekday(rawValue: dayIndex) else {
-                    continue // Skip invalid weekday
-                }
+        // Create rest days for missing weekdays
+        for weekday in Weekday.allCases {
+            if !importedWeekdays.contains(weekday) {
+                AppLogger.debug("Creating rest day for weekday: \(weekday.fullName)", category: "LibraryViewModel.importWorkoutTemplate")
                 
                 let restDayTemplate = DayTemplate(
                     weekday: weekday,

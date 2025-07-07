@@ -25,7 +25,7 @@ struct WorkoutTemplateJSONImportView: View {
                         .font(.title2)
                         .fontWeight(.medium)
                     
-                    Text("Select a JSON file containing your workout template")
+                    Text("Select a JSON file containing your workout template. You can use day names (Monday, Tuesday, etc.) or day indices (1-7).")
                         .font(.body)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
