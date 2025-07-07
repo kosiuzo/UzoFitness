@@ -52,25 +52,13 @@ struct LoggingContentView: View {
                 restDayView
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if !viewModel.exercises.isEmpty {
-                // Current Exercise Header
-                if viewModel.isWorkoutInProgress {
-                    CurrentExerciseHeaderView(
-                        currentExercise: viewModel.currentExercise,
-                        totalExercises: viewModel.exercises.count,
-                        currentIndex: viewModel.currentExerciseIndex,
-                        isWorkoutInProgress: viewModel.isWorkoutInProgress,
-                        getSupersetNumber: viewModel.getSupersetNumber
-                    )
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 24)
-                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
-                    .animation(.easeInOut(duration: 0.3), value: viewModel.isWorkoutInProgress)
+                // Workout content - wrap in ScrollView
+                ScrollView {
+                    // Exercise List
+                    exerciseListSection
                 }
                 
-                // Exercise List
-                exerciseListSection
-                
-                // Complete Workout Button
+                // Complete Workout Button (stays outside ScrollView for better UX)
                 completeWorkoutButton
             } else if viewModel.activePlan != nil && viewModel.selectedDay != nil {
                 // Workout plan selected but no exercises for this day - treat as rest day
@@ -96,15 +84,6 @@ struct LoggingContentView: View {
         VStack(spacing: 20) {
             // Template Picker - Modern Design
             VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Image(systemName: "dumbbell.fill")
-                        .foregroundColor(.blue)
-                        .font(.headline)
-                    Text("Workout Plan")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.primary)
-                }
                 
                 if viewModel.availablePlans.isEmpty {
                     HStack {
@@ -229,45 +208,11 @@ struct LoggingContentView: View {
     
     // MARK: - Exercise List Section
     private var exerciseListSection: some View {
-        ScrollView {
-            LazyVStack(spacing: 16) {
-                ForEach(viewModel.groupedExercises, id: \.1.first?.id) { group in
-                    if group.0 != nil {
-                        // Superset group with minimal visual separation
-                        VStack(spacing: 12) {
-                            ForEach(group.1) { exercise in
-                                LoggingExerciseRowView(
-                                    exercise: exercise,
-                                    onEditSet: { setIndex, reps, weight in
-                                        viewModel.handleIntent(.editSet(
-                                            exerciseID: exercise.id,
-                                            setIndex: setIndex,
-                                            reps: reps,
-                                            weight: weight
-                                        ))
-                                    },
-                                    onAddSet: {
-                                        viewModel.handleIntent(.addSet(exerciseID: exercise.id))
-                                    },
-                                    onToggleSetCompletion: { setIndex in
-                                        viewModel.handleIntent(.toggleSetCompletion(
-                                            exerciseID: exercise.id,
-                                            setIndex: setIndex
-                                        ))
-                                    },
-                                    onMarkComplete: {
-                                        viewModel.handleIntent(.markExerciseComplete(exerciseID: exercise.id))
-                                    },
-                                    getSupersetNumber: viewModel.getSupersetNumber,
-                                    isCurrentExercise: viewModel.currentExercise?.id == exercise.id
-                                )
-                                .background(Color(.systemGray6).opacity(0.3))
-                                .cornerRadius(8)
-                            }
-                        }
-                        .padding(.vertical, 8)
-                    } else {
-                        // Individual exercises
+        LazyVStack(spacing: 16) {
+            ForEach(viewModel.groupedExercises, id: \.1.first?.id) { group in
+                if group.0 != nil {
+                    // Superset group with minimal visual separation
+                    VStack(spacing: 12) {
                         ForEach(group.1) { exercise in
                             LoggingExerciseRowView(
                                 exercise: exercise,
@@ -294,13 +239,45 @@ struct LoggingContentView: View {
                                 getSupersetNumber: viewModel.getSupersetNumber,
                                 isCurrentExercise: viewModel.currentExercise?.id == exercise.id
                             )
+                            .background(Color(.systemGray6).opacity(0.3))
+                            .cornerRadius(8)
                         }
+                    }
+                    .padding(.vertical, 8)
+                } else {
+                    // Individual exercises
+                    ForEach(group.1) { exercise in
+                        LoggingExerciseRowView(
+                            exercise: exercise,
+                            onEditSet: { setIndex, reps, weight in
+                                viewModel.handleIntent(.editSet(
+                                    exerciseID: exercise.id,
+                                    setIndex: setIndex,
+                                    reps: reps,
+                                    weight: weight
+                                ))
+                            },
+                            onAddSet: {
+                                viewModel.handleIntent(.addSet(exerciseID: exercise.id))
+                            },
+                            onToggleSetCompletion: { setIndex in
+                                viewModel.handleIntent(.toggleSetCompletion(
+                                    exerciseID: exercise.id,
+                                    setIndex: setIndex
+                                ))
+                            },
+                            onMarkComplete: {
+                                viewModel.handleIntent(.markExerciseComplete(exerciseID: exercise.id))
+                            },
+                            getSupersetNumber: viewModel.getSupersetNumber,
+                            isCurrentExercise: viewModel.currentExercise?.id == exercise.id
+                        )
                     }
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
     }
     
     // MARK: - Complete Workout Button
@@ -599,14 +576,6 @@ struct SetRowView: View {
                         .onSubmit {
                             onSave()
                         }
-                        .onChange(of: tempReps) { oldValue, newValue in
-                            // Auto-save after a brief delay when user stops typing
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                                if tempReps == newValue && !tempReps.isEmpty && !tempWeight.isEmpty {
-                                    onSave()
-                                }
-                            }
-                        }
                     
                     Text("×")
                         .foregroundColor(.secondary)
@@ -618,20 +587,22 @@ struct SetRowView: View {
                         .onSubmit {
                             onSave()
                         }
-                        .onChange(of: tempWeight) { oldValue, newValue in
-                            // Auto-save after a brief delay when user stops typing
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                                if tempWeight == newValue && !tempReps.isEmpty && !tempWeight.isEmpty {
-                                    onSave()
-                                }
-                            }
-                        }
                     
                     Text("lbs")
                         .font(.caption)
                         .foregroundColor(.secondary)
                     
                     Spacer()
+                }
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Done") {
+                            onSave()
+                        }
+                        .fontWeight(.medium)
+                        .foregroundColor(.blue)
+                    }
                 }
             } else {
                 // Direct Editing Mode - No Edit Button Required
