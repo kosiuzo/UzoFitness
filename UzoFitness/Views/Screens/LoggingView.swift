@@ -58,8 +58,10 @@ struct LoggingContentView: View {
                     exerciseListSection
                 }
                 
-                // Complete Workout Button (stays outside ScrollView for better UX)
-                completeWorkoutButton
+                // Complete Workout Button (only show when all sets are completed)
+                if viewModel.canFinishSession {
+                    completeWorkoutButton
+                }
             } else if viewModel.activePlan != nil && viewModel.selectedDay != nil {
                 // Workout plan selected but no exercises for this day - treat as rest day
                 restDayView
