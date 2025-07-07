@@ -17,10 +17,11 @@ UzoFitness is a modern iOS application built with Swift 5 and SwiftUI that helps
 4. [Installation](#installation)
 5. [Usage](#usage)
 6. [Project Structure](#project-structure)
-7. [Dependencies](#dependencies)
-8. [Contributing](#contributing)
-9. [Roadmap](#roadmap)
-10. [License](#license)
+7. [Documentation](#documentation)
+8. [Dependencies](#dependencies)
+9. [Contributing](#contributing)
+10. [Roadmap](#roadmap)
+11. [License](#license)
 
 ---
 
@@ -30,6 +31,7 @@ UzoFitness is a modern iOS application built with Swift 5 and SwiftUI that helps
 - **Progress Photos** – Import photos from the library or camera and view them in an adaptive `ProgressPhotoGrid` component.
 - **Apple Health Sync** – One-tap authorisation to read body-mass (kg/lb) and body-fat %.  Data is cached for offline viewing.
 - **SwiftData Persistence** – Cloud-sync-ready local storage for workouts, sessions, and user metrics.
+- **iCloud Support** – Capability is enabled; cross-device sync will arrive in a future update.
 - **Accessibility** – Dynamic Type, VoiceOver, and high-contrast colour support.
 
 ## Architecture
@@ -85,8 +87,13 @@ UzoFitness/
  ├─ Views/                     // Screens & sub-views
  ├─ Components/                // Re-usable SwiftUI views
  ├─ Services/                  // HealthKit & Photo managers
- └─ Utilities/                 // Extensions & helpers
+└─ Utilities/                 // Extensions & helpers
 ```
+
+## Documentation
+Additional guides live in the [`UzoFitness/Documentation`](UzoFitness/Documentation) directory. Start with
+[`AppComponentsOverview.md`](UzoFitness/Documentation/AppComponentsOverview.md) for a tour of the codebase and
+[`CloudKitBackImplementation.md`](UzoFitness/Documentation/CloudKitBackImplementation.md) for CloudKit sync details.
 
 ## Dependencies
 | Framework | Usage |
@@ -101,7 +108,7 @@ All dependencies are **first-party Apple frameworks**—no external package mana
 We welcome pull requests!  Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) for guidelines.
 
 ## Roadmap
-- iCloud sync with App Group containers
+- CloudKit-based sync with App Group containers *(capability enabled, implementation in progress)*
 - Workout scheduling & reminders
 - Social sharing & challenges
 

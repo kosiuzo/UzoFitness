@@ -2,6 +2,8 @@
 
 # 1. **CloudKit Setup**
 
+> **Status**: The iCloud capability is already enabled in the project, but the actual sync implementation is still in progress.
+
 ### a. Enable CloudKit in Xcode
 - Go to your project target → **Signing & Capabilities**.
 - Add **iCloud** capability, check **CloudKit**.
