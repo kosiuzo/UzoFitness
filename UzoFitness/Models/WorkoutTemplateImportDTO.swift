@@ -45,12 +45,28 @@ struct WorkoutTemplateImportDTO: Codable {
 
 /// Data Transfer Object for importing day templates from JSON
 struct DayImportDTO: Codable {
-    let dayIndex: Int
+    let dayIndex: Int?  // Optional for backward compatibility
+    let dayName: String?  // New field for day names
     let name: String
     let exercises: [ExerciseImportDTO]
     
     enum CodingKeys: String, CodingKey {
-        case dayIndex, name, exercises
+        case dayIndex, dayName, name, exercises
+    }
+    
+    /// Computed property to get the weekday from either dayIndex or dayName
+    var weekday: Weekday? {
+        // First try to use dayName if provided
+        if let dayName = dayName {
+            return Weekday.from(string: dayName)
+        }
+        
+        // Fall back to dayIndex for backward compatibility
+        if let dayIndex = dayIndex {
+            return Weekday(rawValue: dayIndex)
+        }
+        
+        return nil
     }
     
     /// Validates the imported day data
@@ -61,8 +77,15 @@ struct DayImportDTO: Codable {
             throw ImportError.emptyDayName
         }
         
-        guard dayIndex >= 1 && dayIndex <= 7 else {
-            throw ImportError.invalidDayIndex(dayIndex)
+        // Validate that we have either dayIndex or dayName
+        guard weekday != nil else {
+            if let dayName = dayName {
+                throw ImportError.invalidDayName(dayName)
+            } else if let dayIndex = dayIndex {
+                throw ImportError.invalidDayIndex(dayIndex)
+            } else {
+                throw ImportError.missingDayIdentifier
+            }
         }
         
         guard !exercises.isEmpty else {
@@ -130,6 +153,8 @@ enum ImportError: Error, LocalizedError {
     case noDaysProvided
     case emptyDayName
     case invalidDayIndex(Int)
+    case invalidDayName(String)
+    case missingDayIdentifier
     case noExercisesProvided
     case emptyExerciseName
     case invalidSets(Int)
@@ -153,6 +178,10 @@ enum ImportError: Error, LocalizedError {
             return "Day name cannot be empty"
         case .invalidDayIndex(let index):
             return "Day index must be between 1 and 7, got \(index)"
+        case .invalidDayName(let dayName):
+            return "Invalid day name '\(dayName)'. Valid names are: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday"
+        case .missingDayIdentifier:
+            return "Each day must have either 'dayIndex' (1-7) or 'dayName' (Monday, Tuesday, etc.)"
         case .noExercisesProvided:
             return "Day must have at least one exercise"
         case .emptyExerciseName:

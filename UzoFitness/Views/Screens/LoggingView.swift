@@ -52,6 +52,21 @@ struct LoggingContentView: View {
                 restDayView
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if !viewModel.exercises.isEmpty {
+                // Current Exercise Header
+                if viewModel.isWorkoutInProgress {
+                    CurrentExerciseHeaderView(
+                        currentExercise: viewModel.currentExercise,
+                        totalExercises: viewModel.exercises.count,
+                        currentIndex: viewModel.currentExerciseIndex,
+                        isWorkoutInProgress: viewModel.isWorkoutInProgress,
+                        getSupersetNumber: viewModel.getSupersetNumber
+                    )
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 24)
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                    .animation(.easeInOut(duration: 0.3), value: viewModel.isWorkoutInProgress)
+                }
+                
                 // Exercise List
                 exerciseListSection
                 
@@ -215,31 +230,72 @@ struct LoggingContentView: View {
     // MARK: - Exercise List Section
     private var exerciseListSection: some View {
         ScrollView {
-            LazyVStack(spacing: 12) {
-                ForEach(viewModel.exercises) { exercise in
-                    LoggingExerciseRowView(
-                        exercise: exercise,
-                        onEditSet: { setIndex, reps, weight in
-                            viewModel.handleIntent(.editSet(
-                                exerciseID: exercise.id,
-                                setIndex: setIndex,
-                                reps: reps,
-                                weight: weight
-                            ))
-                        },
-                        onAddSet: {
-                            viewModel.handleIntent(.addSet(exerciseID: exercise.id))
-                        },
-                        onToggleSetCompletion: { setIndex in
-                            viewModel.handleIntent(.toggleSetCompletion(
-                                exerciseID: exercise.id,
-                                setIndex: setIndex
-                            ))
-                        },
-                        onMarkComplete: {
-                            viewModel.handleIntent(.markExerciseComplete(exerciseID: exercise.id))
+            LazyVStack(spacing: 16) {
+                ForEach(viewModel.groupedExercises, id: \.1.first?.id) { group in
+                    if group.0 != nil {
+                        // Superset group with minimal visual separation
+                        VStack(spacing: 12) {
+                            ForEach(group.1) { exercise in
+                                LoggingExerciseRowView(
+                                    exercise: exercise,
+                                    onEditSet: { setIndex, reps, weight in
+                                        viewModel.handleIntent(.editSet(
+                                            exerciseID: exercise.id,
+                                            setIndex: setIndex,
+                                            reps: reps,
+                                            weight: weight
+                                        ))
+                                    },
+                                    onAddSet: {
+                                        viewModel.handleIntent(.addSet(exerciseID: exercise.id))
+                                    },
+                                    onToggleSetCompletion: { setIndex in
+                                        viewModel.handleIntent(.toggleSetCompletion(
+                                            exerciseID: exercise.id,
+                                            setIndex: setIndex
+                                        ))
+                                    },
+                                    onMarkComplete: {
+                                        viewModel.handleIntent(.markExerciseComplete(exerciseID: exercise.id))
+                                    },
+                                    getSupersetNumber: viewModel.getSupersetNumber,
+                                    isCurrentExercise: viewModel.currentExercise?.id == exercise.id
+                                )
+                                .background(Color(.systemGray6).opacity(0.3))
+                                .cornerRadius(8)
+                            }
                         }
-                    )
+                        .padding(.vertical, 8)
+                    } else {
+                        // Individual exercises
+                        ForEach(group.1) { exercise in
+                            LoggingExerciseRowView(
+                                exercise: exercise,
+                                onEditSet: { setIndex, reps, weight in
+                                    viewModel.handleIntent(.editSet(
+                                        exerciseID: exercise.id,
+                                        setIndex: setIndex,
+                                        reps: reps,
+                                        weight: weight
+                                    ))
+                                },
+                                onAddSet: {
+                                    viewModel.handleIntent(.addSet(exerciseID: exercise.id))
+                                },
+                                onToggleSetCompletion: { setIndex in
+                                    viewModel.handleIntent(.toggleSetCompletion(
+                                        exerciseID: exercise.id,
+                                        setIndex: setIndex
+                                    ))
+                                },
+                                onMarkComplete: {
+                                    viewModel.handleIntent(.markExerciseComplete(exerciseID: exercise.id))
+                                },
+                                getSupersetNumber: viewModel.getSupersetNumber,
+                                isCurrentExercise: viewModel.currentExercise?.id == exercise.id
+                            )
+                        }
+                    }
                 }
             }
             .padding(.horizontal, 16)
@@ -325,106 +381,183 @@ struct LoggingExerciseRowView: View {
     let onAddSet: () -> Void
     let onToggleSetCompletion: (Int) -> Void
     let onMarkComplete: () -> Void
+    let getSupersetNumber: ((UUID) -> Int?)?
+    let isCurrentExercise: Bool
     
     @State private var editingSetIndex: Int? = nil
     @State private var tempReps: String = ""
     @State private var tempWeight: String = ""
+    @State private var isExpanded: Bool = true
+    
+    // Computed property to determine if exercise should be expanded by default
+    private var shouldBeExpandedByDefault: Bool {
+        // Always expand current exercise
+        if isCurrentExercise { return true }
+        // Always expand incomplete exercises
+        if !exercise.isCompleted { return true }
+        // Collapse completed exercises by default
+        return false
+    }
     
     var body: some View {
-        VStack(spacing: 16) {
-            // Exercise Header
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(exercise.name)
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    
-                    Text("\(exercise.plannedSets) sets × \(exercise.plannedReps) reps")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+        VStack(spacing: 0) {
+            // Exercise Header (Always visible and tappable)
+            Button {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    isExpanded.toggle()
                 }
-                
-                Spacer()
-                
-                if exercise.isCompleted {
-                    HStack(spacing: 4) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
-                            .font(.title3)
-                        Text("Complete")
-                            .font(.caption)
-                            .foregroundColor(.green)
-                    }
-                } else {
-                    VStack(alignment: .trailing, spacing: 4) {
-                        let completedSets = exercise.sets.filter { $0.isCompleted }.count
-                        let totalSets = exercise.sets.count
+            } label: {
+                HStack {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 12) {
+                            Text(exercise.name)
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                            
+                            if let supersetID = exercise.supersetID,
+                               let getSupersetNumber = getSupersetNumber,
+                               let supersetNumber = getSupersetNumber(supersetID) {
+                                SupersetBadgeView(
+                                    supersetNumber: supersetNumber,
+                                    isHead: exercise.isSupersetHead
+                                )
+                            }
+                        }
                         
-                        Text("\(completedSets)/\(totalSets) sets")
+                        Text("\(exercise.plannedSets) sets × \(exercise.plannedReps) reps")
                             .font(.caption)
                             .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    // Completion status and expand/collapse indicator
+                    HStack(spacing: 12) {
+                        if exercise.isCompleted {
+                            HStack(spacing: 4) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(.green)
+                                    .font(.title3)
+                                Text("Complete")
+                                    .font(.caption)
+                                    .foregroundColor(.green)
+                            }
+                        } else {
+                            VStack(alignment: .trailing, spacing: 4) {
+                                let completedSets = exercise.sets.filter { $0.isCompleted }.count
+                                let totalSets = exercise.sets.count
+                                
+                                Text("\(completedSets)/\(totalSets) sets")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                
+                                Button("Complete All Sets") {
+                                    onMarkComplete()
+                                }
+                                .font(.caption)
+                                .foregroundColor(.blue)
+                            }
+                        }
                         
-                        Button("Complete All Sets") {
-                            onMarkComplete()
-                        }
-                        .font(.caption)
-                        .foregroundColor(.blue)
+                        // Expand/collapse chevron
+                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .animation(.easeInOut(duration: 0.2), value: isExpanded)
                     }
                 }
             }
+            .buttonStyle(.plain)
+            .padding(16)
             
-            // Sets List
-            VStack(spacing: 8) {
-                ForEach(0..<exercise.sets.count, id: \.self) { setIndex in
-                    SetRowView(
-                        setIndex: setIndex,
-                        set: exercise.sets[setIndex],
-                        plannedReps: exercise.plannedReps,
-                        plannedWeight: exercise.plannedWeight ?? 0,
-                        isEditing: editingSetIndex == setIndex,
-                        tempReps: $tempReps,
-                        tempWeight: $tempWeight,
-                        onEdit: {
-                            editingSetIndex = setIndex
-                            tempReps = "\(exercise.sets[setIndex].reps)"
-                            tempWeight = "\(Int(exercise.sets[setIndex].weight))"
-                        },
-                        onSave: {
-                            guard let reps = Int(tempReps),
-                                  let weight = Double(tempWeight) else { return }
-                            onEditSet(setIndex, reps, weight)
-                            editingSetIndex = nil
-                        },
-                        onCancel: {
-                            editingSetIndex = nil
-                        },
-                        onToggleCompletion: {
-                            onToggleSetCompletion(setIndex)
+            // Sets List (Collapsible)
+            if isExpanded {
+                VStack(spacing: 8) {
+                    Divider()
+                        .padding(.horizontal, 16)
+                    
+                    VStack(spacing: 8) {
+                        ForEach(0..<exercise.sets.count, id: \.self) { setIndex in
+                            SetRowView(
+                                setIndex: setIndex,
+                                set: exercise.sets[setIndex],
+                                plannedReps: exercise.plannedReps,
+                                plannedWeight: exercise.plannedWeight ?? 0,
+                                isEditing: editingSetIndex == setIndex,
+                                tempReps: $tempReps,
+                                tempWeight: $tempWeight,
+                                onEdit: {
+                                    editingSetIndex = setIndex
+                                    tempReps = "\(exercise.sets[setIndex].reps)"
+                                    tempWeight = "\(Int(exercise.sets[setIndex].weight))"
+                                },
+                                onSave: {
+                                    guard let reps = Int(tempReps),
+                                          let weight = Double(tempWeight) else { return }
+                                    onEditSet(setIndex, reps, weight)
+                                    editingSetIndex = nil
+                                },
+                                onCancel: {
+                                    editingSetIndex = nil
+                                },
+                                onToggleCompletion: {
+                                    onToggleSetCompletion(setIndex)
+                                }
+                            )
                         }
-                    )
-                }
-                
-                // Add Set Button
-                if !exercise.isCompleted {
-                    Button {
-                        onAddSet()
-                    } label: {
-                        HStack {
-                            Image(systemName: "plus.circle")
-                            Text("Add Set")
+                        
+                        // Add Set Button
+                        if !exercise.isCompleted {
+                            Button {
+                                onAddSet()
+                            } label: {
+                                HStack {
+                                    Image(systemName: "plus.circle")
+                                    Text("Add Set")
+                                }
+                                .font(.caption)
+                                .foregroundColor(.blue)
+                            }
                         }
-                        .font(.caption)
-                        .foregroundColor(.blue)
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
                 }
+                .transition(.asymmetric(
+                    insertion: .opacity.combined(with: .move(edge: .top)),
+                    removal: .opacity.combined(with: .move(edge: .top))
+                ))
             }
-            
-            // Rest timer feature temporarily removed for cleaner UI
         }
-        .padding(16)
-        .background(.background)
+        .background(isCurrentExercise ? Color.blue.opacity(0.05) : Color(.systemBackground))
         .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(isCurrentExercise ? Color.blue.opacity(0.3) : Color.clear, lineWidth: 2)
+        )
         .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+        .scaleEffect(isCurrentExercise ? 1.02 : 1.0)
+        .animation(.easeInOut(duration: 0.2), value: isCurrentExercise)
+        .onAppear {
+            // Set initial expansion state based on completion status
+            isExpanded = shouldBeExpandedByDefault
+        }
+        .onChange(of: isCurrentExercise) { oldValue, newValue in
+            // Auto-expand when exercise becomes current
+            if newValue && !isExpanded {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    isExpanded = true
+                }
+            }
+        }
+        .onChange(of: exercise.isCompleted) { oldValue, newValue in
+            // Auto-collapse when exercise is completed (unless it's current)
+            if newValue && !isCurrentExercise && isExpanded {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    isExpanded = false
+                }
+            }
+        }
     }
     
     private func formatTime(_ seconds: TimeInterval) -> String {

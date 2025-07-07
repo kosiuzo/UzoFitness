@@ -35,6 +35,30 @@ extension Weekday {
         case .saturday: return "Saturday"
         }
     }
+    
+    /// Creates a Weekday from a string representation (case-insensitive)
+    static func from(string: String) -> Weekday? {
+        let lowercased = string.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        switch lowercased {
+        case "sunday", "sun":
+            return .sunday
+        case "monday", "mon":
+            return .monday
+        case "tuesday", "tue", "tues":
+            return .tuesday
+        case "wednesday", "wed":
+            return .wednesday
+        case "thursday", "thu", "thur", "thurs":
+            return .thursday
+        case "friday", "fri":
+            return .friday
+        case "saturday", "sat":
+            return .saturday
+        default:
+            return nil
+        }
+    }
 }
 
 enum PhotoAngle: String, Codable, CaseIterable {
