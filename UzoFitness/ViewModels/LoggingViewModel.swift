@@ -50,6 +50,8 @@ enum LoggingIntent {
     case cancelRest(exerciseID: UUID)
     case markExerciseComplete(exerciseID: UUID)
     case finishSession
+    case advanceToNextExercise
+    case setCurrentExercise(index: Int)
 }
 
 // MARK: - ViewState Enum
@@ -117,10 +119,45 @@ class LoggingViewModel: ObservableObject {
     @Published var error: Error?
     @Published var state: ViewState<String> = .idle
     
+    // MARK: - Current Exercise Tracking State
+    @Published var currentExerciseIndex: Int = 0
+    @Published var isWorkoutInProgress: Bool = false
+    
     // MARK: - Computed Properties
     var canFinishSession: Bool {
         guard session != nil else { return false }
         return !exercises.isEmpty && exercises.allSatisfy { $0.isCompleted }
+    }
+    
+    var currentExercise: SessionExerciseUI? {
+        guard currentExerciseIndex < exercises.count else { return nil }
+        return exercises[currentExerciseIndex]
+    }
+    
+    var groupedExercises: [(Int?, [SessionExerciseUI])] {
+        var grouped: [UUID?: [SessionExerciseUI]] = [:]
+        
+        // Group exercises by superset ID
+        for exercise in exercises {
+            grouped[exercise.supersetID, default: []].append(exercise)
+        }
+        
+        // Convert to ordered list with superset numbers
+        let result: [(Int?, [SessionExerciseUI])] = grouped.map { (supersetID, exerciseGroup) in
+            if let supersetID = supersetID {
+                let supersetNumber = getSupersetNumber(for: supersetID)
+                return (supersetNumber, exerciseGroup.sorted { $0.position < $1.position })
+            } else {
+                return (nil, exerciseGroup.sorted { $0.position < $1.position })
+            }
+        }
+        
+        // Sort by the original exercise positions to maintain order
+        return result.sorted { group1, group2 in
+            let firstExercise1 = group1.1.first?.position ?? Double.infinity
+            let firstExercise2 = group2.1.first?.position ?? Double.infinity
+            return firstExercise1 < firstExercise2
+        }
     }
     
     var totalVolume: Double {
@@ -199,6 +236,12 @@ class LoggingViewModel: ObservableObject {
             
         case .finishSession:
             finishSession()
+            
+        case .advanceToNextExercise:
+            advanceToNextExercise()
+            
+        case .setCurrentExercise(let index):
+            setCurrentExercise(index: index)
         }
     }
     
@@ -537,6 +580,8 @@ class LoggingViewModel: ObservableObject {
     private func updateExercisesUI() {
         guard let session = session else {
             exercises = []
+            isWorkoutInProgress = false
+            currentExerciseIndex = 0
             return
         }
         
@@ -544,7 +589,126 @@ class LoggingViewModel: ObservableObject {
             .sorted(by: { $0.position < $1.position })
             .map { SessionExerciseUI(from: $0) }
         
+        // Update workout progress state
+        isWorkoutInProgress = !exercises.isEmpty
+        
+        // Update current exercise index
+        updateCurrentExercise()
+        
         AppLogger.debug("[LoggingViewModel.updateExercisesUI] Updated UI with \(exercises.count) exercises", category: "LoggingViewModel")
+    }
+    
+    // MARK: - Current Exercise Management
+    private func updateCurrentExercise() {
+        guard !exercises.isEmpty else {
+            currentExerciseIndex = 0
+            return
+        }
+        
+        // Find the first incomplete exercise
+        if let firstIncompleteIndex = exercises.firstIndex(where: { !$0.isCompleted }) {
+            currentExerciseIndex = firstIncompleteIndex
+        } else {
+            // All exercises completed - keep current index if valid
+            currentExerciseIndex = min(currentExerciseIndex, exercises.count - 1)
+        }
+    }
+    
+    private func advanceToNextExercise() {
+        guard let currentExercise = currentExercise else { return }
+        
+        AppLogger.info("[LoggingViewModel.advanceToNextExercise] Advancing from exercise: \(currentExercise.name)", category: "LoggingViewModel")
+        
+        // If current exercise is part of a superset
+        if let supersetID = currentExercise.supersetID {
+            if isCurrentSupersetCompleted() {
+                // Move to next exercise after superset
+                moveToNextExerciseAfterSuperset(supersetID)
+            } else {
+                // Move to next exercise in same superset
+                moveToNextExerciseInSuperset(supersetID)
+            }
+        } else {
+            // Regular exercise - move to next
+            moveToNextExercise()
+        }
+    }
+    
+    private func setCurrentExercise(index: Int) {
+        guard index >= 0 && index < exercises.count else { return }
+        currentExerciseIndex = index
+        AppLogger.info("[LoggingViewModel.setCurrentExercise] Current exercise set to index: \(index)", category: "LoggingViewModel")
+    }
+    
+    private func isCurrentSupersetCompleted() -> Bool {
+        guard let currentExercise = currentExercise,
+              let supersetID = currentExercise.supersetID else { return false }
+        
+        let supersetExercises = exercises.filter { $0.supersetID == supersetID }
+        return supersetExercises.allSatisfy { $0.isCompleted }
+    }
+    
+    private func moveToNextExerciseAfterSuperset(_ supersetID: UUID) {
+        // Find the last exercise in the superset
+        let supersetExercises = exercises.enumerated().filter { $0.element.supersetID == supersetID }
+        guard let lastSupersetIndex = supersetExercises.map({ $0.offset }).max() else { return }
+        
+        // Move to next exercise after the superset
+        let nextIndex = lastSupersetIndex + 1
+        if nextIndex < exercises.count {
+            currentExerciseIndex = nextIndex
+        }
+    }
+    
+    private func moveToNextExerciseInSuperset(_ supersetID: UUID) {
+        // Find next exercise in the same superset
+        let supersetExercises = exercises.enumerated().filter { $0.element.supersetID == supersetID }
+        let currentIndexInSuperset = supersetExercises.firstIndex { $0.offset == currentExerciseIndex }
+        
+        if let currentIndexInSuperset = currentIndexInSuperset,
+           currentIndexInSuperset + 1 < supersetExercises.count {
+            currentExerciseIndex = supersetExercises[currentIndexInSuperset + 1].offset
+        }
+    }
+    
+    private func moveToNextExercise() {
+        let nextIndex = currentExerciseIndex + 1
+        if nextIndex < exercises.count {
+            currentExerciseIndex = nextIndex
+        }
+    }
+    
+    private func getNextExerciseIndex() -> Int? {
+        guard let currentExercise = currentExercise else { return nil }
+        
+        if let supersetID = currentExercise.supersetID {
+            if isCurrentSupersetCompleted() {
+                // Get next exercise after superset
+                let supersetExercises = exercises.enumerated().filter { $0.element.supersetID == supersetID }
+                guard let lastSupersetIndex = supersetExercises.map({ $0.offset }).max() else { return nil }
+                let nextIndex = lastSupersetIndex + 1
+                return nextIndex < exercises.count ? nextIndex : nil
+            } else {
+                // Get next exercise in same superset
+                let supersetExercises = exercises.enumerated().filter { $0.element.supersetID == supersetID }
+                let currentIndexInSuperset = supersetExercises.firstIndex { $0.offset == currentExerciseIndex }
+                
+                if let currentIndexInSuperset = currentIndexInSuperset,
+                   currentIndexInSuperset + 1 < supersetExercises.count {
+                    return supersetExercises[currentIndexInSuperset + 1].offset
+                }
+            }
+        } else {
+            // Regular exercise
+            let nextIndex = currentExerciseIndex + 1
+            return nextIndex < exercises.count ? nextIndex : nil
+        }
+        
+        return nil
+    }
+    
+    func getSupersetNumber(for supersetID: UUID) -> Int? {
+        return selectedDay?.getSupersetNumber(for: supersetID)
     }
     
     private func editSet(exerciseID: UUID, setIndex: Int, reps: Int, weight: Double) {
@@ -663,6 +827,12 @@ class LoggingViewModel: ObservableObject {
             AppLogger.info("[LoggingViewModel.toggleSetCompletion] All sets completed - auto-completing exercise", category: "LoggingViewModel")
             sessionExercise.isCompleted = true
             sessionExercise.updateExerciseCacheOnCompletion()
+            
+            // Auto-advance to next exercise if this exercise is the current one
+            if let currentExerciseUI = currentExercise,
+               currentExerciseUI.id == exerciseID {
+                advanceToNextExercise()
+            }
         } else if completedSetsCount < totalSetsCount && sessionExercise.isCompleted {
             AppLogger.debug("[LoggingViewModel.toggleSetCompletion] Not all sets completed - marking exercise as incomplete", category: "LoggingViewModel")
             sessionExercise.isCompleted = false
@@ -779,6 +949,12 @@ class LoggingViewModel: ObservableObject {
         
         // Update the exercise's cache for future sessions
         sessionExercise.updateExerciseCacheOnCompletion()
+        
+        // Auto-advance to next exercise if this exercise is the current one
+        if let currentExerciseUI = currentExercise,
+           currentExerciseUI.id == exerciseID {
+            advanceToNextExercise()
+        }
         
         updateExercisesUI()
         

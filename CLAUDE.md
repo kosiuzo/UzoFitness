@@ -8,9 +8,10 @@ UzoFitness is a modern iOS application built with **Swift 5** and **SwiftUI** th
 2. **Progress Tracking** – Log body-weight, body-fat %, and upload progress photos organized in grid views
 3. **Apple Health Integration** – Securely read body-mass and body-fat data directly from Apple Health
 
-**Architecture**: SwiftUI + MVVM with SwiftData persistence
-**Target**: iOS 17.0+ (SwiftData requirement)
-**Status**: Active development (June 2025)
+**Architecture**: SwiftUI + MVVM with SwiftData persistence  
+**Target**: iOS 17.0+ (SwiftData requirement)  
+**Status**: Active development (June 2025)  
+**Design Philosophy**: Minimalist iOS design with clean typography, generous white space, and subtle visual hierarchy
 
 ## Directory Structure
 
@@ -72,16 +73,16 @@ UzoFitness/
 ### Build Commands
 ```bash
 # Build for simulator (without launching)
-xcodebuild -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.0' build
+xcodebuild -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5' build
 
 # Build for device
 xcodebuild -scheme UzoFitness -sdk iphoneos -configuration Debug build
 
 # Build for simulator (launches simulator)
-xcodebuild -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.0'
+xcodebuild -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'
 
 # Run tests
-xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.0'
+xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'
 ```
 
 ### Code Quality Tools
@@ -118,6 +119,21 @@ swiftlint
 - Use `@Environment` for shared app-wide dependencies
 - Extract complex views into separate components when body exceeds 10-15 lines
 - Use `.task{}` over `.onAppear{}` for async operations
+
+### UI Design Principles
+- **Follow Minimalist iOS Design**: All UI changes must adhere to the [Minimalist iOS Design Guide](.cursor/rules/minimalist-ios-guide.mdc)
+- Use generous white space (16px, 24px, 32px increments) as primary design element
+- Employ subtle gray backgrounds (`Color(.systemGray6)`) for gentle visual separation
+- Prioritize clear, readable text over decorative elements
+- Use system fonts (San Francisco) for consistency and legibility
+- Default to neutral color scheme with whites, light grays, and subtle accents
+- Use color sparingly and purposefully (blue for interactive elements, green for completion states)
+- Avoid gradients, shadows, or complex visual effects unless absolutely necessary
+- Design with clean, simple shapes and minimal ornamentation
+- Implement subtle interactive states with light gray fills on tap
+- Group related content with consistent card-based layouts and gentle borders
+- Follow iOS Human Interface Guidelines for familiar interaction patterns
+- Implement smooth, subtle animations that feel natural to iOS users
 
 ### Async/Await Patterns
 - Prefer `async/await` over Combine for new code
@@ -249,24 +265,30 @@ class ExampleService: ExampleServiceProtocol {
 - [HealthKit](https://developer.apple.com/documentation/healthkit/)
 - [Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/ios/)
 
+### Design Documentation
+- [Minimalist iOS Design Guide](.cursor/rules/minimalist-ios-guide.mdc) - **Required reading for all UI changes**
+
 ## Development Workflow
 
 ### New Feature Development
 1. Create feature branch from main
-2. Implement feature following MVVM pattern
-3. Add unit tests for ViewModels and Services
-4. Update documentation if needed
-5. Run code quality tools (`swiftformat`, `swiftlint`)
-6. Ensure all tests pass
-7. Create pull request with clear description
+2. **Review [Minimalist iOS Design Guide](.cursor/rules/minimalist-ios-guide.mdc) for UI design requirements**
+3. Implement feature following MVVM pattern
+4. **Design UI with minimalist principles: generous white space, clean typography, subtle visual cues**
+5. Add unit tests for ViewModels and Services
+6. Update documentation if needed
+7. Run code quality tools (`swiftformat`, `swiftlint`)
+8. Ensure all tests pass
+9. Create pull request with clear description
 
 ### Bug Fix Process
 1. Reproduce the issue
 2. Create fix branch
-3. Implement fix with minimal changes
-4. Add regression test if applicable
-5. Test on both simulator and device
-6. Submit pull request
+3. **Ensure UI fixes follow minimalist design principles** (see [Minimalist iOS Design Guide](.cursor/rules/minimalist-ios-guide.mdc))
+4. Implement fix with minimal changes
+5. Add regression test if applicable
+6. Test on both simulator and device
+7. Submit pull request
 
 ### Code Review Checklist
 - [ ] Follows Swift style guidelines
@@ -275,6 +297,10 @@ class ExampleService: ExampleServiceProtocol {
 - [ ] No memory leaks or performance issues
 - [ ] Documentation updated if needed
 - [ ] Accessibility considerations addressed
+- [ ] **UI follows minimalist iOS design principles** (see [Minimalist iOS Design Guide](.cursor/rules/minimalist-ios-guide.mdc))
+- [ ] Uses generous white space and clean typography
+- [ ] Avoids visual clutter and unnecessary decorative elements
+- [ ] Implements subtle, natural iOS animations
 
 ---
 
