@@ -135,29 +135,39 @@ class LoggingViewModel: ObservableObject {
     }
     
     var groupedExercises: [(Int?, [SessionExerciseUI])] {
-        var grouped: [UUID?: [SessionExerciseUI]] = [:]
+        // Sort exercises by position to ensure consistent ordering
+        let sortedExercises = exercises.sorted { $0.position < $1.position }
+        var result: [(Int?, [SessionExerciseUI])] = []
+        var currentSupersetID: UUID? = nil
+        var currentGroup: [SessionExerciseUI] = []
         
-        // Group exercises by superset ID
-        for exercise in exercises {
-            grouped[exercise.supersetID, default: []].append(exercise)
-        }
-        
-        // Convert to ordered list with superset numbers
-        let result: [(Int?, [SessionExerciseUI])] = grouped.map { (supersetID, exerciseGroup) in
-            if let supersetID = supersetID {
-                let supersetNumber = getSupersetNumber(for: supersetID)
-                return (supersetNumber, exerciseGroup.sorted { $0.position < $1.position })
+        for exercise in sortedExercises {
+            if let supersetID = exercise.supersetID {
+                if supersetID != currentSupersetID {
+                    // Finish previous group if any
+                    if !currentGroup.isEmpty {
+                        result.append((currentSupersetID != nil ? getSupersetNumber(for: currentSupersetID!) : nil, currentGroup))
+                        currentGroup = []
+                    }
+                    currentSupersetID = supersetID
+                }
+                currentGroup.append(exercise)
             } else {
-                return (nil, exerciseGroup.sorted { $0.position < $1.position })
+                // Finish previous group if any
+                if !currentGroup.isEmpty {
+                    result.append((currentSupersetID != nil ? getSupersetNumber(for: currentSupersetID!) : nil, currentGroup))
+                    currentGroup = []
+                    currentSupersetID = nil
+                }
+                // Add non-superset exercise as its own group
+                result.append((nil, [exercise]))
             }
         }
-        
-        // Sort by the original exercise positions to maintain order
-        return result.sorted { group1, group2 in
-            let firstExercise1 = group1.1.first?.position ?? Double.infinity
-            let firstExercise2 = group2.1.first?.position ?? Double.infinity
-            return firstExercise1 < firstExercise2
+        // Add last group if any
+        if !currentGroup.isEmpty {
+            result.append((currentSupersetID != nil ? getSupersetNumber(for: currentSupersetID!) : nil, currentGroup))
         }
+        return result
     }
     
     var totalVolume: Double {
@@ -322,8 +332,15 @@ class LoggingViewModel: ObservableObject {
             AppLogger.info("[LoggingViewModel.selectPlan] Plan selected: \(plan.customName)", category: "LoggingViewModel")
             AppLogger.debug("[LoggingViewModel] Active plan changed to: \(plan.customName)", category: "LoggingViewModel")
             
-            // Update available days from the selected plan's template
-            availableDays = plan.template?.dayTemplates.sorted(by: { $0.weekday.rawValue < $1.weekday.rawValue }) ?? []
+            // Custom sort: Mon-Fri (2-6), then Sat (7), then Sun (1)
+            let weekdayOrder: [Weekday] = [.monday, .tuesday, .wednesday, .thursday, .friday, .saturday, .sunday]
+            availableDays = plan.template?.dayTemplates.sorted {
+                guard let firstIndex = weekdayOrder.firstIndex(of: $0.weekday),
+                      let secondIndex = weekdayOrder.firstIndex(of: $1.weekday) else {
+                    return $0.weekday.rawValue < $1.weekday.rawValue
+                }
+                return firstIndex < secondIndex
+            } ?? []
             AppLogger.debug("[LoggingViewModel.selectPlan] Loaded \(availableDays.count) days for plan", category: "LoggingViewModel")
             
             // Auto-select current day if no day is currently selected
