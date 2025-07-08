@@ -520,14 +520,22 @@ struct LoggingExerciseRowView: View {
                                 tempReps: $tempReps,
                                 tempWeight: $tempWeight,
                                 onEdit: { field in
+                                    // If switching to a new set or exercise, re-initialize both fields
+                                    let isNewSet = editingSetIndex != setIndex || editingExerciseID != exercise.id
                                     editingSetIndex = setIndex
                                     editingExerciseID = exercise.id
                                     isAnySetEditing = true
-                                    switch field {
-                                    case .reps:
+                                    if isNewSet {
                                         tempReps = "\(exercise.sets[setIndex].reps)"
-                                    case .weight:
                                         tempWeight = "\(Int(exercise.sets[setIndex].weight))"
+                                    } else {
+                                        // Only update the tapped field, keep the other as-is
+                                        switch field {
+                                        case .reps:
+                                            tempReps = "\(exercise.sets[setIndex].reps)"
+                                        case .weight:
+                                            tempWeight = "\(Int(exercise.sets[setIndex].weight))"
+                                        }
                                     }
                                     initialFocus = field
                                 },
