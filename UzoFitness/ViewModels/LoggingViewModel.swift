@@ -312,6 +312,26 @@ class LoggingViewModel: ObservableObject {
         AppLogger.info("[LoggingViewModel.loadLastPerformedData] Last performed data loaded", category: "LoggingViewModel")
     }
     
+    func refreshSessionWithAutoPopulation() {
+        AppLogger.info("[LoggingViewModel.refreshSessionWithAutoPopulation] Refreshing session with auto-populated values", category: "LoggingViewModel")
+        
+        guard activePlan != nil,
+              selectedDay != nil else {
+            AppLogger.error("[LoggingViewModel.refreshSessionWithAutoPopulation] Missing plan or day", category: "LoggingViewModel")
+            return
+        }
+        
+        // Clear current session
+        if let existingSession = session {
+            modelContext.delete(existingSession)
+        }
+        
+        // Create fresh session with auto-population
+        createFreshSessionWithAutoPopulation()
+        
+        AppLogger.info("[LoggingViewModel.refreshSessionWithAutoPopulation] Session refreshed with auto-populated values", category: "LoggingViewModel")
+    }
+    
     // MARK: - Private Methods
     private func selectPlan(_ planID: UUID) {
         AppLogger.info("[LoggingViewModel.selectPlan] Selecting plan: \(planID)", category: "LoggingViewModel")
@@ -592,6 +612,83 @@ class LoggingViewModel: ObservableObject {
         }
         
         AppLogger.info("[LoggingViewModel.createSessionExercises] Created \(dayTemplate.exerciseTemplates.count) session exercises", category: "LoggingViewModel")
+    }
+    
+    private func createFreshSessionWithAutoPopulation() {
+        AppLogger.info("[LoggingViewModel.createFreshSessionWithAutoPopulation] Creating new session with auto-populated values", category: "LoggingViewModel")
+        
+        guard let activePlan = activePlan,
+              let selectedDay = selectedDay else {
+            AppLogger.error("[LoggingViewModel.createFreshSessionWithAutoPopulation] Missing plan or day", category: "LoggingViewModel")
+            return
+        }
+        
+        let today = Date()
+        let newSession = WorkoutSession(
+            date: today,
+            title: "\(selectedDay.weekday.fullName) - \(activePlan.customName)",
+            plan: activePlan
+        )
+        
+        modelContext.insert(newSession)
+        session = newSession
+        sessionStartTime = Date()
+        
+        AppLogger.debug("[LoggingViewModel.createFreshSessionWithAutoPopulation] New session created with ID: \(newSession.id)", category: "LoggingViewModel")
+        
+        // Create session exercises with auto-population enabled
+        createSessionExercisesWithAutoPopulation(for: newSession, from: selectedDay)
+        
+        // Save immediately to ensure the session persists
+        do {
+            try modelContext.save()
+            AppLogger.info("[LoggingViewModel.createFreshSessionWithAutoPopulation] New session with auto-populated values saved successfully", category: "LoggingViewModel")
+        } catch {
+            AppLogger.error("[LoggingViewModel.createFreshSessionWithAutoPopulation] Failed to save new session", category: "LoggingViewModel", error: error)
+        }
+        
+        updateExercisesUI()
+        AppLogger.info("[LoggingViewModel.createFreshSessionWithAutoPopulation] Fresh session with auto-populated values ready", category: "LoggingViewModel")
+    }
+    
+    private func createSessionExercisesWithAutoPopulation(for session: WorkoutSession, from dayTemplate: DayTemplate) {
+        AppLogger.info("[LoggingViewModel.createSessionExercisesWithAutoPopulation] Creating exercises with auto-population", category: "LoggingViewModel")
+        
+        for exerciseTemplate in dayTemplate.exerciseTemplates.sorted(by: { $0.position < $1.position }) {
+            let sessionExercise = SessionExercise(
+                exercise: exerciseTemplate.exercise,
+                plannedSets: exerciseTemplate.setCount,
+                plannedReps: nil, // Don't override, let auto-population handle it
+                plannedWeight: nil, // Don't override, let auto-population handle it
+                position: exerciseTemplate.position,
+                supersetID: exerciseTemplate.supersetID,
+                currentSet: 0,
+                isCompleted: false,
+                session: session,
+                autoPopulateFromLastSession: true // Enable auto-population from last used values
+            )
+            
+            modelContext.insert(sessionExercise)
+            session.sessionExercises.append(sessionExercise)
+            
+            // Create planned sets using auto-populated values
+            for setIndex in 0..<exerciseTemplate.setCount {
+                let plannedSet = CompletedSet(
+                    reps: sessionExercise.plannedReps, // Use auto-populated reps
+                    weight: sessionExercise.plannedWeight ?? 0, // Use auto-populated weight
+                    isCompleted: false,
+                    position: setIndex,
+                    sessionExercise: sessionExercise
+                )
+                modelContext.insert(plannedSet)
+                sessionExercise.completedSets.append(plannedSet)
+                AppLogger.debug("[LoggingViewModel.createSessionExercisesWithAutoPopulation] Created auto-populated set \(setIndex + 1) for \(exerciseTemplate.exercise.name) - Reps: \(sessionExercise.plannedReps), Weight: \(sessionExercise.plannedWeight ?? 0)", category: "LoggingViewModel")
+            }
+            
+            AppLogger.debug("[LoggingViewModel.createSessionExercisesWithAutoPopulation] Added exercise: \(exerciseTemplate.exercise.name) with auto-populated values", category: "LoggingViewModel")
+        }
+        
+        AppLogger.info("[LoggingViewModel.createSessionExercisesWithAutoPopulation] Created \(dayTemplate.exerciseTemplates.count) session exercises with auto-population", category: "LoggingViewModel")
     }
     
     private func updateExercisesUI() {
@@ -1025,12 +1122,15 @@ class LoggingViewModel: ObservableObject {
             AppLogger.debug("[LoggingViewModel] Session duration: \(session.duration ?? 0) seconds", category: "LoggingViewModel")
             AppLogger.debug("[LoggingViewModel.finishSession] Total volume: \(totalVolume) lbs", category: "LoggingViewModel")
             
-            // Reset state for next session - DON'T create a fresh session automatically
+            // Reset state for next session and immediately create a new session with auto-populated values
             self.session = nil
             self.exercises = []
             self.sessionStartTime = nil
             
-            AppLogger.info("[LoggingViewModel.finishSession] Session state reset - ready for next workout", category: "LoggingViewModel")
+            // Automatically create a new session with auto-populated values from the completed session
+            createFreshSessionWithAutoPopulation()
+            
+            AppLogger.info("[LoggingViewModel.finishSession] Session completed and new session created with auto-populated values", category: "LoggingViewModel")
             
         } catch {
             AppLogger.error("[LoggingViewModel.finishSession] Save error", category: "LoggingViewModel", error: error)
