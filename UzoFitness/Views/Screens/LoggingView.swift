@@ -28,6 +28,11 @@ struct LoggingView: View {
 struct LoggingContentView: View {
     @ObservedObject var viewModel: LoggingViewModel
     @State private var initialFocus: SetRowView.Field? = nil
+    @State private var isAnySetEditing: Bool = false
+    @State private var editingExerciseID: UUID? = nil
+    @State private var editingSetIndex: Int? = nil
+    @State private var tempReps: String = ""
+    @State private var tempWeight: String = ""
     
     var body: some View {
         contentView
@@ -36,6 +41,39 @@ struct LoggingContentView: View {
                 viewModel.loadAvailablePlans()
                 viewModel.loadLastPerformedData()
             }
+            .toolbar {
+                if isAnySetEditing {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Done") {
+                            saveCurrentSet()
+                        }
+                        .fontWeight(.medium)
+                        .foregroundColor(.blue)
+                    }
+                }
+            }
+    }
+    
+    private func saveCurrentSet() {
+        guard let exerciseID = editingExerciseID,
+              let setIndex = editingSetIndex,
+              let reps = Int(tempReps),
+              let weight = Double(tempWeight) else { return }
+        
+        viewModel.handleIntent(.editSet(
+            exerciseID: exerciseID,
+            setIndex: setIndex,
+            reps: reps,
+            weight: weight
+        ))
+        
+        // Reset editing state
+        isAnySetEditing = false
+        editingExerciseID = nil
+        editingSetIndex = nil
+        tempReps = ""
+        tempWeight = ""
     }
     
     @ViewBuilder
@@ -241,7 +279,12 @@ struct LoggingContentView: View {
                                 },
                                 getSupersetNumber: viewModel.getSupersetNumber,
                                 isCurrentExercise: viewModel.currentExercise?.id == exercise.id,
-                                initialFocus: $initialFocus
+                                initialFocus: $initialFocus,
+                                isAnySetEditing: $isAnySetEditing,
+                                editingExerciseID: $editingExerciseID,
+                                editingSetIndex: $editingSetIndex,
+                                tempReps: $tempReps,
+                                tempWeight: $tempWeight
                             )
                             .background(Color(.systemGray6).opacity(0.3))
                             .cornerRadius(8)
@@ -275,7 +318,12 @@ struct LoggingContentView: View {
                             },
                             getSupersetNumber: viewModel.getSupersetNumber,
                             isCurrentExercise: viewModel.currentExercise?.id == exercise.id,
-                            initialFocus: $initialFocus
+                            initialFocus: $initialFocus,
+                            isAnySetEditing: $isAnySetEditing,
+                            editingExerciseID: $editingExerciseID,
+                            editingSetIndex: $editingSetIndex,
+                            tempReps: $tempReps,
+                            tempWeight: $tempWeight
                         )
                     }
                 }
@@ -366,10 +414,12 @@ struct LoggingExerciseRowView: View {
     let getSupersetNumber: ((UUID) -> Int?)?
     let isCurrentExercise: Bool
     @Binding var initialFocus: SetRowView.Field?
+    @Binding var isAnySetEditing: Bool
+    @Binding var editingExerciseID: UUID?
+    @Binding var editingSetIndex: Int?
+    @Binding var tempReps: String
+    @Binding var tempWeight: String
     
-    @State private var editingSetIndex: Int? = nil
-    @State private var tempReps: String = ""
-    @State private var tempWeight: String = ""
     @State private var isExpanded: Bool = true
     
     // Computed property to determine if exercise should be expanded by default
@@ -466,11 +516,13 @@ struct LoggingExerciseRowView: View {
                                 set: exercise.sets[setIndex],
                                 plannedReps: exercise.plannedReps,
                                 plannedWeight: exercise.plannedWeight ?? 0,
-                                isEditing: editingSetIndex == setIndex,
+                                isEditing: editingSetIndex == setIndex && editingExerciseID == exercise.id,
                                 tempReps: $tempReps,
                                 tempWeight: $tempWeight,
                                 onEdit: { field in
                                     editingSetIndex = setIndex
+                                    editingExerciseID = exercise.id
+                                    isAnySetEditing = true
                                     switch field {
                                     case .reps:
                                         tempReps = "\(exercise.sets[setIndex].reps)"
@@ -484,9 +536,13 @@ struct LoggingExerciseRowView: View {
                                           let weight = Double(tempWeight) else { return }
                                     onEditSet(setIndex, reps, weight)
                                     editingSetIndex = nil
+                                    editingExerciseID = nil
+                                    isAnySetEditing = false
                                 },
                                 onCancel: {
                                     editingSetIndex = nil
+                                    editingExerciseID = nil
+                                    isAnySetEditing = false
                                 },
                                 onToggleCompletion: {
                                     onToggleSetCompletion(setIndex)
@@ -544,24 +600,6 @@ struct LoggingExerciseRowView: View {
             if newValue && !isCurrentExercise && isExpanded {
                 withAnimation(.easeInOut(duration: 0.3)) {
                     isExpanded = false
-                }
-            }
-        }
-        .toolbar {
-            if editingSetIndex != nil {
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("Done") {
-                        // Find the current set being edited and save it
-                        if let setIndex = editingSetIndex {
-                            guard let reps = Int(tempReps),
-                                  let weight = Double(tempWeight) else { return }
-                            onEditSet(setIndex, reps, weight)
-                            editingSetIndex = nil
-                        }
-                    }
-                    .fontWeight(.medium)
-                    .foregroundColor(.blue)
                 }
             }
         }
@@ -626,8 +664,7 @@ struct SetRowView: View {
                         .frame(width: 60)
                         .focused($focusedField, equals: .weight)
                         .onSubmit {
-                            // Save when weight field is submitted
-                            onSave()
+                            // Don't auto-save - let the Done button handle saving
                         }
                     
                     Text("lbs")
@@ -637,10 +674,7 @@ struct SetRowView: View {
                     Spacer()
                 }
                 .onChange(of: focusedField) { oldValue, newValue in
-                    // Save when focus is lost (when focusedField becomes nil)
-                    if oldValue != nil && newValue == nil {
-                        onSave()
-                    }
+                    // Don't auto-save on focus change - let the Done button handle saving
                 }
                 .onAppear {
                     // Set initial focus to tapped field if available, then reset
