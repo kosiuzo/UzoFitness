@@ -184,29 +184,42 @@ struct StatsContentView: View {
                 .font(.headline)
                 .padding(.horizontal)
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(viewModel.getExerciseOptions(), id: \.0) { exerciseID, exerciseName in
-                        Button {
-                            Task {
-                                await viewModel.handleIntent(.selectExercise(exerciseID))
-                            }
-                        } label: {
+            Menu {
+                ForEach(viewModel.getExerciseOptions(), id: \.0) { exerciseID, exerciseName in
+                    Button {
+                        Task {
+                            await viewModel.handleIntent(.selectExercise(exerciseID))
+                        }
+                    } label: {
+                        HStack {
                             Text(exerciseName)
-                                .font(.subheadline)
-                                .fontWeight(viewModel.selectedExerciseID == exerciseID ? .semibold : .regular)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 10)
-                                .background(
-                                    Capsule()
-                                        .fill(viewModel.selectedExerciseID == exerciseID ? Color.accentColor : Color(.systemGray5))
-                                )
-                                .foregroundColor(viewModel.selectedExerciseID == exerciseID ? .white : .primary)
+                            if viewModel.selectedExerciseID == exerciseID {
+                                Image(systemName: "checkmark")
+                                    .foregroundColor(.accentColor)
+                            }
                         }
                     }
                 }
-                .padding(.horizontal)
+            } label: {
+                HStack {
+                    Text(viewModel.selectedExerciseName ?? "Choose an exercise")
+                        .font(.subheadline)
+                        .foregroundColor(viewModel.selectedExerciseID != nil ? .primary : .secondary)
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.down")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(.systemGray6))
+                )
             }
+            .padding(.horizontal)
         }
         .padding(.vertical)
         .background(
