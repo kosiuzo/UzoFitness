@@ -607,61 +607,66 @@ struct SetRowView: View {
                     }
                 }
             } else {
-                // Direct Editing Mode - No Edit Button Required
+                // Direct Editing Mode - Individual Tappable Fields
                 HStack(spacing: 8) {
+                    // Reps Field - Tappable
                     Button {
                         onEdit()
                     } label: {
-                        HStack(spacing: 4) {
-                            if let set = set {
-                                Text("\(set.reps)")
-                                    .font(.body)
-                                    .foregroundColor(.primary)
-                                    .frame(minWidth: 30)
-                                    .padding(.vertical, 6)
-                                    .padding(.horizontal, 8)
-                                    .background(.quaternary)
-                                    .cornerRadius(6)
-                            } else {
-                                Text("\(plannedReps)")
-                                    .font(.body)
-                                    .foregroundColor(.secondary)
-                                    .frame(minWidth: 30)
-                                    .padding(.vertical, 6)
-                                    .padding(.horizontal, 8)
-                                    .background(.quaternary)
-                                    .cornerRadius(6)
-                            }
-                            
-                            Text("×")
+                        if let set = set {
+                            Text("\(set.reps)")
+                                .font(.body)
+                                .foregroundColor(.primary)
+                                .frame(minWidth: 30)
+                                .padding(.vertical, 6)
+                                .padding(.horizontal, 8)
+                                .background(.quaternary)
+                                .cornerRadius(6)
+                        } else {
+                            Text("\(plannedReps)")
+                                .font(.body)
                                 .foregroundColor(.secondary)
-                            
-                            if let set = set {
-                                Text("\(Int(set.weight))")
-                                    .font(.body)
-                                    .foregroundColor(.primary)
-                                    .frame(minWidth: 40)
-                                    .padding(.vertical, 6)
-                                    .padding(.horizontal, 8)
-                                    .background(.quaternary)
-                                    .cornerRadius(6)
-                            } else {
-                                Text("\(Int(plannedWeight))")
-                                    .font(.body)
-                                    .foregroundColor(.secondary)
-                                    .frame(minWidth: 40)
-                                    .padding(.vertical, 6)
-                                    .padding(.horizontal, 8)
-                                    .background(.quaternary)
-                                    .cornerRadius(6)
-                            }
-                            
-                            Text("lbs")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .frame(minWidth: 30)
+                                .padding(.vertical, 6)
+                                .padding(.horizontal, 8)
+                                .background(.quaternary)
+                                .cornerRadius(6)
                         }
                     }
                     .buttonStyle(.plain)
+                    
+                    Text("×")
+                        .foregroundColor(.secondary)
+                    
+                    // Weight Field - Tappable
+                    Button {
+                        onEdit()
+                    } label: {
+                        if let set = set {
+                            Text("\(Int(set.weight))")
+                                .font(.body)
+                                .foregroundColor(.primary)
+                                .frame(minWidth: 40)
+                                .padding(.vertical, 6)
+                                .padding(.horizontal, 8)
+                                .background(.quaternary)
+                                .cornerRadius(6)
+                        } else {
+                            Text("\(Int(plannedWeight))")
+                                .font(.body)
+                                .foregroundColor(.secondary)
+                                .frame(minWidth: 40)
+                                .padding(.vertical, 6)
+                                .padding(.horizontal, 8)
+                                .background(.quaternary)
+                                .cornerRadius(6)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    
+                    Text("lbs")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                     
                     Spacer()
                     
