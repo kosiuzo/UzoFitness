@@ -27,6 +27,7 @@ struct LoggingView: View {
 // MARK: - Logging Content View
 struct LoggingContentView: View {
     @ObservedObject var viewModel: LoggingViewModel
+    @State private var initialFocus: SetRowView.Field? = nil
     
     var body: some View {
         contentView
@@ -239,7 +240,8 @@ struct LoggingContentView: View {
                                     viewModel.handleIntent(.markExerciseComplete(exerciseID: exercise.id))
                                 },
                                 getSupersetNumber: viewModel.getSupersetNumber,
-                                isCurrentExercise: viewModel.currentExercise?.id == exercise.id
+                                isCurrentExercise: viewModel.currentExercise?.id == exercise.id,
+                                initialFocus: $initialFocus
                             )
                             .background(Color(.systemGray6).opacity(0.3))
                             .cornerRadius(8)
@@ -272,7 +274,8 @@ struct LoggingContentView: View {
                                 viewModel.handleIntent(.markExerciseComplete(exerciseID: exercise.id))
                             },
                             getSupersetNumber: viewModel.getSupersetNumber,
-                            isCurrentExercise: viewModel.currentExercise?.id == exercise.id
+                            isCurrentExercise: viewModel.currentExercise?.id == exercise.id,
+                            initialFocus: $initialFocus
                         )
                     }
                 }
@@ -362,6 +365,7 @@ struct LoggingExerciseRowView: View {
     let onMarkComplete: () -> Void
     let getSupersetNumber: ((UUID) -> Int?)?
     let isCurrentExercise: Bool
+    @Binding var initialFocus: SetRowView.Field?
     
     @State private var editingSetIndex: Int? = nil
     @State private var tempReps: String = ""
@@ -465,10 +469,15 @@ struct LoggingExerciseRowView: View {
                                 isEditing: editingSetIndex == setIndex,
                                 tempReps: $tempReps,
                                 tempWeight: $tempWeight,
-                                onEdit: {
+                                onEdit: { field in
                                     editingSetIndex = setIndex
-                                    tempReps = "\(exercise.sets[setIndex].reps)"
-                                    tempWeight = "\(Int(exercise.sets[setIndex].weight))"
+                                    switch field {
+                                    case .reps:
+                                        tempReps = "\(exercise.sets[setIndex].reps)"
+                                    case .weight:
+                                        tempWeight = "\(Int(exercise.sets[setIndex].weight))"
+                                    }
+                                    initialFocus = field
                                 },
                                 onSave: {
                                     guard let reps = Int(tempReps),
@@ -481,7 +490,8 @@ struct LoggingExerciseRowView: View {
                                 },
                                 onToggleCompletion: {
                                     onToggleSetCompletion(setIndex)
-                                }
+                                },
+                                initialFocus: $initialFocus
                             )
                         }
                         
@@ -537,6 +547,24 @@ struct LoggingExerciseRowView: View {
                 }
             }
         }
+        .toolbar {
+            if editingSetIndex != nil {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") {
+                        // Find the current set being edited and save it
+                        if let setIndex = editingSetIndex {
+                            guard let reps = Int(tempReps),
+                                  let weight = Double(tempWeight) else { return }
+                            onEditSet(setIndex, reps, weight)
+                            editingSetIndex = nil
+                        }
+                    }
+                    .fontWeight(.medium)
+                    .foregroundColor(.blue)
+                }
+            }
+        }
     }
     
     private func formatTime(_ seconds: TimeInterval) -> String {
@@ -555,10 +583,18 @@ struct SetRowView: View {
     let isEditing: Bool
     @Binding var tempReps: String
     @Binding var tempWeight: String
-    let onEdit: () -> Void
+    let onEdit: (Field) -> Void
     let onSave: () -> Void
     let onCancel: () -> Void
     let onToggleCompletion: () -> Void
+    @Binding var initialFocus: Field?
+    
+    @FocusState private var focusedField: Field?
+    
+    enum Field {
+        case reps
+        case weight
+    }
     
     var body: some View {
         HStack(spacing: 12) {
@@ -569,24 +605,28 @@ struct SetRowView: View {
                 .frame(width: 20)
             
             if isEditing {
-                // Editing Mode with Auto-save
+                // Editing Mode with Auto-save on focus change
                 HStack(spacing: 8) {
                     TextField("Reps", text: $tempReps)
                         .keyboardType(.numberPad)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 60)
+                        .focused($focusedField, equals: .reps)
                         .onSubmit {
-                            onSave()
+                            // Move focus to weight field when reps is submitted
+                            focusedField = .weight
                         }
                     
                     Text("×")
                         .foregroundColor(.secondary)
                     
-                    TextField("Weight", text: $tempWeight)
+                    TextField("W", text: $tempWeight)
                         .keyboardType(.decimalPad)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 60)
+                        .focused($focusedField, equals: .weight)
                         .onSubmit {
+                            // Save when weight field is submitted
                             onSave()
                         }
                     
@@ -596,14 +636,21 @@ struct SetRowView: View {
                     
                     Spacer()
                 }
-                .toolbar {
-                    ToolbarItemGroup(placement: .keyboard) {
-                        Spacer()
-                        Button("Done") {
-                            onSave()
+                .onChange(of: focusedField) { oldValue, newValue in
+                    // Save when focus is lost (when focusedField becomes nil)
+                    if oldValue != nil && newValue == nil {
+                        onSave()
+                    }
+                }
+                .onAppear {
+                    // Set initial focus to tapped field if available, then reset
+                    if let initial = initialFocus {
+                        focusedField = initial
+                        DispatchQueue.main.async {
+                            initialFocus = nil
                         }
-                        .fontWeight(.medium)
-                        .foregroundColor(.blue)
+                    } else {
+                        focusedField = .reps
                     }
                 }
             } else {
@@ -611,7 +658,7 @@ struct SetRowView: View {
                 HStack(spacing: 8) {
                     // Reps Field - Tappable
                     Button {
-                        onEdit()
+                        onEdit(.reps)
                     } label: {
                         if let set = set {
                             Text("\(set.reps)")
@@ -640,7 +687,7 @@ struct SetRowView: View {
                     
                     // Weight Field - Tappable
                     Button {
-                        onEdit()
+                        onEdit(.weight)
                     } label: {
                         if let set = set {
                             Text("\(Int(set.weight))")
