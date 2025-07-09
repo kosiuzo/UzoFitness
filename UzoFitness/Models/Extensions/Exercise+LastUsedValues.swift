@@ -44,8 +44,9 @@ extension Exercise {
         return nil // This will be implemented in the helper methods
     }
     
-    /// Returns suggested starting values for a new session exercise
+    /// Returns suggested starting values for a new session exercise (works across all days)
     var suggestedStartingValues: (weight: Double?, reps: Int?, totalVolume: Double?) {
+        AppLogger.debug("[Exercise.suggestedStartingValues] For \(name): Weight=\(lastUsedWeight ?? 0), Reps=\(lastUsedReps ?? 0), LastUsed=\(lastUsedDate?.description ?? "never")", category: "Exercise")
         return (lastUsedWeight, lastUsedReps, lastTotalVolume)
     }
 }

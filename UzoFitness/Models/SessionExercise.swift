@@ -80,8 +80,9 @@ final class SessionExercise: Identified, Timestamped {
             self.previousTotalVolume = suggestedValues.totalVolume
             self.previousSessionDate = exercise.lastUsedDate
             
-            AppLogger.debug("[SessionExercise.init] Auto-populated from exercise: \(exercise.name)", category: "SessionExercise")
-            AppLogger.debug("[SessionExercise.init] Suggested weight: \(suggestedValues.weight ?? 0), reps: \(suggestedValues.reps ?? 0)", category: "SessionExercise")
+            AppLogger.debug("[SessionExercise.init] Auto-populated from exercise: \(exercise.name) using CROSS-DAY data", category: "SessionExercise")
+            AppLogger.debug("[SessionExercise.init] Exercise global cached values - Weight: \(exercise.lastUsedWeight ?? 0), Reps: \(exercise.lastUsedReps ?? 0), Last used: \(exercise.lastUsedDate?.description ?? "never")", category: "SessionExercise")
+            AppLogger.debug("[SessionExercise.init] Final auto-populated values - Weight: \(self.plannedWeight ?? 0), Reps: \(self.plannedReps)", category: "SessionExercise")
         } else {
             self.plannedReps = plannedReps ?? 10
             self.plannedWeight = plannedWeight
@@ -93,25 +94,40 @@ final class SessionExercise: Identified, Timestamped {
     }
     
     /// Updates the exercise's cached values when this session is completed
+    /// This updates the global Exercise model so future sessions on ANY day will use these values
     func updateExerciseCacheOnCompletion() {
         guard isCompleted && !completedSets.isEmpty else {
             AppLogger.debug("[SessionExercise.updateExerciseCacheOnCompletion] Cannot update - not completed or no sets", category: "SessionExercise")
             return
         }
         
-        AppLogger.debug("[SessionExercise.updateExerciseCacheOnCompletion] Updating exercise cache for: \(exercise.name)", category: "SessionExercise")
+        AppLogger.debug("[SessionExercise.updateExerciseCacheOnCompletion] Updating GLOBAL exercise cache for: \(exercise.name) - will be used across all days", category: "SessionExercise")
         
         // Update exercise's cached values with this session's data
         let totalVolume = self.totalVolume
         
-        if let lastSet = completedSets.last {
-            exercise.lastUsedWeight = lastSet.weight
-            exercise.lastUsedReps = lastSet.reps
+        // Find the best set for weight and reps (typically the last set or the heaviest set)
+        let sortedSets = completedSets.filter { $0.isCompleted }.sorted { lhs, rhs in
+            // Sort by weight first, then by position to get the heaviest completed set
+            if lhs.weight != rhs.weight {
+                return lhs.weight > rhs.weight
+            }
+            return lhs.position > rhs.position
+        }
+        
+        if let bestSet = sortedSets.first {
+            let oldWeight = exercise.lastUsedWeight
+            let oldReps = exercise.lastUsedReps
+            
+            exercise.lastUsedWeight = bestSet.weight
+            exercise.lastUsedReps = bestSet.reps
+            
+            AppLogger.info("[SessionExercise.updateExerciseCacheOnCompletion] Updated weight: \(oldWeight ?? 0) → \(bestSet.weight), reps: \(oldReps ?? 0) → \(bestSet.reps)", category: "SessionExercise")
         }
         
         exercise.lastTotalVolume = totalVolume
         exercise.lastUsedDate = session?.date ?? createdAt
         
-        AppLogger.info("[SessionExercise.updateExerciseCacheOnCompletion] Updated cache - Weight: \(exercise.lastUsedWeight ?? 0), Reps: \(exercise.lastUsedReps ?? 0), Volume: \(exercise.lastTotalVolume ?? 0)", category: "SessionExercise")
+        AppLogger.info("[SessionExercise.updateExerciseCacheOnCompletion] Updated GLOBAL cache for \(exercise.name) - Weight: \(exercise.lastUsedWeight ?? 0), Reps: \(exercise.lastUsedReps ?? 0) - will be used on ANY day this exercise appears", category: "SessionExercise")
     }
 }

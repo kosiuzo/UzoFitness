@@ -136,11 +136,6 @@ struct LoggingContentView: View {
             }
         }
         .background(.background.secondary)
-        .refreshable {
-            AppLogger.info("[LoggingContentView] Refreshing workout plans", category: "LoggingView")
-            viewModel.loadAvailablePlans()
-            viewModel.loadLastPerformedData()
-        }
         // Remove error alerts for missing workout plans - handle gracefully in UI
     }
     
@@ -365,10 +360,13 @@ struct LoggingExerciseRowView: View {
                             if let supersetID = exercise.supersetID,
                                let getSupersetNumber = getSupersetNumber,
                                let supersetNumber = getSupersetNumber(supersetID) {
-                                SupersetBadgeView(
-                                    supersetNumber: supersetNumber,
-                                    isHead: exercise.isSupersetHead
-                                )
+                                Text("SS\(supersetNumber)")
+                                    .font(.caption2)
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Color.orange)
+                                    .cornerRadius(4)
                             }
                         }
                         
@@ -569,7 +567,6 @@ struct SetRowView: View {
                 // Editing Mode with Auto-save on focus change
                 HStack(spacing: 8) {
                     TextField("Reps", text: $tempReps)
-                        .keyboardType(.numberPad)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 60)
                         .focused($focusedField, equals: .reps)
@@ -582,7 +579,6 @@ struct SetRowView: View {
                         .foregroundColor(.secondary)
                     
                     TextField("W", text: $tempWeight)
-                        .keyboardType(.decimalPad)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 60)
                         .focused($focusedField, equals: .weight)
@@ -694,6 +690,6 @@ struct SetRowView: View {
 struct LoggingView_Previews: PreviewProvider {
     static var previews: some View {
         LoggingView()
-            .modelContainer(PersistenceController.preview.container)
+            .modelContainer(for: [WorkoutPlan.self, WorkoutSession.self, SessionExercise.self, CompletedSet.self, Exercise.self])
     }
 }

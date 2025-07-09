@@ -577,14 +577,14 @@ class LoggingViewModel: ObservableObject {
     }
     
     private func createSessionExercises(for session: WorkoutSession, from dayTemplate: DayTemplate) {
-        AppLogger.info("[LoggingViewModel.createSessionExercises] Creating exercises for session", category: "LoggingViewModel")
+        AppLogger.info("[LoggingViewModel.createSessionExercises] Creating exercises for session - using auto-population from last used values across all days", category: "LoggingViewModel")
         
         for exerciseTemplate in dayTemplate.exerciseTemplates.sorted(by: { $0.position < $1.position }) {
             let sessionExercise = SessionExercise(
                 exercise: exerciseTemplate.exercise,
                 plannedSets: exerciseTemplate.setCount,
-                plannedReps: exerciseTemplate.reps,
-                plannedWeight: exerciseTemplate.weight,
+                plannedReps: nil, // Let auto-population handle this
+                plannedWeight: nil, // Let auto-population handle this  
                 position: exerciseTemplate.position,
                 supersetID: exerciseTemplate.supersetID,
                 currentSet: 0,
@@ -599,18 +599,18 @@ class LoggingViewModel: ObservableObject {
             // Create planned sets as real sets that need to be completed
             for setIndex in 0..<exerciseTemplate.setCount {
                 let plannedSet = CompletedSet(
-                    reps: exerciseTemplate.reps,
-                    weight: exerciseTemplate.weight ?? 0,
+                    reps: sessionExercise.plannedReps, // Use auto-populated reps
+                    weight: sessionExercise.plannedWeight ?? 0, // Use auto-populated weight
                     isCompleted: false, // Mark as not completed initially
                     position: setIndex, // Set proper position for ordering
                     sessionExercise: sessionExercise
                 )
                 modelContext.insert(plannedSet)
                 sessionExercise.completedSets.append(plannedSet)
-                AppLogger.debug("[LoggingViewModel.createSessionExercises] Created planned set \(setIndex + 1) for \(exerciseTemplate.exercise.name)", category: "LoggingViewModel")
+                AppLogger.debug("[LoggingViewModel.createSessionExercises] Created planned set \(setIndex + 1) for \(exerciseTemplate.exercise.name) - Reps: \(sessionExercise.plannedReps), Weight: \(sessionExercise.plannedWeight ?? 0)", category: "LoggingViewModel")
             }
             
-            AppLogger.debug("[LoggingViewModel.createSessionExercises] Added exercise: \(exerciseTemplate.exercise.name) with \(exerciseTemplate.setCount) planned sets", category: "LoggingViewModel")
+            AppLogger.debug("[LoggingViewModel.createSessionExercises] Added exercise: \(exerciseTemplate.exercise.name) with \(exerciseTemplate.setCount) planned sets - Final values: \(sessionExercise.plannedReps) reps, \(sessionExercise.plannedWeight ?? 0) lbs", category: "LoggingViewModel")
         }
         
         AppLogger.info("[LoggingViewModel.createSessionExercises] Created \(dayTemplate.exerciseTemplates.count) session exercises", category: "LoggingViewModel")
@@ -654,7 +654,7 @@ class LoggingViewModel: ObservableObject {
     }
     
     private func createSessionExercisesWithAutoPopulation(for session: WorkoutSession, from dayTemplate: DayTemplate) {
-        AppLogger.info("[LoggingViewModel.createSessionExercisesWithAutoPopulation] Creating exercises with auto-population", category: "LoggingViewModel")
+        AppLogger.info("[LoggingViewModel.createSessionExercisesWithAutoPopulation] Creating exercises with CROSS-DAY auto-population from last used values", category: "LoggingViewModel")
         
         for exerciseTemplate in dayTemplate.exerciseTemplates.sorted(by: { $0.position < $1.position }) {
             let sessionExercise = SessionExercise(
@@ -959,6 +959,9 @@ class LoggingViewModel: ObservableObject {
         do {
             try modelContext.save()
             AppLogger.info("[LoggingViewModel.toggleSetCompletion] Set completion status saved", category: "LoggingViewModel")
+            if sessionExercise.isCompleted {
+                AppLogger.debug("[LoggingViewModel.toggleSetCompletion] Exercise auto-completed - cache saved with Weight: \(sessionExercise.exercise.lastUsedWeight ?? 0), Reps: \(sessionExercise.exercise.lastUsedReps ?? 0)", category: "LoggingViewModel")
+            }
         } catch {
             AppLogger.error("[LoggingViewModel.toggleSetCompletion] Save error", category: "LoggingViewModel", error: error)
             self.error = error
@@ -1077,7 +1080,7 @@ class LoggingViewModel: ObservableObject {
         do {
             try modelContext.save()
             AppLogger.info("[LoggingViewModel.markExerciseComplete] Exercise marked complete with all \(totalSetsCount) sets completed", category: "LoggingViewModel")
-            AppLogger.debug("[LoggingViewModel] Exercise completion status updated", category: "LoggingViewModel")
+            AppLogger.debug("[LoggingViewModel.markExerciseComplete] Exercise cache saved - Weight: \(sessionExercise.exercise.lastUsedWeight ?? 0), Reps: \(sessionExercise.exercise.lastUsedReps ?? 0)", category: "LoggingViewModel")
         } catch {
             AppLogger.error("[LoggingViewModel.markExerciseComplete] Save error", category: "LoggingViewModel", error: error)
             self.error = error
