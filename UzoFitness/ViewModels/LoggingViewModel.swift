@@ -174,7 +174,7 @@ class LoggingViewModel: ObservableObject {
     
     var totalVolume: Double {
         exercises.reduce(0) { total, exercise in
-            total + exercise.sets.reduce(0) { setTotal, set in
+            total + exercise.sets.filter { $0.isCompleted }.reduce(0) { setTotal, set in
                 setTotal + (Double(set.reps) * set.weight)
             }
         }
@@ -597,10 +597,11 @@ class LoggingViewModel: ObservableObject {
             session.sessionExercises.append(sessionExercise)
             
             // Create planned sets as real sets that need to be completed
+            // Sets start with suggested values but user must edit them to log actual values
             for setIndex in 0..<exerciseTemplate.setCount {
                 let plannedSet = CompletedSet(
-                    reps: sessionExercise.plannedReps, // Use auto-populated reps
-                    weight: sessionExercise.plannedWeight ?? 0, // Use auto-populated weight
+                    reps: sessionExercise.plannedReps, // Auto-populated suggestion
+                    weight: sessionExercise.plannedWeight ?? 0, // Auto-populated suggestion
                     isCompleted: false, // Mark as not completed initially
                     position: setIndex, // Set proper position for ordering
                     sessionExercise: sessionExercise
@@ -1127,15 +1128,14 @@ class LoggingViewModel: ObservableObject {
             AppLogger.debug("[LoggingViewModel] Session duration: \(session.duration ?? 0) seconds", category: "LoggingViewModel")
             AppLogger.debug("[LoggingViewModel.finishSession] Total volume: \(totalVolume) lbs", category: "LoggingViewModel")
             
-            // Reset state for next session and immediately create a new session with auto-populated values
+            // Reset state for next session
             self.session = nil
             self.exercises = []
             self.sessionStartTime = nil
+            self.isWorkoutInProgress = false
+            self.currentExerciseIndex = 0
             
-            // Automatically create a new session with auto-populated values from the completed session
-            createFreshSessionWithAutoPopulation()
-            
-            AppLogger.info("[LoggingViewModel.finishSession] Session completed and new session created with auto-populated values", category: "LoggingViewModel")
+            AppLogger.info("[LoggingViewModel.finishSession] Session completed successfully", category: "LoggingViewModel")
             
         } catch {
             AppLogger.error("[LoggingViewModel.finishSession] Save error", category: "LoggingViewModel", error: error)

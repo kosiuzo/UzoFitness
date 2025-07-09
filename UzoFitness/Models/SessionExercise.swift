@@ -26,7 +26,7 @@ final class SessionExercise: Identified, Timestamped {
     @Relationship(inverse: \CompletedSet.sessionExercise) var completedSets: [CompletedSet]
 
     var totalVolume: Double {
-        completedSets.reduce(0) {
+        completedSets.filter { $0.isCompleted }.reduce(0) {
             $0 + (Double($1.reps) * $1.weight)
         }
     }

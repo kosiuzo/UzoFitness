@@ -453,6 +453,7 @@ final class WorkoutTemplateImportTests: XCTestCase {
             days: [
                 DayImportDTO(
                     dayIndex: 1,
+                    dayName: "Day 1",
                     name: "Day 1",
                     exercises: [
                         ExerciseImportDTO(

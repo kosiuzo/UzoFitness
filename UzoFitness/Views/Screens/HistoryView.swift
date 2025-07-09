@@ -11,19 +11,14 @@ import UIKit
 
 struct HistoryView: View {
     @Environment(\.modelContext) private var modelContext
+    @StateObject private var viewModel = HistoryViewModel()
     @State private var selectedDate: Date?
     @State private var currentMonth = Date()
-    @State private var workoutSessions: [WorkoutSession] = []
-    @State private var streakCount = 0
-    @State private var totalWorkoutDays = 0
-    @State private var templateUsageCounts: [UUID: Int] = [:]
-    @State private var isLoading = false
-    @State private var errorMessage: String?
     
     private let calendar = Calendar.current
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
                 // Header with streak (more compact)
                 headerView
@@ -31,26 +26,24 @@ struct HistoryView: View {
                 // Calendar (shifted upward)
                 calendarView
                 
-                // Fixed lower-half detail view (Task 2.1)
+                // Fixed lower-half detail view
                 fixedDetailView
             }
-            .navigationTitle("") // Task 2.2: Remove "History" title
+            .navigationTitle("")
             .navigationBarHidden(true)
             .task {
-                await loadWorkoutData()
+                viewModel.setModelContext(modelContext)
             }
             .refreshable {
-                await loadWorkoutData()
+                viewModel.handleIntent(.refreshData)
             }
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
-                Task {
-                    await loadWorkoutData()
-                }
+                viewModel.handleIntent(.refreshData)
             }
         }
     }
     
-    // MARK: - Header View (Task 2.3: More compact for upward calendar shift)
+    // MARK: - Header View
     private var headerView: some View {
         VStack(spacing: 12) {
             HStack(spacing: 24) {
@@ -59,12 +52,12 @@ struct HistoryView: View {
                         .font(.caption2)
                         .foregroundColor(.secondary)
                     
-                    Text("\(streakCount)")
+                    Text("\(viewModel.streakCount)")
                         .font(.title)
                         .fontWeight(.bold)
                         .foregroundColor(.primary)
                     
-                    Text(streakCount == 1 ? "day" : "days")
+                    Text(viewModel.streakCount == 1 ? "day" : "days")
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }
@@ -76,7 +69,7 @@ struct HistoryView: View {
                         .font(.caption2)
                         .foregroundColor(.secondary)
                     
-                    Text("\(totalWorkoutDays)")
+                    Text("\(viewModel.totalWorkoutDays)")
                         .font(.headline)
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
@@ -90,19 +83,19 @@ struct HistoryView: View {
             .padding(.vertical, 12)
             
             // Error message if any
-            if let errorMessage = errorMessage {
+            if let error = viewModel.error {
                 HStack {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(.orange)
                     
-                    Text(errorMessage)
+                    Text(error.localizedDescription)
                         .font(.caption2)
                         .foregroundColor(.secondary)
                     
                     Spacer()
                     
                     Button("Retry") {
-                        Task { await loadWorkoutData() }
+                        viewModel.handleIntent(.refreshData)
                     }
                     .font(.caption2)
                     .foregroundColor(.blue)
@@ -114,7 +107,7 @@ struct HistoryView: View {
         .background(Color(.systemGray6))
     }
     
-    // MARK: - Calendar View (Task 2.4: Adjusted sizing for clear visibility)
+    // MARK: - Calendar View
     private var calendarView: some View {
         VStack(spacing: 12) {
             // Month navigation
@@ -124,7 +117,7 @@ struct HistoryView: View {
                         .font(.title3)
                         .foregroundColor(.primary)
                 }
-                .disabled(isLoading)
+                .disabled(viewModel.isLoading)
                 
                 Spacer()
                 
@@ -139,12 +132,12 @@ struct HistoryView: View {
                         .font(.title3)
                         .foregroundColor(canNavigateToNextMonth ? .primary : .secondary)
                 }
-                .disabled(!canNavigateToNextMonth || isLoading)
+                .disabled(!canNavigateToNextMonth || viewModel.isLoading)
             }
             .padding(.horizontal, 20)
             
             // Loading indicator
-            if isLoading {
+            if viewModel.isLoading {
                 SwiftUI.ProgressView()
                     .scaleEffect(0.7)
                     .padding(.vertical, 4)
@@ -154,19 +147,19 @@ struct HistoryView: View {
             CalendarGridView(
                 currentMonth: currentMonth,
                 selectedDate: $selectedDate,
-                workoutDates: Set(workoutSessions.map { calendar.startOfDay(for: $0.date) }),
+                workoutDates: viewModel.workoutDates,
                 onDateSelected: { date in
                     selectedDate = date
                 }
             )
             .padding(.horizontal, 20)
-            .disabled(isLoading)
+            .disabled(viewModel.isLoading)
         }
         .padding(.vertical, 12)
         .background(Color(.systemBackground))
     }
     
-    // MARK: - Fixed Detail View (Task 2.1: Replace bottom sheet with fixed lower-half)
+    // MARK: - Fixed Detail View
     private var fixedDetailView: some View {
         VStack(spacing: 0) {
             // Subtle divider
@@ -181,7 +174,7 @@ struct HistoryView: View {
                 emptyStateView
             }
         }
-        .frame(maxHeight: .infinity) // Takes up remaining space (lower half)
+        .frame(maxHeight: .infinity)
         .background(Color(.systemGray6))
     }
     
@@ -202,19 +195,14 @@ struct HistoryView: View {
                 .padding(.top, 20)
                 
                 // Workout sessions for selected date
-                let sessionsForDate = workoutSessions.filter { 
-                    calendar.isDate($0.date, inSameDayAs: date) 
-                }
+                let sessionsForDate = viewModel.sessionsForDate(date)
                 
                 if sessionsForDate.isEmpty {
                     noWorkoutsView
                 } else {
                     LazyVStack(spacing: 12) {
                         ForEach(sessionsForDate) { session in
-                            WorkoutSessionCard(
-                                session: session,
-                                templateUsageCount: templateUsageCounts[session.plan?.template?.id ?? UUID()] ?? 0
-                            )
+                            WorkoutSessionCard(session: session)
                         }
                     }
                 }
@@ -292,87 +280,7 @@ struct HistoryView: View {
         DateFormatter.monthYear.string(from: currentMonth)
     }
     
-    // MARK: - Data Loading
-    @MainActor
-    private func loadWorkoutData() async {
-        AppLogger.info("[HistoryView.loadWorkoutData] Starting data load", category: "HistoryView")
-        isLoading = true
-        errorMessage = nil
-        
-        do {
-            // Load workout sessions with all relationships
-            let sessionDescriptor = FetchDescriptor<WorkoutSession>(
-                sortBy: [SortDescriptor(\.date, order: .reverse)]
-            )
-            let allSessions = try modelContext.fetch(sessionDescriptor)
-            
-            // Filter out sessions with no exercises logged
-            workoutSessions = allSessions.filter { session in
-                let hasExercises = !session.sessionExercises.isEmpty
-                if !hasExercises {
-                    AppLogger.debug("[HistoryView.loadWorkoutData] Filtering out session with no exercises: \(session.title)", category: "HistoryView")
-                }
-                return hasExercises
-            }
-            
-            // Calculate streak and total days
-            calculateStreakAndTotals()
-            
-            // Calculate template usage counts
-            await calculateTemplateUsageCounts()
-            
-            AppLogger.info("[HistoryView.loadWorkoutData] Successfully loaded \(workoutSessions.count) sessions", category: "HistoryView")
-            
-        } catch {
-            AppLogger.error("[HistoryView.loadWorkoutData] Error", category: "HistoryView", error: error)
-            errorMessage = "Failed to load workout data"
-        }
-        
-        isLoading = false
-    }
     
-    private func calculateStreakAndTotals() {
-        let uniqueDates = Set(workoutSessions.map { calendar.startOfDay(for: $0.date) })
-        totalWorkoutDays = uniqueDates.count
-        
-        // Calculate streak
-        let sortedDates = uniqueDates.sorted(by: >)
-        guard !sortedDates.isEmpty else { 
-            streakCount = 0
-            return 
-        }
-        
-        var streak = 0
-        var currentDate = calendar.startOfDay(for: Date())
-        
-        for date in sortedDates {
-            if calendar.isDate(date, inSameDayAs: currentDate) {
-                streak += 1
-                currentDate = calendar.date(byAdding: .day, value: -1, to: currentDate) ?? currentDate
-            } else if abs(calendar.dateComponents([.day], from: date, to: currentDate).day ?? 0) > 1 {
-                break
-            }
-        }
-        
-        streakCount = streak
-        AppLogger.debug("[HistoryView] Calculated streak: \(streak), total days: \(totalWorkoutDays)", category: "HistoryView")
-    }
-    
-    // MARK: - Template Usage Calculation
-    private func calculateTemplateUsageCounts() async {
-        AppLogger.info("[HistoryView.calculateTemplateUsageCounts] Calculating template usage", category: "HistoryView")
-        
-        var counts: [UUID: Int] = [:]
-        
-        for session in workoutSessions {
-            if let templateId = session.plan?.template?.id {
-                counts[templateId, default: 0] += 1
-            }
-        }
-        
-        templateUsageCounts = counts
-        AppLogger.debug("[HistoryView] Template usage counts: \(counts.count) templates tracked", category: "HistoryView")
-    }
 }
 
 // MARK: - Calendar Grid View
@@ -512,213 +420,43 @@ struct CalendarDayView: View {
 // MARK: - Workout Session Card
 struct WorkoutSessionCard: View {
     let session: WorkoutSession
-    let templateUsageCount: Int
-    @State private var isExpanded = false
-    
-    private let calendar = Calendar.current
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            Button(action: { withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() } }) {
-                HStack(alignment: .top, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text(session.title.isEmpty ? "Workout" : session.title)
-                                .font(.headline)
-                                .foregroundColor(.primary)
-                                .multilineTextAlignment(.leading)
-                            
-                            Spacer()
-                            
-                            // Plan progress indicator
-                            if let progress = calculatePlanProgress() {
-                                Text("Week \(progress.currentWeek) of \(progress.totalWeeks)")
-                                    .font(.caption)
-                                    .foregroundColor(.blue)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 3)
-                                    .background(Color.blue.opacity(0.1))
-                                    .cornerRadius(6)
-                            }
-                        }
-                        
-                        // Template usage count
-                        if templateUsageCount > 0 {
-                            Text("Logged \(templateUsageCount) times")
-                                .font(.caption2)
-                                .foregroundColor(.green)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.green.opacity(0.1))
-                                .cornerRadius(4)
-                        }
-                        
-                        HStack(spacing: 16) {
-                            if let planName = session.plan?.customName {
-                                Text(planName)
-                                    .font(.caption)
-                                    .foregroundColor(.blue)
-                            }
-                            
-                            Text("\(formatVolume(session.totalVolume))")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            
-                            Text("\(session.sessionExercises.count) exercises")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            
-                            if let duration = session.duration {
-                                Text(formatDuration(duration))
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                    }
+        NavigationLink(destination: HistoryWorkoutView(session: session)) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text(session.title.isEmpty ? "Workout" : session.title)
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                        .multilineTextAlignment(.leading)
                     
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
-                .padding(16)
-            }
-            .buttonStyle(PlainButtonStyle())
-            
-            // Expanded content
-            if isExpanded {
-                VStack(spacing: 12) {
-                    Divider()
-                        .padding(.horizontal, 16)
+                
+                HStack(spacing: 16) {
+                    Text("\(session.sessionExercises.count) exercises")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                     
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Exercises")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .padding(.horizontal, 16)
-                        
-                        LazyVStack(spacing: 8) {
-                            ForEach(session.sessionExercises.prefix(10)) { sessionExercise in
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(sessionExercise.exercise.name)
-                                            .font(.body)
-                                            .multilineTextAlignment(.leading)
-                                        
-                                        // Show exercise volume
-                                        let exerciseVolume = sessionExercise.totalVolume
-                                        if exerciseVolume > 0 {
-                                            Text("Volume: \(formatVolume(exerciseVolume))")
-                                                .font(.caption2)
-                                                .foregroundColor(.blue)
-                                        }
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    VStack(alignment: .trailing, spacing: 2) {
-                                        if sessionExercise.completedSets.isEmpty {
-                                            Text("0 sets")
-                                                .font(.caption)
-                                                .foregroundColor(.secondary)
-                                            Text("Not completed")
-                                                .font(.caption2)
-                                                .foregroundColor(.orange)
-                                        } else {
-                                            Text("\(sessionExercise.completedSets.count) sets")
-                                                .font(.caption)
-                                                .foregroundColor(.secondary)
-                                            
-                                            // Show weight range or individual weights
-                                            let weights = sessionExercise.completedSets.map { $0.weight }.sorted()
-                                            let uniqueWeights = Array(Set(weights))
-                                            
-                                            if uniqueWeights.count == 1 {
-                                                // All sets same weight
-                                                if let weight = uniqueWeights.first, let reps = sessionExercise.completedSets.first?.reps {
-                                                    Text("\(reps) × \(formatWeight(weight))")
-                                                        .font(.caption2)
-                                                        .foregroundColor(.secondary)
-                                                }
-                                            } else if uniqueWeights.count <= 3 {
-                                                // Show all unique weights
-                                                let weightStrings = uniqueWeights.sorted().map { formatWeight($0) }
-                                                Text(weightStrings.joined(separator: ", "))
-                                                    .font(.caption2)
-                                                    .foregroundColor(.secondary)
-                                            } else {
-                                                // Show range
-                                                if let minWeight = uniqueWeights.min(), let maxWeight = uniqueWeights.max() {
-                                                    Text("\(formatWeight(minWeight)) - \(formatWeight(maxWeight))")
-                                                        .font(.caption2)
-                                                        .foregroundColor(.secondary)
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                .padding(.horizontal, 16)
-                            }
-                        }
-                        
-                        if session.sessionExercises.count > 10 {
-                            Text("+ \(session.sessionExercises.count - 10) more exercises")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                                .padding(.horizontal, 16)
-                        }
-                        
-                        // Total volume breakdown
-                        Divider()
-                            .padding(.horizontal, 16)
-                        
-                        HStack {
-                            Text("Total Volume")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                            
-                            Spacer()
-                            
-                            Text(formatVolume(session.totalVolume))
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.blue)
-                        }
-                        .padding(.horizontal, 16)
+                    if let duration = session.duration {
+                        Text(formatDuration(duration))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
-                    .padding(.bottom, 16)
                 }
             }
+            .padding(16)
+            .background(Color(.systemGray6))
+            .cornerRadius(12)
         }
-        .background(.regularMaterial)
-        .cornerRadius(12)
-    }
-    
-    // MARK: - Plan Progress Calculation
-    private func calculatePlanProgress() -> (currentWeek: Int, totalWeeks: Int)? {
-        guard let plan = session.plan else { return nil }
-        
-        let daysSinceStart = calendar.dateComponents([.day], from: plan.startedAt, to: session.date).day ?? 0
-        let currentWeek = min((daysSinceStart / 7) + 1, plan.durationWeeks)
-        
-        return (currentWeek: currentWeek, totalWeeks: plan.durationWeeks)
+        .buttonStyle(PlainButtonStyle())
     }
     
     // MARK: - Formatting Helpers
-    private func formatVolume(_ volume: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        return (formatter.string(from: NSNumber(value: volume)) ?? "0") + " lbs"
-    }
-    
-    private func formatWeight(_ weight: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = weight.truncatingRemainder(dividingBy: 1) == 0 ? 0 : 1
-        return (formatter.string(from: NSNumber(value: weight)) ?? "0") + " lbs"
-    }
-    
     private func formatDuration(_ duration: TimeInterval) -> String {
         let hours = Int(duration) / 3600
         let minutes = Int(duration) % 3600 / 60

@@ -47,20 +47,20 @@ final class HistoryViewModelTests: XCTestCase {
     
     func testInitialization_SetsDefaultState() async throws {
         // Then
-        XCTAssertTrue(viewModel.calendarData.isEmpty)
+        XCTAssertTrue(viewModel.workoutSessions.isEmpty)
         XCTAssertNil(viewModel.selectedDate)
-        XCTAssertTrue(viewModel.dailyDetails.isEmpty)
         XCTAssertNil(viewModel.error)
-        XCTAssertEqual(viewModel.totalVolumeForDay, 0.0)
-        XCTAssertNil(viewModel.longestSession)
         XCTAssertEqual(viewModel.streakCount, 0)
+        XCTAssertEqual(viewModel.totalWorkoutDays, 0)
+        XCTAssertEqual(viewModel.state, .idle)
+        XCTAssertFalse(viewModel.isLoading)
         
         print("✅ [HistoryViewModelTests.testInitialization_SetsDefaultState] Passed")
     }
     
-    // MARK: - Calendar Data Tests
+    // MARK: - Data Loading Tests
     
-    func testWorkoutSessionSummary_CreatesCorrectSummary() async throws {
+    func testLoadWorkoutData_LoadsSessionsWithCompletedSets() async throws {
         // Given
         let (session, _) = try createTestWorkoutSession(
             date: Date(),
@@ -70,20 +70,19 @@ final class HistoryViewModelTests: XCTestCase {
         )
         
         // When
-        let summary = WorkoutSessionSummary(from: session)
+        viewModel.handleIntent(.loadData)
         
         // Then
-        XCTAssertEqual(summary.id, session.id)
-        XCTAssertEqual(summary.title, "Morning Workout")
-        XCTAssertEqual(summary.duration, 3600)
-        XCTAssertEqual(summary.exerciseCount, 3)
-        XCTAssertEqual(summary.formattedDuration, "1h 0m")
-        XCTAssertGreaterThan(summary.totalVolume, 0)
+        XCTAssertEqual(viewModel.workoutSessions.count, 1)
+        XCTAssertEqual(viewModel.workoutSessions.first?.title, "Morning Workout")
+        XCTAssertEqual(viewModel.workoutSessions.first?.duration, 3600)
+        XCTAssertEqual(viewModel.workoutSessions.first?.sessionExercises.count, 3)
+        XCTAssertGreaterThan(viewModel.workoutSessions.first?.totalVolume ?? 0, 0)
         
-        print("✅ [HistoryViewModelTests.testWorkoutSessionSummary_CreatesCorrectSummary] Passed")
+        print("✅ [HistoryViewModelTests.testLoadWorkoutData_LoadsSessionsWithCompletedSets] Passed")
     }
     
-    func testWorkoutSessionSummary_EmptyTitle_UsesDefaultTitle() async throws {
+    func testLoadWorkoutData_HandlesEmptyTitle() async throws {
         // Given
         let (session, _) = try createTestWorkoutSession(
             date: Date(),
@@ -93,18 +92,19 @@ final class HistoryViewModelTests: XCTestCase {
         )
         
         // When
-        let summary = WorkoutSessionSummary(from: session)
+        viewModel.handleIntent(.loadData)
         
         // Then
-        XCTAssertEqual(summary.title, "Workout") // Default title
-        XCTAssertEqual(summary.formattedDuration, "30m")
+        XCTAssertEqual(viewModel.workoutSessions.count, 1)
+        XCTAssertEqual(viewModel.workoutSessions.first?.title, "")
+        XCTAssertEqual(viewModel.workoutSessions.first?.duration, 1800)
         
-        print("✅ [HistoryViewModelTests.testWorkoutSessionSummary_EmptyTitle_UsesDefaultTitle] Passed")
+        print("✅ [HistoryViewModelTests.testLoadWorkoutData_HandlesEmptyTitle] Passed")
     }
     
     // MARK: - Date Selection Tests
     
-    func testSelectDate_WithNoWorkoutData_SetsSelectedDateWithEmptyDetails() async throws {
+    func testSelectDate_WithNoWorkoutData_SetsSelectedDate() async throws {
         // Given
         let futureDate = Calendar.current.date(byAdding: .day, value: 30, to: Date())!
         
@@ -113,15 +113,12 @@ final class HistoryViewModelTests: XCTestCase {
         
         // Then
         XCTAssertNotNil(viewModel.selectedDate)
-        XCTAssertTrue(viewModel.dailyDetails.isEmpty)
-        XCTAssertTrue(viewModel.selectedDateSessions.isEmpty)
-        XCTAssertEqual(viewModel.totalVolumeForDay, 0.0)
-        XCTAssertNil(viewModel.longestSession)
+        XCTAssertTrue(viewModel.sessionsForDate(futureDate).isEmpty)
         
-        print("✅ [HistoryViewModelTests.testSelectDate_WithNoWorkoutData_SetsSelectedDateWithEmptyDetails] Passed")
+        print("✅ [HistoryViewModelTests.testSelectDate_WithNoWorkoutData_SetsSelectedDate] Passed")
     }
     
-    func testClearSelection_ClearsSelectedDateAndDetails() async throws {
+    func testClearSelection_ClearsSelectedDate() async throws {
         // Given
         let testDate = Date()
         try createTestWorkoutSession(date: testDate, title: "Test", duration: 3600, exerciseCount: 1)
@@ -133,10 +130,8 @@ final class HistoryViewModelTests: XCTestCase {
         
         // Then
         XCTAssertNil(viewModel.selectedDate)
-        XCTAssertTrue(viewModel.dailyDetails.isEmpty)
-        XCTAssertTrue(viewModel.selectedDateSessions.isEmpty)
         
-        print("✅ [HistoryViewModelTests.testClearSelection_ClearsSelectedDateAndDetails] Passed")
+        print("✅ [HistoryViewModelTests.testClearSelection_ClearsSelectedDate] Passed")
     }
     
     // MARK: - Helper Method Tests
@@ -167,6 +162,285 @@ final class HistoryViewModelTests: XCTestCase {
         XCTAssertNil(viewModel.error)
         
         print("✅ [HistoryViewModelTests.testClearError_WithError_ClearsError] Passed")
+    }
+    
+    // MARK: - Completed Sets Bug Fix Tests
+    
+    func testLoadWorkoutData_FiltersOutSessionsWithNoCompletedSets() async throws {
+        // Given: Create a session with only auto-populated values (no completed sets)
+        let sessionWithNoCompletedSets = WorkoutSession(
+            date: Date(),
+            title: "Empty Session",
+            duration: 1800
+        )
+        modelContext.insert(sessionWithNoCompletedSets)
+        
+        let exercise = Exercise(name: "Bench Press", category: .strength)
+        modelContext.insert(exercise)
+        
+        let sessionExercise = SessionExercise(
+            exercise: exercise,
+            plannedSets: 3,
+            plannedReps: 10,
+            position: 1.0,
+            session: sessionWithNoCompletedSets
+        )
+        modelContext.insert(sessionExercise)
+        sessionWithNoCompletedSets.sessionExercises.append(sessionExercise)
+        
+        // No completed sets added intentionally
+        
+        // And: Create a session with actual completed sets
+        let sessionWithCompletedSets = WorkoutSession(
+            date: Calendar.current.date(byAdding: .day, value: -1, to: Date())!,
+            title: "Completed Session",
+            duration: 2400
+        )
+        modelContext.insert(sessionWithCompletedSets)
+        
+        let exercise2 = Exercise(name: "Squat", category: .strength)
+        modelContext.insert(exercise2)
+        
+        let sessionExercise2 = SessionExercise(
+            exercise: exercise2,
+            plannedSets: 3,
+            plannedReps: 10,
+            position: 1.0,
+            session: sessionWithCompletedSets
+        )
+        modelContext.insert(sessionExercise2)
+        sessionWithCompletedSets.sessionExercises.append(sessionExercise2)
+        
+        // Add completed sets
+        let completedSet1 = CompletedSet(
+            reps: 10,
+            weight: 135.0,
+            position: 0,
+            sessionExercise: sessionExercise2
+        )
+        let completedSet2 = CompletedSet(
+            reps: 8,
+            weight: 135.0,
+            position: 1,
+            sessionExercise: sessionExercise2
+        )
+        modelContext.insert(completedSet1)
+        modelContext.insert(completedSet2)
+        sessionExercise2.completedSets.append(completedSet1)
+        sessionExercise2.completedSets.append(completedSet2)
+        
+        try modelContext.save()
+        
+        // When
+        viewModel.handleIntent(.loadData)
+        
+        // Then: Only session with completed sets should be loaded
+        XCTAssertEqual(viewModel.workoutSessions.count, 1)
+        XCTAssertEqual(viewModel.workoutSessions.first?.title, "Completed Session")
+        XCTAssertEqual(viewModel.workoutSessions.first?.sessionExercises.first?.completedSets.count, 2)
+        
+        print("✅ [HistoryViewModelTests.testLoadWorkoutData_FiltersOutSessionsWithNoCompletedSets] Passed")
+    }
+    
+    func testLoadWorkoutData_IncludesSessionsWithMixedCompletedSets() async throws {
+        // Given: Create a session with multiple exercises, some with completed sets and some without
+        let session = WorkoutSession(
+            date: Date(),
+            title: "Mixed Session",
+            duration: 3000
+        )
+        modelContext.insert(session)
+        
+        // Exercise 1: Has completed sets
+        let exercise1 = Exercise(name: "Bench Press", category: .strength)
+        modelContext.insert(exercise1)
+        
+        let sessionExercise1 = SessionExercise(
+            exercise: exercise1,
+            plannedSets: 3,
+            plannedReps: 10,
+            position: 1.0,
+            session: session
+        )
+        modelContext.insert(sessionExercise1)
+        session.sessionExercises.append(sessionExercise1)
+        
+        let completedSet1 = CompletedSet(
+            reps: 10,
+            weight: 135.0,
+            position: 0,
+            sessionExercise: sessionExercise1
+        )
+        modelContext.insert(completedSet1)
+        sessionExercise1.completedSets.append(completedSet1)
+        
+        // Exercise 2: No completed sets (auto-populated only)
+        let exercise2 = Exercise(name: "Squat", category: .strength)
+        modelContext.insert(exercise2)
+        
+        let sessionExercise2 = SessionExercise(
+            exercise: exercise2,
+            plannedSets: 3,
+            plannedReps: 10,
+            position: 2.0,
+            session: session
+        )
+        modelContext.insert(sessionExercise2)
+        session.sessionExercises.append(sessionExercise2)
+        // No completed sets added for this exercise
+        
+        try modelContext.save()
+        
+        // When
+        viewModel.handleIntent(.loadData)
+        
+        // Then: Session should be included because it has at least one exercise with completed sets
+        XCTAssertEqual(viewModel.workoutSessions.count, 1)
+        XCTAssertEqual(viewModel.workoutSessions.first?.title, "Mixed Session")
+        XCTAssertEqual(viewModel.workoutSessions.first?.sessionExercises.count, 2)
+        
+        // Verify one exercise has completed sets and one doesn't
+        let loadedSession = viewModel.workoutSessions.first!
+        let exerciseWithSets = loadedSession.sessionExercises.first { !$0.completedSets.isEmpty }
+        let exerciseWithoutSets = loadedSession.sessionExercises.first { $0.completedSets.isEmpty }
+        
+        XCTAssertNotNil(exerciseWithSets)
+        XCTAssertNotNil(exerciseWithoutSets)
+        XCTAssertEqual(exerciseWithSets?.completedSets.count, 1)
+        XCTAssertEqual(exerciseWithoutSets?.completedSets.count, 0)
+        
+        print("✅ [HistoryViewModelTests.testLoadWorkoutData_IncludesSessionsWithMixedCompletedSets] Passed")
+    }
+    
+    func testLoadWorkoutData_FiltersOutSessionsWithOnlyAutoPopulatedExercises() async throws {
+        // Given: Create multiple sessions with only auto-populated exercises
+        let calendar = Calendar.current
+        let today = Date()
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+        
+        // Session 1: Only auto-populated exercises
+        let session1 = WorkoutSession(
+            date: today,
+            title: "Auto-populated Session 1",
+            duration: 1800
+        )
+        modelContext.insert(session1)
+        
+        let exercise1 = Exercise(name: "Bench Press", category: .strength)
+        modelContext.insert(exercise1)
+        
+        let sessionExercise1 = SessionExercise(
+            exercise: exercise1,
+            plannedSets: 3,
+            plannedReps: 10,
+            position: 1.0,
+            session: session1
+        )
+        modelContext.insert(sessionExercise1)
+        session1.sessionExercises.append(sessionExercise1)
+        
+        // Session 2: Only auto-populated exercises
+        let session2 = WorkoutSession(
+            date: yesterday,
+            title: "Auto-populated Session 2",
+            duration: 2400
+        )
+        modelContext.insert(session2)
+        
+        let exercise2 = Exercise(name: "Squat", category: .strength)
+        modelContext.insert(exercise2)
+        
+        let sessionExercise2 = SessionExercise(
+            exercise: exercise2,
+            plannedSets: 4,
+            plannedReps: 8,
+            position: 1.0,
+            session: session2
+        )
+        modelContext.insert(sessionExercise2)
+        session2.sessionExercises.append(sessionExercise2)
+        
+        try modelContext.save()
+        
+        // When
+        viewModel.handleIntent(.loadData)
+        
+        // Then: No sessions should be loaded
+        XCTAssertEqual(viewModel.workoutSessions.count, 0)
+        XCTAssertEqual(viewModel.totalWorkoutDays, 0)
+        XCTAssertEqual(viewModel.streakCount, 0)
+        
+        print("✅ [HistoryViewModelTests.testLoadWorkoutData_FiltersOutSessionsWithOnlyAutoPopulatedExercises] Passed")
+    }
+    
+    func testWorkoutDates_OnlyIncludesSessionsWithCompletedSets() async throws {
+        // Given: Create sessions with and without completed sets
+        let calendar = Calendar.current
+        let today = Date()
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+        
+        // Session with completed sets
+        let completedSession = WorkoutSession(
+            date: today,
+            title: "Completed Session",
+            duration: 1800
+        )
+        modelContext.insert(completedSession)
+        
+        let exercise1 = Exercise(name: "Bench Press", category: .strength)
+        modelContext.insert(exercise1)
+        
+        let sessionExercise1 = SessionExercise(
+            exercise: exercise1,
+            plannedSets: 3,
+            plannedReps: 10,
+            position: 1.0,
+            session: completedSession
+        )
+        modelContext.insert(sessionExercise1)
+        completedSession.sessionExercises.append(sessionExercise1)
+        
+        let completedSet = CompletedSet(
+            reps: 10,
+            weight: 135.0,
+            position: 0,
+            sessionExercise: sessionExercise1
+        )
+        modelContext.insert(completedSet)
+        sessionExercise1.completedSets.append(completedSet)
+        
+        // Session without completed sets
+        let incompleteSession = WorkoutSession(
+            date: yesterday,
+            title: "Incomplete Session",
+            duration: 1200
+        )
+        modelContext.insert(incompleteSession)
+        
+        let exercise2 = Exercise(name: "Squat", category: .strength)
+        modelContext.insert(exercise2)
+        
+        let sessionExercise2 = SessionExercise(
+            exercise: exercise2,
+            plannedSets: 3,
+            plannedReps: 10,
+            position: 1.0,
+            session: incompleteSession
+        )
+        modelContext.insert(sessionExercise2)
+        incompleteSession.sessionExercises.append(sessionExercise2)
+        
+        try modelContext.save()
+        
+        // When
+        viewModel.handleIntent(.loadData)
+        
+        // Then: Only the date with completed sets should be in workoutDates
+        XCTAssertEqual(viewModel.workoutDates.count, 1)
+        XCTAssertTrue(viewModel.workoutDates.contains(calendar.startOfDay(for: today)))
+        XCTAssertFalse(viewModel.workoutDates.contains(calendar.startOfDay(for: yesterday)))
+        
+        print("✅ [HistoryViewModelTests.testWorkoutDates_OnlyIncludesSessionsWithCompletedSets] Passed")
     }
     
     // MARK: - Helper Methods
