@@ -27,54 +27,22 @@ struct LoggingView: View {
 // MARK: - Logging Content View
 struct LoggingContentView: View {
     @ObservedObject var viewModel: LoggingViewModel
-    @State private var initialFocus: SetRowView.Field? = nil
-    @State private var isAnySetEditing: Bool = false
-    @State private var editingExerciseID: UUID? = nil
-    @State private var editingSetIndex: Int? = nil
-    @State private var tempReps: String = ""
-    @State private var tempWeight: String = ""
+    @State private var showingWorkoutSession: Bool = false
     
     var body: some View {
-        contentView
-            .onAppear {
-                AppLogger.info("[LoggingContentView] View appeared - loading data", category: "LoggingView")
-                viewModel.loadAvailablePlans()
-                viewModel.loadLastPerformedData()
-            }
-            .toolbar {
-                if isAnySetEditing {
-                    ToolbarItemGroup(placement: .keyboard) {
-                        Spacer()
-                        Button("Done") {
-                            saveCurrentSet()
-                        }
-                        .fontWeight(.medium)
-                        .foregroundColor(.blue)
-                    }
+        NavigationStack {
+            contentView
+                .onAppear {
+                    AppLogger.info("[LoggingContentView] View appeared - loading data", category: "LoggingView")
+                    viewModel.loadAvailablePlans()
+                    viewModel.loadLastPerformedData()
                 }
-            }
+                .navigationDestination(isPresented: $showingWorkoutSession) {
+                    WorkoutSessionView(viewModel: viewModel)
+                }
+        }
     }
     
-    private func saveCurrentSet() {
-        guard let exerciseID = editingExerciseID,
-              let setIndex = editingSetIndex,
-              let reps = Int(tempReps),
-              let weight = Double(tempWeight) else { return }
-        
-        viewModel.handleIntent(.editSet(
-            exerciseID: exerciseID,
-            setIndex: setIndex,
-            reps: reps,
-            weight: weight
-        ))
-        
-        // Reset editing state
-        isAnySetEditing = false
-        editingExerciseID = nil
-        editingSetIndex = nil
-        tempReps = ""
-        tempWeight = ""
-    }
     
     @ViewBuilder
     private var contentView: some View {
@@ -91,15 +59,71 @@ struct LoggingContentView: View {
                 restDayView
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if !viewModel.exercises.isEmpty {
-                // Workout content - wrap in ScrollView
-                ScrollView {
-                    // Exercise List
-                    exerciseListSection
-                }
-                
-                // Complete Workout Button (only show when all sets are completed)
-                if viewModel.canFinishSession {
-                    completeWorkoutButton
+                // Day summary content with start session button
+                VStack(spacing: 0) {
+                    // Exercise summary list in scrollable area
+                    ScrollView {
+                        VStack(spacing: 16) {
+                            ForEach(viewModel.exercises, id: \.id) { exercise in
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(exercise.name)
+                                            .font(.body)
+                                            .fontWeight(.medium)
+                                            .foregroundColor(.primary)
+                                        
+                                        Text("\(exercise.plannedSets) sets × \(exercise.plannedReps) reps")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                        
+                                        if let weight = exercise.plannedWeight, weight > 0 {
+                                            Text("\(Int(weight)) lbs")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        }
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    // Exercise category indicator
+                                    if let category = exercise.category {
+                                        Text(category.rawValue.capitalized)
+                                            .font(.caption2)
+                                            .foregroundColor(.blue)
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 4)
+                                            .background(Color.blue.opacity(0.1))
+                                            .cornerRadius(8)
+                                    }
+                                }
+                                .padding(.vertical, 12)
+                                .padding(.horizontal, 16)
+                                .background(Color(.systemGray6))
+                                .cornerRadius(12)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 20)
+                    }
+                    
+                    // Start session button - always visible at bottom
+                    VStack(spacing: 0) {
+                        Divider()
+                            .padding(.horizontal, 20)
+                        
+                        Button("Start Workout") {
+                            showingWorkoutSession = true
+                        }
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(Color.blue)
+                        .cornerRadius(12)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 16)
+                        .background(.background.secondary)
+                    }
                 }
             } else if viewModel.activePlan != nil && viewModel.selectedDay != nil {
                 // Workout plan selected but no exercises for this day - treat as rest day
@@ -247,115 +271,6 @@ struct LoggingContentView: View {
         .padding()
     }
     
-    // MARK: - Exercise List Section
-    private var exerciseListSection: some View {
-        LazyVStack(spacing: 16) {
-            ForEach(viewModel.groupedExercises, id: \.1.first?.id) { group in
-                if group.0 != nil {
-                    // Superset group with minimal visual separation
-                    VStack(spacing: 12) {
-                        ForEach(group.1) { exercise in
-                            LoggingExerciseRowView(
-                                exercise: exercise,
-                                onEditSet: { setIndex, reps, weight in
-                                    viewModel.handleIntent(.editSet(
-                                        exerciseID: exercise.id,
-                                        setIndex: setIndex,
-                                        reps: reps,
-                                        weight: weight
-                                    ))
-                                },
-                                onAddSet: {
-                                    viewModel.handleIntent(.addSet(exerciseID: exercise.id))
-                                },
-                                onToggleSetCompletion: { setIndex in
-                                    viewModel.handleIntent(.toggleSetCompletion(
-                                        exerciseID: exercise.id,
-                                        setIndex: setIndex
-                                    ))
-                                },
-                                onMarkComplete: {
-                                    viewModel.handleIntent(.markExerciseComplete(exerciseID: exercise.id))
-                                },
-                                getSupersetNumber: viewModel.getSupersetNumber,
-                                isCurrentExercise: viewModel.currentExercise?.id == exercise.id,
-                                initialFocus: $initialFocus,
-                                isAnySetEditing: $isAnySetEditing,
-                                editingExerciseID: $editingExerciseID,
-                                editingSetIndex: $editingSetIndex,
-                                tempReps: $tempReps,
-                                tempWeight: $tempWeight
-                            )
-                            .background(Color(.systemGray6).opacity(0.3))
-                            .cornerRadius(8)
-                        }
-                    }
-                    .padding(.vertical, 8)
-                } else {
-                    // Individual exercises
-                    ForEach(group.1) { exercise in
-                        LoggingExerciseRowView(
-                            exercise: exercise,
-                            onEditSet: { setIndex, reps, weight in
-                                viewModel.handleIntent(.editSet(
-                                    exerciseID: exercise.id,
-                                    setIndex: setIndex,
-                                    reps: reps,
-                                    weight: weight
-                                ))
-                            },
-                            onAddSet: {
-                                viewModel.handleIntent(.addSet(exerciseID: exercise.id))
-                            },
-                            onToggleSetCompletion: { setIndex in
-                                viewModel.handleIntent(.toggleSetCompletion(
-                                    exerciseID: exercise.id,
-                                    setIndex: setIndex
-                                ))
-                            },
-                            onMarkComplete: {
-                                viewModel.handleIntent(.markExerciseComplete(exerciseID: exercise.id))
-                            },
-                            getSupersetNumber: viewModel.getSupersetNumber,
-                            isCurrentExercise: viewModel.currentExercise?.id == exercise.id,
-                            initialFocus: $initialFocus,
-                            isAnySetEditing: $isAnySetEditing,
-                            editingExerciseID: $editingExerciseID,
-                            editingSetIndex: $editingSetIndex,
-                            tempReps: $tempReps,
-                            tempWeight: $tempWeight
-                        )
-                    }
-                }
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-    }
-    
-    // MARK: - Complete Workout Button
-    private var completeWorkoutButton: some View {
-        VStack(spacing: 0) {
-            Divider()
-            
-            Button {
-                AppLogger.info("[LoggingView] Complete Workout button tapped", category: "LoggingView")
-                viewModel.handleIntent(.finishSession)
-            } label: {
-                Text("Complete Workout")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(viewModel.canFinishSession ? Color.blue : Color.gray)
-                    .cornerRadius(12)
-            }
-            .disabled(!viewModel.canFinishSession)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(.background)
-        }
-    }
     
     // MARK: - Empty State View (No Workout Plans)
     private var emptyStateView: some View {
