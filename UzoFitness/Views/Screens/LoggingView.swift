@@ -212,11 +212,6 @@ struct LoggingContentView: View {
                 VStack(spacing: 24) {
                     // Day Summary Header
                     VStack(spacing: 8) {
-                        Text("Today's Workout")
-                            .font(.title2)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.primary)
-                        
                         if let selectedDay = viewModel.selectedDay {
                             Text("\(selectedDay.weekday.fullName) - \(selectedDay.exerciseTemplates.count) exercises")
                                 .font(.subheadline)
