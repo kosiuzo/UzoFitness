@@ -43,10 +43,10 @@ struct WorkoutSessionView: View {
                         .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color(.systemBackground))
+                .background(Color(.systemGroupedBackground))
             }
         }
-        .background(Color(.systemBackground))
+        .background(Color(.systemGroupedBackground))
     }
     
     // MARK: - Exercise List Section
@@ -82,8 +82,6 @@ struct WorkoutSessionView: View {
                                 getSupersetNumber: viewModel.getSupersetNumber,
                                 isCurrentExercise: viewModel.currentExercise?.id == exercise.id
                             )
-                            .background(Color(.systemGray6).opacity(0.3))
-                            .cornerRadius(8)
                         }
                     }
                     .padding(.vertical, 8)

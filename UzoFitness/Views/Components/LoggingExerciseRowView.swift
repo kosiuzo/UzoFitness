@@ -155,14 +155,18 @@ struct LoggingExerciseRowView: View {
                 ))
             }
         }
-        .background(isCurrentExercise ? Color.blue.opacity(0.05) : Color(.systemBackground))
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(isCurrentExercise ? Color.blue.opacity(0.3) : Color.clear, lineWidth: 2)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(isCurrentExercise ? Color.blue.opacity(0.07) : Color(.systemGray6))
         )
-        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
-        .scaleEffect(isCurrentExercise ? 1.02 : 1.0)
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(isCurrentExercise ? Color.blue.opacity(0.4) : Color(.systemGray4), lineWidth: isCurrentExercise ? 2 : 1)
+        )
+        .shadow(color: Color.black.opacity(isCurrentExercise ? 0.10 : 0.06), radius: isCurrentExercise ? 8 : 4, x: 0, y: 2)
+        .padding(.horizontal, 2)
+        .padding(.vertical, 2)
+        .scaleEffect(isCurrentExercise ? 1.025 : 1.0)
         .animation(.easeInOut(duration: 0.2), value: isCurrentExercise)
         .onAppear {
             // Set initial expansion state based on completion status
