@@ -321,6 +321,7 @@ struct LoggingExerciseRowView: View {
     let onAddSet: () -> Void
     let onToggleSetCompletion: (Int) -> Void
     let onMarkComplete: () -> Void
+    let onUseLastValues: () -> Void
     let getSupersetNumber: ((UUID) -> Int?)?
     let isCurrentExercise: Bool
     @Binding var initialFocus: SetRowView.Field?
@@ -474,15 +475,28 @@ struct LoggingExerciseRowView: View {
                         
                         // Add Set Button
                         if !exercise.isCompleted {
-                            Button {
-                                onAddSet()
-                            } label: {
-                                HStack {
-                                    Image(systemName: "plus.circle")
-                                    Text("Add Set")
+                            HStack(spacing: 16) {
+                                Button {
+                                    onAddSet()
+                                } label: {
+                                    HStack {
+                                        Image(systemName: "plus.circle")
+                                        Text("Add Set")
+                                    }
+                                    .font(.caption)
+                                    .foregroundColor(.blue)
                                 }
-                                .font(.caption)
-                                .foregroundColor(.blue)
+                                
+                                Button {
+                                    onUseLastValues()
+                                } label: {
+                                    HStack {
+                                        Image(systemName: "arrow.clockwise")
+                                        Text("Use Last Values")
+                                    }
+                                    .font(.caption)
+                                    .foregroundColor(.orange)
+                                }
                             }
                         }
                     }

@@ -98,6 +98,9 @@ struct WorkoutSessionView: View {
                                 onMarkComplete: {
                                     viewModel.handleIntent(.markExerciseComplete(exerciseID: exercise.id))
                                 },
+                                onUseLastValues: {
+                                    viewModel.handleIntent(.useLastValues(exerciseID: exercise.id))
+                                },
                                 getSupersetNumber: viewModel.getSupersetNumber,
                                 isCurrentExercise: viewModel.currentExercise?.id == exercise.id,
                                 initialFocus: $initialFocus,
@@ -136,6 +139,9 @@ struct WorkoutSessionView: View {
                             },
                             onMarkComplete: {
                                 viewModel.handleIntent(.markExerciseComplete(exerciseID: exercise.id))
+                            },
+                            onUseLastValues: {
+                                viewModel.handleIntent(.useLastValues(exerciseID: exercise.id))
                             },
                             getSupersetNumber: viewModel.getSupersetNumber,
                             isCurrentExercise: viewModel.currentExercise?.id == exercise.id,

@@ -125,16 +125,8 @@ class HistoryViewModel: ObservableObject {
             
             let sessions = try modelContext.fetch(descriptor)
             
-            // Filter out sessions with no actual completed work
-            workoutSessions = sessions.filter { session in
-                let hasCompletedWork = session.sessionExercises.contains { sessionExercise in
-                    !sessionExercise.completedSets.isEmpty
-                }
-                if !hasCompletedWork {
-                    AppLogger.debug("[HistoryViewModel.loadWorkoutData] Filtering out session with no completed sets: \(session.title)", category: "HistoryViewModel")
-                }
-                return hasCompletedWork
-            }
+            // Show all workout sessions without filtering
+            workoutSessions = sessions
             
             AppLogger.info("[HistoryViewModel.loadWorkoutData] Successfully loaded \(workoutSessions.count) sessions", category: "HistoryViewModel")
             AppLogger.debug("[HistoryViewModel] State changed to: loaded", category: "HistoryViewModel")

@@ -51,6 +51,7 @@ enum LoggingIntent {
     case startRest(exerciseID: UUID, seconds: TimeInterval)
     case cancelRest(exerciseID: UUID)
     case markExerciseComplete(exerciseID: UUID)
+    case useLastValues(exerciseID: UUID)
     case finishSession
     case advanceToNextExercise
     case setCurrentExercise(index: Int)
@@ -245,6 +246,9 @@ class LoggingViewModel: ObservableObject {
             
         case .markExerciseComplete(let exerciseID):
             markExerciseComplete(exerciseID: exerciseID)
+            
+        case .useLastValues(let exerciseID):
+            useLastValues(exerciseID: exerciseID)
             
         case .finishSession:
             finishSession()
@@ -589,8 +593,7 @@ class LoggingViewModel: ObservableObject {
                 supersetID: exerciseTemplate.supersetID,
                 currentSet: 0,
                 isCompleted: false, // Explicitly set to false for new sessions
-                session: session,
-                autoPopulateFromLastSession: true // Enable auto-population from last used values
+                session: session
             )
             
             modelContext.insert(sessionExercise)
@@ -667,8 +670,7 @@ class LoggingViewModel: ObservableObject {
                 supersetID: exerciseTemplate.supersetID,
                 currentSet: 0,
                 isCompleted: false,
-                session: session,
-                autoPopulateFromLastSession: true // Enable auto-population from last used values
+                session: session
             )
             
             modelContext.insert(sessionExercise)
@@ -943,7 +945,6 @@ class LoggingViewModel: ObservableObject {
         if completedSetsCount == totalSetsCount && !sessionExercise.isCompleted {
             AppLogger.info("[LoggingViewModel.toggleSetCompletion] All sets completed - auto-completing exercise", category: "LoggingViewModel")
             sessionExercise.isCompleted = true
-            sessionExercise.updateExerciseCacheOnCompletion()
             
             // Auto-advance to next exercise if this exercise is the current one
             if let currentExerciseUI = currentExercise,
@@ -1067,9 +1068,6 @@ class LoggingViewModel: ObservableObject {
         // Mark exercise as complete
         sessionExercise.isCompleted = true
         
-        // Update the exercise's cache for future sessions
-        sessionExercise.updateExerciseCacheOnCompletion()
-        
         // Auto-advance to next exercise if this exercise is the current one
         if let currentExerciseUI = currentExercise,
            currentExerciseUI.id == exerciseID {
@@ -1084,6 +1082,29 @@ class LoggingViewModel: ObservableObject {
             AppLogger.debug("[LoggingViewModel.markExerciseComplete] Exercise cache saved - Weight: \(sessionExercise.exercise.lastUsedWeight ?? 0), Reps: \(sessionExercise.exercise.lastUsedReps ?? 0)", category: "LoggingViewModel")
         } catch {
             AppLogger.error("[LoggingViewModel.markExerciseComplete] Save error", category: "LoggingViewModel", error: error)
+            self.error = error
+        }
+    }
+    
+    private func useLastValues(exerciseID: UUID) {
+        AppLogger.info("[LoggingViewModel.useLastValues] Using last values for exercise: \(exerciseID)", category: "LoggingViewModel")
+        
+        guard let session = session,
+              let sessionExercise = session.sessionExercises.first(where: { $0.id == exerciseID }) else {
+            AppLogger.error("[LoggingViewModel.useLastValues] Exercise not found", category: "LoggingViewModel")
+            error = LoggingError.exerciseNotFound
+            return
+        }
+        
+        sessionExercise.updateAllSetsWithLastUsedValues()
+        
+        updateExercisesUI()
+        
+        do {
+            try modelContext.save()
+            AppLogger.info("[LoggingViewModel.useLastValues] Sets updated with last used values", category: "LoggingViewModel")
+        } catch {
+            AppLogger.error("[LoggingViewModel.useLastValues] Save error", category: "LoggingViewModel", error: error)
             self.error = error
         }
     }
