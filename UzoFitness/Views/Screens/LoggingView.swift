@@ -73,11 +73,7 @@ struct LoggingContentView: View {
             }
         }
         .background(.background.secondary)
-        .refreshable {
-            AppLogger.info("[LoggingContentView] Refreshing workout plans", category: "LoggingView")
-            viewModel.loadAvailablePlans()
-            viewModel.loadLastPerformedData()
-        }
+        // .refreshable { ... } removed to disable pull-to-refresh
         // Remove error alerts for missing workout plans - handle gracefully in UI
     }
     
