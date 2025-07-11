@@ -43,6 +43,7 @@ struct SessionExerciseUI: Identifiable, Hashable {
 enum LoggingIntent {
     case selectPlan(UUID)
     case selectDay(Weekday)
+    case startSession
     case editSet(exerciseID: UUID, setIndex: Int, reps: Int, weight: Double)
     case addSet(exerciseID: UUID)
     case toggleSetCompletion(exerciseID: UUID, setIndex: Int)
@@ -225,6 +226,9 @@ class LoggingViewModel: ObservableObject {
             
         case .selectDay(let weekday):
             selectDay(weekday)
+            
+        case .startSession:
+            startWorkoutSession()
             
         case .editSet(let exerciseID, let setIndex, let reps, let weight):
             editSet(exerciseID: exerciseID, setIndex: setIndex, reps: reps, weight: weight)
@@ -410,8 +414,14 @@ class LoggingViewModel: ObservableObject {
             session = nil
             exercises = []
         } else {
-            createOrResumeSession()
+            // Don't automatically create session - wait for user to start session
+            AppLogger.debug("[LoggingViewModel.selectDay] Day selected, waiting for user to start session", category: "LoggingViewModel")
         }
+    }
+    
+    func startWorkoutSession() {
+        AppLogger.info("[LoggingViewModel.startWorkoutSession] Starting workout session manually", category: "LoggingViewModel")
+        createFreshSessionWithAutoPopulation()
     }
     
     private func createOrResumeSession() {
@@ -940,7 +950,6 @@ class LoggingViewModel: ObservableObject {
         if completedSetsCount == totalSetsCount && !sessionExercise.isCompleted {
             AppLogger.info("[LoggingViewModel.toggleSetCompletion] All sets completed - auto-completing exercise", category: "LoggingViewModel")
             sessionExercise.isCompleted = true
-            sessionExercise.updateExerciseCacheOnCompletion()
             
             // Auto-advance to next exercise if this exercise is the current one
             if let currentExerciseUI = currentExercise,
@@ -1061,9 +1070,6 @@ class LoggingViewModel: ObservableObject {
         // Mark exercise as complete
         sessionExercise.isCompleted = true
         
-        // Update the exercise's cache for future sessions
-        sessionExercise.updateExerciseCacheOnCompletion()
-        
         // Auto-advance to next exercise if this exercise is the current one
         if let currentExerciseUI = currentExercise,
            currentExerciseUI.id == exerciseID {
@@ -1080,6 +1086,46 @@ class LoggingViewModel: ObservableObject {
             AppLogger.error("[LoggingViewModel.markExerciseComplete] Save error", category: "LoggingViewModel", error: error)
             self.error = error
         }
+    }
+    
+    /// Batch update all exercise cache values when workout is completed
+    /// This prevents conflicts from individual updates during the workout
+    private func updateAllExerciseCacheValuesOnWorkoutCompletion() {
+        AppLogger.info("[LoggingViewModel.updateAllExerciseCacheValuesOnWorkoutCompletion] Starting batch update of exercise cache values", category: "LoggingViewModel")
+        
+        guard let session = session else {
+            AppLogger.debug("[LoggingViewModel.updateAllExerciseCacheValuesOnWorkoutCompletion] No session to update", category: "LoggingViewModel")
+            return
+        }
+        
+        var updatedCount = 0
+        
+        for sessionExercise in session.sessionExercises {
+            // Only update completed exercises with sets
+            guard sessionExercise.isCompleted && !sessionExercise.completedSets.isEmpty else {
+                AppLogger.debug("[LoggingViewModel.updateAllExerciseCacheValuesOnWorkoutCompletion] Skipping \(sessionExercise.exercise.name) - not completed or no sets", category: "LoggingViewModel")
+                continue
+            }
+            
+            AppLogger.debug("[LoggingViewModel.updateAllExerciseCacheValuesOnWorkoutCompletion] Updating exercise cache for: \(sessionExercise.exercise.name)", category: "LoggingViewModel")
+            
+            // Update exercise's cached values with this session's data
+            let totalVolume = sessionExercise.totalVolume
+            
+            if let lastSet = sessionExercise.completedSets.last {
+                sessionExercise.exercise.lastUsedWeight = lastSet.weight
+                sessionExercise.exercise.lastUsedReps = lastSet.reps
+            }
+            
+            sessionExercise.exercise.lastTotalVolume = totalVolume
+            sessionExercise.exercise.lastUsedDate = session.date
+            
+            updatedCount += 1
+            
+            AppLogger.debug("[LoggingViewModel.updateAllExerciseCacheValuesOnWorkoutCompletion] Updated cache for \(sessionExercise.exercise.name) - Weight: \(sessionExercise.exercise.lastUsedWeight ?? 0), Reps: \(sessionExercise.exercise.lastUsedReps ?? 0), Volume: \(sessionExercise.exercise.lastTotalVolume ?? 0)", category: "LoggingViewModel")
+        }
+        
+        AppLogger.info("[LoggingViewModel.updateAllExerciseCacheValuesOnWorkoutCompletion] Batch update completed for \(updatedCount) exercises", category: "LoggingViewModel")
     }
     
     private func finishSession() {
@@ -1101,6 +1147,9 @@ class LoggingViewModel: ObservableObject {
         if let startTime = sessionStartTime {
             session.duration = Date().timeIntervalSince(startTime)
         }
+        
+        // Batch update all exercise cache values now that workout is completed
+        updateAllExerciseCacheValuesOnWorkoutCompletion()
         
         // Convert SessionExercises to PerformedExercises for history
         for sessionExercise in session.sessionExercises {

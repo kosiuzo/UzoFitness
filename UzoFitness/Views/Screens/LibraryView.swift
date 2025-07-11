@@ -430,6 +430,70 @@ struct ExerciseEditorView: View {
                         .frame(minHeight: 100)
                 }
                 
+                // Last Used Values Section
+                if let exercise = exercise {
+                    Section("Last Used Values") {
+                        VStack(spacing: 12) {
+                            HStack {
+                                Text("Last Used Weight:")
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                if let lastWeight = exercise.lastUsedWeight {
+                                    Text("\(lastWeight, specifier: "%.1f") lbs")
+                                        .fontWeight(.medium)
+                                } else {
+                                    Text("Not recorded")
+                                        .foregroundStyle(.tertiary)
+                                        .italic()
+                                }
+                            }
+                            
+                            HStack {
+                                Text("Last Used Reps:")
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                if let lastReps = exercise.lastUsedReps {
+                                    Text("\(lastReps)")
+                                        .fontWeight(.medium)
+                                } else {
+                                    Text("Not recorded")
+                                        .foregroundStyle(.tertiary)
+                                        .italic()
+                                }
+                            }
+                            
+                            HStack {
+                                Text("Last Total Volume:")
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                if let lastVolume = exercise.lastTotalVolume {
+                                    Text("\(lastVolume, specifier: "%.1f") lbs")
+                                        .fontWeight(.medium)
+                                } else {
+                                    Text("Not recorded")
+                                        .foregroundStyle(.tertiary)
+                                        .italic()
+                                }
+                            }
+                            
+                            HStack {
+                                Text("Last Used Date:")
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                if let lastDate = exercise.lastUsedDate {
+                                    Text(lastDate.formatted(date: .abbreviated, time: .omitted))
+                                        .fontWeight(.medium)
+                                } else {
+                                    Text("Never used")
+                                        .foregroundStyle(.tertiary)
+                                        .italic()
+                                }
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+                
                 if exercise != nil {
                     Section {
                         Button("Delete Exercise", role: .destructive) {

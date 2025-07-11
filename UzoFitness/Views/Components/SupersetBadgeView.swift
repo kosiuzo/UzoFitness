@@ -8,15 +8,15 @@ struct SupersetBadgeView: View {
         HStack(spacing: 6) {
             Image(systemName: "arrow.triangle.2.circlepath")
                 .font(.caption2)
-                .foregroundColor(.blue)
-            Text("\(supersetNumber)")
+                .foregroundColor(.red)
+            Text("SS\(supersetNumber)")
                 .font(.caption)
                 .fontWeight(.medium)
-                .foregroundColor(.blue)
+                .foregroundColor(.red)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
-        .background(Color.blue.opacity(0.1))
+        .background(Color.red.opacity(0.1))
         .cornerRadius(8)
     }
 }
