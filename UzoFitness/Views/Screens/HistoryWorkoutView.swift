@@ -16,50 +16,56 @@ struct HistoryWorkoutView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                // Workout Header
+                // Workout Header (now minimalist, no title here)
                 workoutHeaderView
-                
                 // Exercise List
                 exerciseListView
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 16)
             .padding(.vertical, 16)
         }
-        .navigationTitle(session.title.isEmpty ? "Workout" : session.title)
-        .navigationBarTitleDisplayMode(.large)
-        .background(.regularMaterial)
+        .navigationTitle(planNameOnly)
+        .navigationBarTitleDisplayMode(.inline)
+        .background(Color(.systemBackground))
+    }
+    
+    // Extract only the plan name from the session title (removes weekday prefix and dash)
+    private var planNameOnly: String {
+        let title = session.title
+        // Look for a dash and remove the prefix if present
+        if let dashRange = title.range(of: " - ") {
+            return String(title[dashRange.upperBound...]).trimmingCharacters(in: .whitespaces)
+        }
+        return title.isEmpty ? "Workout" : title
     }
     
     // MARK: - Workout Header
     private var workoutHeaderView: some View {
-        VStack(spacing: 16) {
-            // Date and Duration
-            VStack(spacing: 8) {
+        VStack(spacing: 12) {
+            // Date and Duration (subtle, minimalist)
+            HStack {
                 Text(DateFormatter.fullDate.string(from: session.date))
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                Spacer()
                 if let duration = session.duration {
-                    Text("Duration: \(formatDuration(duration))")
-                        .font(.subheadline)
+                    Text(formatDuration(duration))
+                        .font(.caption)
                         .foregroundColor(.secondary)
                 }
             }
-            
             // Stats Row
-            HStack(spacing: 32) {
+            HStack(spacing: 24) {
                 StatView(
                     title: "Total Volume",
                     value: formatVolume(session.totalVolume),
                     color: .blue
                 )
-                
                 StatView(
                     title: "Exercises",
                     value: "\(session.sessionExercises.count)",
                     color: .green
                 )
-                
                 if !session.sessionExercises.isEmpty {
                     StatView(
                         title: "Sets",
@@ -69,23 +75,21 @@ struct HistoryWorkoutView: View {
                 }
             }
         }
-        .padding(20)
-        .background(.thickMaterial)
+        .padding(16)
+        .background(Color(.systemGray6))
         .cornerRadius(12)
     }
     
     // MARK: - Exercise List
     private var exerciseListView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 20) {
             HStack {
                 Text("Exercises")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                
+                    .font(.headline)
+                    .foregroundColor(.primary)
                 Spacer()
             }
-            
-            LazyVStack(spacing: 12) {
+            LazyVStack(spacing: 16) {
                 ForEach(session.sessionExercises.sorted(by: { $0.position < $1.position })) { sessionExercise in
                     ExerciseDetailCard(sessionExercise: sessionExercise)
                 }
