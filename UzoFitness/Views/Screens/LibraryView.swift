@@ -48,9 +48,9 @@ struct LibraryView: View {
 // MARK: - ExercisesTabView
 struct ExercisesTabView: View {
     @ObservedObject var viewModel: LibraryViewModel
-    @State private var showingExerciseEditor = false
+    @State private var showingExerciseCreator = false // for create
     @State private var showingJSONImport = false
-    @State private var selectedExerciseForEdit: Exercise?
+    @State private var selectedExerciseForEdit: Exercise? // for edit
     
     var body: some View {
         VStack(spacing: 0) {
@@ -64,7 +64,7 @@ struct ExercisesTabView: View {
                     )
                     
                     Button("Add Exercise") {
-                        showingExerciseEditor = true
+                        showingExerciseCreator = true
                     }
                     .buttonStyle(.borderedProminent)
                     
@@ -80,7 +80,7 @@ struct ExercisesTabView: View {
                         Spacer()
                         
                         Button {
-                            showingExerciseEditor = true
+                            showingExerciseCreator = true
                         } label: {
                             Label("Add Exercise", systemImage: "plus.circle.fill")
                                 .font(.headline)
@@ -96,7 +96,6 @@ struct ExercisesTabView: View {
                                 .contentShape(Rectangle())
                                 .onTapGesture {
                                     selectedExerciseForEdit = exercise
-                                    showingExerciseEditor = true
                                 }
                                 .swipeActions(edge: .trailing) {
                                     Button("Delete", role: .destructive) {
@@ -105,7 +104,6 @@ struct ExercisesTabView: View {
                                     
                                     Button("Edit") {
                                         selectedExerciseForEdit = exercise
-                                        showingExerciseEditor = true
                                     }
                                     .tint(.blue)
                                 }
@@ -119,7 +117,7 @@ struct ExercisesTabView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     Button {
-                        showingExerciseEditor = true
+                        showingExerciseCreator = true
                     } label: {
                         Label("Create Exercise", systemImage: "plus")
                     }
@@ -134,8 +132,11 @@ struct ExercisesTabView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingExerciseEditor) {
-            ExerciseEditorView(exercise: selectedExerciseForEdit, viewModel: viewModel)
+        .sheet(isPresented: $showingExerciseCreator) {
+            ExerciseEditorView(exercise: nil, viewModel: viewModel)
+        }
+        .sheet(item: $selectedExerciseForEdit) { exercise in
+            ExerciseEditorView(exercise: exercise, viewModel: viewModel)
         }
         .sheet(isPresented: $showingJSONImport) {
             JSONImportView(
