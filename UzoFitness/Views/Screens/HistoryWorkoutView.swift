@@ -42,18 +42,20 @@ struct HistoryWorkoutView: View {
     // MARK: - Workout Header
     private var workoutHeaderView: some View {
         VStack(spacing: 12) {
-            // Date and Duration (subtle, minimalist)
-            HStack {
+            // Date and Duration (stacked vertically)
+            VStack(alignment: .leading, spacing: 4) {
                 Text(DateFormatter.fullDate.string(from: session.date))
                     .font(.subheadline)
                     .foregroundColor(.secondary)
-                Spacer()
+                
                 if let duration = session.duration {
-                    Text(formatDuration(duration))
+                    Text("Duration: \(formatDuration(duration))")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            
             // Stats Row
             HStack(spacing: 24) {
                 StatView(
