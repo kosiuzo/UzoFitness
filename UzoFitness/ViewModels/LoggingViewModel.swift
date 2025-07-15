@@ -51,6 +51,7 @@ enum LoggingIntent {
     case cancelRest(exerciseID: UUID)
     case markExerciseComplete(exerciseID: UUID)
     case finishSession
+    case cancelSession
     case advanceToNextExercise
     case setCurrentExercise(index: Int)
 }
@@ -123,6 +124,7 @@ class LoggingViewModel: ObservableObject {
     // MARK: - Current Exercise Tracking State
     @Published var currentExerciseIndex: Int = 0
     @Published var isWorkoutInProgress: Bool = false
+    @Published var hasIncompleteSession: Bool = false
     
     // MARK: - Computed Properties
     var canFinishSession: Bool {
@@ -133,6 +135,16 @@ class LoggingViewModel: ObservableObject {
     var currentExercise: SessionExerciseUI? {
         guard currentExerciseIndex < exercises.count else { return nil }
         return exercises[currentExerciseIndex]
+    }
+    
+    var sessionButtonText: String {
+        if session != nil {
+            return "Workout In Progress"
+        } else if hasIncompleteSession {
+            return "Continue Session"
+        } else {
+            return "Start Workout Session"
+        }
     }
     
     var groupedExercises: [(Int?, [SessionExerciseUI])] {
@@ -251,6 +263,9 @@ class LoggingViewModel: ObservableObject {
         case .finishSession:
             finishSession()
             
+        case .cancelSession:
+            cancelSession()
+            
         case .advanceToNextExercise:
             advanceToNextExercise()
             
@@ -287,6 +302,7 @@ class LoggingViewModel: ObservableObject {
                 session = nil
                 exercises = []
                 isRestDay = false
+                hasIncompleteSession = false
             }
             
             // Auto-select the first active plan if none selected
@@ -337,6 +353,46 @@ class LoggingViewModel: ObservableObject {
     }
     
     // MARK: - Private Methods
+    private func checkForIncompleteSession() {
+        AppLogger.info("[LoggingViewModel.checkForIncompleteSession] Checking for incomplete session", category: "LoggingViewModel")
+        
+        guard let activePlan = activePlan,
+              let selectedDay = selectedDay else {
+            hasIncompleteSession = false
+            return
+        }
+        
+        let today = Date()
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: today)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+        
+        do {
+            let fetchDescriptor = FetchDescriptor<WorkoutSession>(
+                predicate: #Predicate<WorkoutSession> { session in
+                    session.date >= startOfDay &&
+                    session.date < endOfDay &&
+                    session.duration == nil // No duration means incomplete
+                }
+            )
+            let todaySessions = try modelContext.fetch(fetchDescriptor)
+            
+            // Filter for the current plan and day
+            let incompleteSessions = todaySessions.filter { session in
+                session.plan?.id == activePlan.id &&
+                (session.title.contains(selectedDay.weekday.fullName) || session.title.contains(selectedDay.weekday.abbreviation))
+            }
+            
+            hasIncompleteSession = !incompleteSessions.isEmpty
+            
+            AppLogger.debug("[LoggingViewModel.checkForIncompleteSession] Found \(incompleteSessions.count) incomplete sessions for current plan and day", category: "LoggingViewModel")
+            
+        } catch {
+            AppLogger.error("[LoggingViewModel.checkForIncompleteSession] Error checking for incomplete sessions", category: "LoggingViewModel", error: error)
+            hasIncompleteSession = false
+        }
+    }
+    
     private func selectPlan(_ planID: UUID) {
         AppLogger.info("[LoggingViewModel.selectPlan] Selecting plan: \(planID)", category: "LoggingViewModel")
         
@@ -413,15 +469,34 @@ class LoggingViewModel: ObservableObject {
             // Clear any existing session and exercises for rest days
             session = nil
             exercises = []
+            hasIncompleteSession = false
         } else {
-            // Don't automatically create session - wait for user to start session
+            // Check for incomplete session when day is selected
+            checkForIncompleteSession()
             AppLogger.debug("[LoggingViewModel.selectDay] Day selected, waiting for user to start session", category: "LoggingViewModel")
         }
     }
     
     func startWorkoutSession() {
         AppLogger.info("[LoggingViewModel.startWorkoutSession] Starting workout session manually", category: "LoggingViewModel")
-        createFreshSessionWithAutoPopulation()
+        
+        // Check if there's already an active session in progress
+        if let existingSession = session, existingSession.duration == nil {
+            AppLogger.debug("[LoggingViewModel.startWorkoutSession] Session already in progress, continuing existing session", category: "LoggingViewModel")
+            updateExercisesUI()
+            return
+        }
+        
+        // Check for incomplete session from today
+        checkForIncompleteSession()
+        
+        if hasIncompleteSession {
+            AppLogger.info("[LoggingViewModel.startWorkoutSession] Continuing incomplete session", category: "LoggingViewModel")
+            createOrResumeSession()
+        } else {
+            AppLogger.info("[LoggingViewModel.startWorkoutSession] Creating new session", category: "LoggingViewModel")
+            createFreshSessionWithAutoPopulation()
+        }
     }
     
     private func createOrResumeSession() {
@@ -1171,20 +1246,49 @@ class LoggingViewModel: ObservableObject {
             AppLogger.debug("[LoggingViewModel] Session duration: \(session.duration ?? 0) seconds", category: "LoggingViewModel")
             AppLogger.debug("[LoggingViewModel.finishSession] Total volume: \(totalVolume) lbs", category: "LoggingViewModel")
             
-            // Reset state for next session and immediately create a new session with auto-populated values
+            // Reset state for next session
             self.session = nil
             self.exercises = []
             self.sessionStartTime = nil
+            self.isWorkoutInProgress = false
+            self.currentExerciseIndex = 0
+            self.hasIncompleteSession = false
             
-            // Automatically create a new session with auto-populated values from the completed session
-            createFreshSessionWithAutoPopulation()
-            
-            AppLogger.info("[LoggingViewModel.finishSession] Session completed and new session created with auto-populated values", category: "LoggingViewModel")
+            AppLogger.info("[LoggingViewModel.finishSession] Session completed successfully", category: "LoggingViewModel")
             
         } catch {
             AppLogger.error("[LoggingViewModel.finishSession] Save error", category: "LoggingViewModel", error: error)
             self.error = error
         }
+    }
+    
+    private func cancelSession() {
+        AppLogger.info("[LoggingViewModel.cancelSession] Cancelling current session", category: "LoggingViewModel")
+        
+        guard session != nil else {
+            AppLogger.error("[LoggingViewModel.cancelSession] No session to cancel", category: "LoggingViewModel")
+            return
+        }
+        
+        // Save the session in its current incomplete state (no duration set)
+        do {
+            try modelContext.save()
+            AppLogger.info("[LoggingViewModel.cancelSession] Session saved in incomplete state", category: "LoggingViewModel")
+        } catch {
+            AppLogger.error("[LoggingViewModel.cancelSession] Failed to save incomplete session", category: "LoggingViewModel", error: error)
+        }
+        
+        // Reset UI state but keep session available for resuming
+        self.session = nil
+        self.exercises = []
+        self.sessionStartTime = nil
+        self.isWorkoutInProgress = false
+        self.currentExerciseIndex = 0
+        
+        // Check if we now have an incomplete session (should be true after cancel)
+        checkForIncompleteSession()
+        
+        AppLogger.info("[LoggingViewModel.cancelSession] Session cancelled and UI reset, hasIncompleteSession: \(hasIncompleteSession)", category: "LoggingViewModel")
     }
     
     // MARK: - Cleanup

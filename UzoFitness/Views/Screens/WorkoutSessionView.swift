@@ -12,6 +12,8 @@ struct WorkoutSessionView: View {
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
                         Button("Cancel") {
+                            AppLogger.info("[WorkoutSessionView] Cancel button tapped", category: "WorkoutSessionView")
+                            viewModel.handleIntent(.cancelSession)
                             isPresented = false
                         }
                     }
