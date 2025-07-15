@@ -4,6 +4,7 @@ import SwiftUI
 struct LoggingExerciseRowView: View {
     let exercise: SessionExerciseUI
     let onEditSet: (Int, Int, Double) -> Void
+    let onBulkEditSets: (Int, Double) -> Void
     let onAddSet: () -> Void
     let onToggleSetCompletion: (Int) -> Void
     let onMarkComplete: () -> Void
@@ -14,6 +15,9 @@ struct LoggingExerciseRowView: View {
     @State private var tempReps: String = ""
     @State private var tempWeight: String = ""
     @State private var isExpanded: Bool = true
+    @State private var showingBulkEdit: Bool = false
+    @State private var bulkReps: String = ""
+    @State private var bulkWeight: String = ""
     
     // Computed property to determine if exercise should be expanded by default
     private var shouldBeExpandedByDefault: Bool {
@@ -53,6 +57,16 @@ struct LoggingExerciseRowView: View {
                         Text("\(exercise.plannedSets) sets × \(exercise.plannedReps) reps")
                             .font(.caption)
                             .foregroundColor(.secondary)
+                        
+                        if !exercise.isCompleted && exercise.sets.count > 1 {
+                            Button("Edit All Sets") {
+                                bulkReps = "\(exercise.plannedReps)"
+                                bulkWeight = "\(Int(exercise.plannedWeight ?? 0))"
+                                showingBulkEdit = true
+                            }
+                            .font(.caption)
+                            .foregroundColor(.blue)
+                        }
                     }
                     
                     Spacer()
@@ -187,6 +201,20 @@ struct LoggingExerciseRowView: View {
                     isExpanded = false
                 }
             }
+        }
+        .alert("Edit All Sets", isPresented: $showingBulkEdit) {
+            TextField("Reps", text: $bulkReps)
+                .keyboardType(.numberPad)
+            TextField("Weight", text: $bulkWeight)
+                .keyboardType(.numberPad)
+            Button("Cancel", role: .cancel) {}
+            Button("Save") {
+                guard let reps = Int(bulkReps),
+                      let weight = Double(bulkWeight) else { return }
+                onBulkEditSets(reps, weight)
+            }
+        } message: {
+            Text("This will update the reps and weight for all sets in this exercise.")
         }
     }
     

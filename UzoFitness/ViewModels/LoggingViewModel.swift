@@ -45,6 +45,7 @@ enum LoggingIntent {
     case selectDay(Weekday)
     case startSession
     case editSet(exerciseID: UUID, setIndex: Int, reps: Int, weight: Double)
+    case bulkEditSets(exerciseID: UUID, reps: Int, weight: Double)
     case addSet(exerciseID: UUID)
     case toggleSetCompletion(exerciseID: UUID, setIndex: Int)
     case startRest(exerciseID: UUID, seconds: TimeInterval)
@@ -244,6 +245,9 @@ class LoggingViewModel: ObservableObject {
             
         case .editSet(let exerciseID, let setIndex, let reps, let weight):
             editSet(exerciseID: exerciseID, setIndex: setIndex, reps: reps, weight: weight)
+            
+        case .bulkEditSets(let exerciseID, let reps, let weight):
+            bulkEditSets(exerciseID: exerciseID, reps: reps, weight: weight)
             
         case .addSet(let exerciseID):
             addSet(exerciseID: exerciseID)
@@ -959,6 +963,36 @@ class LoggingViewModel: ObservableObject {
             AppLogger.info("[LoggingViewModel.editSet] Set updated successfully", category: "LoggingViewModel")
         } catch {
             AppLogger.error("[LoggingViewModel.editSet] Save error", category: "LoggingViewModel", error: error)
+            self.error = error
+        }
+    }
+    
+    private func bulkEditSets(exerciseID: UUID, reps: Int, weight: Double) {
+        AppLogger.info("[LoggingViewModel.bulkEditSets] Bulk editing sets for exercise: \(exerciseID)", category: "LoggingViewModel")
+        
+        guard let session = session,
+              let sessionExercise = session.sessionExercises.first(where: { $0.id == exerciseID }) else {
+            AppLogger.error("[LoggingViewModel.bulkEditSets] Exercise not found", category: "LoggingViewModel")
+            error = LoggingError.exerciseNotFound
+            return
+        }
+        
+        // Get ordered sets
+        let orderedSets = sessionExercise.completedSets.sorted(by: { $0.position < $1.position })
+        
+        // Update all existing sets with new reps and weight
+        for completedSet in orderedSets {
+            completedSet.reps = reps
+            completedSet.weight = weight
+        }
+        
+        updateExercisesUI()
+        
+        do {
+            try modelContext.save()
+            AppLogger.info("[LoggingViewModel.bulkEditSets] All sets updated successfully", category: "LoggingViewModel")
+        } catch {
+            AppLogger.error("[LoggingViewModel.bulkEditSets] Save error", category: "LoggingViewModel", error: error)
             self.error = error
         }
     }

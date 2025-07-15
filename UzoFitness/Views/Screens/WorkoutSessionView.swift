@@ -69,6 +69,13 @@ struct WorkoutSessionView: View {
                                         weight: weight
                                     ))
                                 },
+                                onBulkEditSets: { reps, weight in
+                                    viewModel.handleIntent(.bulkEditSets(
+                                        exerciseID: exercise.id,
+                                        reps: reps,
+                                        weight: weight
+                                    ))
+                                },
                                 onAddSet: {
                                     viewModel.handleIntent(.addSet(exerciseID: exercise.id))
                                 },
@@ -96,6 +103,13 @@ struct WorkoutSessionView: View {
                                 viewModel.handleIntent(.editSet(
                                     exerciseID: exercise.id,
                                     setIndex: setIndex,
+                                    reps: reps,
+                                    weight: weight
+                                ))
+                            },
+                            onBulkEditSets: { reps, weight in
+                                viewModel.handleIntent(.bulkEditSets(
+                                    exerciseID: exercise.id,
                                     reps: reps,
                                     weight: weight
                                 ))
