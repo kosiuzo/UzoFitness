@@ -243,7 +243,7 @@ struct LoggingContentView: View {
                 Button {
                     startWorkoutSession()
                 } label: {
-                    Text("Start Session")
+                    Text(viewModel.sessionButtonText)
                         .font(.headline)
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)

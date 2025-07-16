@@ -1,5 +1,6 @@
 import SwiftUI
 import Charts
+import Foundation
 
 struct ConsolidatedMetricChart: View {
     let title: String
@@ -55,26 +56,27 @@ struct ConsolidatedMetricChart: View {
     
     // MARK: - Consolidated Chart
     private var consolidatedChartView: some View {
-        Chart {
-            ForEach(Array(selectedMetrics), id: \.self) { metric in
-                ForEach(data[metric] ?? [], id: \.id) { dataPoint in
-                    LineMark(
-                        x: .value("Date", dataPoint.date),
-                        y: .value(metric.displayName, dataPoint.value)
-                    )
-                    .foregroundStyle(metric.color)
-                    .lineStyle(StrokeStyle(lineWidth: 2))
-                    
-                    PointMark(
-                        x: .value("Date", dataPoint.date),
-                        y: .value(metric.displayName, dataPoint.value)
-                    )
-                    .foregroundStyle(metric.color)
-                    .symbolSize(40)
-                }
-            }
+        Chart(chartData, id: \.id) { item in
+            LineMark(
+                x: .value("Date", item.date),
+                y: .value("Value", item.value)
+            )
+            .foregroundStyle(by: .value("Metric", item.metricName))
+            .lineStyle(StrokeStyle(lineWidth: 3))
+            .interpolationMethod(.catmullRom)
+            
+            PointMark(
+                x: .value("Date", item.date),
+                y: .value("Value", item.value)
+            )
+            .foregroundStyle(by: .value("Metric", item.metricName))
+            .symbolSize(60)
         }
         .frame(height: 300)
+        .chartForegroundStyleScale(
+            domain: Array(selectedMetrics).map { $0.displayName },
+            range: Array(selectedMetrics).map { $0.color }
+        )
         .chartXAxis {
             AxisMarks(values: .stride(by: .month)) { value in
                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
@@ -141,6 +143,25 @@ struct ConsolidatedMetricChart: View {
         }
     }
     
+    private var chartData: [ChartDataItem] {
+        var items: [ChartDataItem] = []
+        
+        for metric in selectedMetrics {
+            let dataPoints = data[metric] ?? []
+            for dataPoint in dataPoints {
+                items.append(ChartDataItem(
+                    id: UUID(),
+                    date: dataPoint.date,
+                    value: dataPoint.value,
+                    metricName: metric.displayName,
+                    metricType: metric
+                ))
+            }
+        }
+        
+        return items.sorted { $0.date < $1.date }
+    }
+    
     // MARK: - Helper Methods
     private func getLatestValue(for metric: MetricType) -> Double {
         return data[metric]?.last?.value ?? 0.0
@@ -152,6 +173,15 @@ struct ConsolidatedMetricChart: View {
         formatter.maximumFractionDigits = value.truncatingRemainder(dividingBy: 1) == 0 ? 0 : 1
         return formatter.string(from: NSNumber(value: value)) ?? "\(Int(value))"
     }
+}
+
+// MARK: - Chart Data Item
+struct ChartDataItem: Identifiable {
+    let id: UUID
+    let date: Date
+    let value: Double
+    let metricName: String
+    let metricType: MetricType
 }
 
 // MARK: - Metric Card Component
@@ -263,4 +293,4 @@ struct ConsolidatedMetricChart_Previews: PreviewProvider {
         
         return data
     }
-} 
+}
