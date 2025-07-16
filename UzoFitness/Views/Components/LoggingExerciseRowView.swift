@@ -43,15 +43,6 @@ struct LoggingExerciseRowView: View {
                             Text(exercise.name)
                                 .font(.headline)
                                 .foregroundColor(.primary)
-                            
-                            if let supersetID = exercise.supersetID,
-                               let getSupersetNumber = getSupersetNumber,
-                               let supersetNumber = getSupersetNumber(supersetID) {
-                                SupersetBadgeView(
-                                    supersetNumber: supersetNumber,
-                                    isHead: exercise.isSupersetHead
-                                )
-                            }
                         }
                         
                         Text("\(exercise.plannedSets) sets × \(exercise.plannedReps) reps")
@@ -84,6 +75,14 @@ struct LoggingExerciseRowView: View {
                             }
                         } else {
                             VStack(alignment: .trailing, spacing: 4) {
+                                if let supersetID = exercise.supersetID,
+                                   let getSupersetNumber = getSupersetNumber,
+                                   let supersetNumber = getSupersetNumber(supersetID) {
+                                    SupersetBadgeView(
+                                        supersetNumber: supersetNumber,
+                                        isHead: exercise.isSupersetHead
+                                    )
+                                }
                                 let completedSets = exercise.sets.filter { $0.isCompleted }.count
                                 let totalSets = exercise.sets.count
                                 
