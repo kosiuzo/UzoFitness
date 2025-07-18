@@ -61,7 +61,7 @@ public extension Weekday {
     }
 }
 
-public enum PhotoAngle: String, Codable, CaseIterable {
+public enum PhotoAngle: String, Codable, CaseIterable, Sendable {
   case front = "front"
   case side = "side"
   case back = "back"

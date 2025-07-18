@@ -7,34 +7,13 @@
 
 
 import HealthKit
+import UzoFitnessCore
 
 // MARK: - Protocols for Dependency Injection
-
-protocol HealthStoreProtocol {
-    func requestAuthorization(toShare typesToShare: Set<HKSampleType>?, read typesToRead: Set<HKObjectType>?, completion: @escaping @Sendable (Bool, Error?) -> Void)
-    func execute(_ query: HKQuery)
-}
-
-protocol CalendarProtocol {
-    func startOfDay(for date: Date) -> Date
-    func date(byAdding component: Calendar.Component, value: Int, to date: Date) -> Date?
-}
-
-protocol HealthKitTypeFactoryProtocol {
-    func quantityType(forIdentifier identifier: HKQuantityTypeIdentifier) -> HKQuantityType?
-}
+// (HealthStoreProtocol removed; now in UzoFitnessCore)
 
 // MARK: - Query Executor Protocol for Easier Testing
-
-protocol QueryExecutorProtocol {
-    func executeSampleQuery(
-        sampleType: HKSampleType,
-        predicate: NSPredicate?,
-        limit: Int,
-        sortDescriptors: [NSSortDescriptor],
-        completion: @escaping ([HKSample]?, Error?) -> Void
-    )
-}
+// (QueryExecutorProtocol removed; now in UzoFitnessCore)
 
 // MARK: - Protocol Extensions for Real Implementations
 
@@ -115,8 +94,8 @@ final class HealthKitManager {
     /// 1. Request read permission for bodyMass & bodyFatPercentage
     func requestAuthorization(completion: @Sendable @escaping (Bool, Error?) -> Void) {
         guard
-            let massType = typeFactory.quantityType(forIdentifier: .bodyMass),
-            let fatType = typeFactory.quantityType(forIdentifier: .bodyFatPercentage)
+            let massType = typeFactory.quantityType(forIdentifier: HKQuantityTypeIdentifier.bodyMass),
+            let fatType = typeFactory.quantityType(forIdentifier: HKQuantityTypeIdentifier.bodyFatPercentage)
         else {
             return completion(false, HealthKitError.typeUnavailable)
         }
@@ -165,7 +144,7 @@ extension HealthKitManager {
     private func fetchBodyMass(limit: Int,
                                predicate: NSPredicate?,
                                completion: @escaping (Double?, Error?) -> Void) {
-        guard let type = typeFactory.quantityType(forIdentifier: .bodyMass) else {
+        guard let type = typeFactory.quantityType(forIdentifier: HKQuantityTypeIdentifier.bodyMass) else {
             return completion(nil, HealthKitError.typeUnavailable)
         }
         let sort = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
@@ -180,7 +159,7 @@ extension HealthKitManager {
     private func fetchBodyFat(limit: Int,
                               predicate: NSPredicate?,
                               completion: @escaping (Double?, Error?) -> Void) {
-        guard let type = typeFactory.quantityType(forIdentifier: .bodyFatPercentage) else {
+        guard let type = typeFactory.quantityType(forIdentifier: HKQuantityTypeIdentifier.bodyFatPercentage) else {
             return completion(nil, HealthKitError.typeUnavailable)
         }
         let sort = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
@@ -195,7 +174,7 @@ extension HealthKitManager {
     /// Returns midnight-to-midnight bounds for a given date
     private func dayBounds(for date: Date) -> (start: Date, end: Date) {
         let start = calendar.startOfDay(for: date)
-        let end = calendar.date(byAdding: .day, value: 1, to: start)!
+        let end = calendar.date(byAdding: Calendar.Component.day, value: 1, to: start)!
         return (start, end)
     }
 }

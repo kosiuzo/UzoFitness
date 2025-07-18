@@ -71,12 +71,4 @@ struct HistoryWorkoutView: View {
     }
 }
 
-// MARK: - Date Formatter Extension
-extension DateFormatter {
-    static let fullDate: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .full
-        formatter.timeStyle = .short
-        return formatter
-    }()
-}
+// DateFormatter extensions moved to UzoFitnessCore

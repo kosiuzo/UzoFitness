@@ -45,10 +45,7 @@ struct WorkoutSessionSimpleCard: View {
     }
     
     private func formatVolume(_ volume: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        return (formatter.string(from: NSNumber(value: volume)) ?? "0") + " lbs"
+        return FormattingUtilities.formatVolume(volume) + " lbs"
     }
     
     private func formatDuration(_ duration: TimeInterval) -> String {

@@ -285,23 +285,4 @@ struct HistoryView: View {
     }
 }
 
-// MARK: - Date Formatters
-extension DateFormatter {
-    static let monthYear: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
-        return formatter
-    }()
-    
-    static let dayMonth: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM d"
-        return formatter
-    }()
-    
-    static let weekday: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE"
-        return formatter
-    }()
-}
+// DateFormatter extensions moved to UzoFitnessCore

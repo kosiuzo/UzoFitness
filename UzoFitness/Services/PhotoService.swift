@@ -13,48 +13,9 @@ import Photos
 import UzoFitnessCore
 
 // MARK: - Protocols for Dependency Injection
-
-/// Protocol for photo library operations
-protocol PhotoLibraryServiceProtocol {
-    func authorizationStatus() async -> PHAuthorizationStatus
-    func requestAuthorization() async -> PHAuthorizationStatus
-    func saveImage(_ image: UIImage) async throws
-}
-
-/// Protocol for file system operations
-protocol FileSystemServiceProtocol {
-    func cacheDirectory() throws -> URL
-    func writeData(_ data: Data, to url: URL) throws
-}
-
-/// Protocol for image picking operations
-protocol ImagePickerServiceProtocol {
-    @MainActor func pickImage() async -> UIImage?
-}
-
-/// Protocol for SwiftData operations
-protocol DataPersistenceServiceProtocol {
-    func insert(_ object: Any) throws
-    func save() throws
-}
+// (FileSystemServiceProtocol, ImagePickerServiceProtocol, DataPersistenceServiceProtocol removed; now in UzoFitnessCore)
 
 // MARK: - Default Implementations
-
-final class DefaultPhotoLibraryService: PhotoLibraryServiceProtocol {
-    func authorizationStatus() async -> PHAuthorizationStatus {
-        PHPhotoLibrary.authorizationStatus(for: .addOnly)
-    }
-    
-    func requestAuthorization() async -> PHAuthorizationStatus {
-        await PHPhotoLibrary.requestAuthorization(for: .addOnly)
-    }
-    
-    func saveImage(_ image: UIImage) async throws {
-        try await PHPhotoLibrary.shared().performChanges {
-            PHAssetChangeRequest.creationRequestForAsset(from: image)
-        }
-    }
-}
 
 final class DefaultFileSystemService: FileSystemServiceProtocol {
     /// Returns a persistent directory for storing progress photos.
@@ -87,10 +48,10 @@ final class DefaultFileSystemService: FileSystemServiceProtocol {
     }
 }
 
+@MainActor
 final class DefaultImagePickerService: NSObject, ImagePickerServiceProtocol {
     private var pickerContinuation: CheckedContinuation<UIImage?, Never>?
     
-    @MainActor
     func pickImage() async -> UIImage? {
         await withCheckedContinuation { continuation in
             pickerContinuation = continuation
@@ -147,27 +108,33 @@ final class DefaultDataPersistenceService: DataPersistenceServiceProtocol {
     }
 }
 
+// Placeholder service that will be replaced with the real implementation
+final class PlaceholderImagePickerService: ImagePickerServiceProtocol {
+    func pickImage() async -> UIImage? {
+        // This should never be called directly
+        fatalError("PlaceholderImagePickerService should be replaced with DefaultImagePickerService")
+    }
+}
+
 // MARK: - Refactored PhotoService
 
 /// Service for picking, caching, persisting, and exporting progress photos.
 final class PhotoService {
-    private let photoLibraryService: PhotoLibraryServiceProtocol
     private let fileSystemService: FileSystemServiceProtocol
-    private let imagePickerService: ImagePickerServiceProtocol
+    private var imagePickerService: ImagePickerServiceProtocol
     private let dataPersistenceService: DataPersistenceServiceProtocol
 
     init(
-        photoLibraryService: PhotoLibraryServiceProtocol = DefaultPhotoLibraryService(),
         fileSystemService: FileSystemServiceProtocol = DefaultFileSystemService(),
         imagePickerService: ImagePickerServiceProtocol? = nil,
         dataPersistenceService: DataPersistenceServiceProtocol
     ) {
-        self.photoLibraryService = photoLibraryService
         self.fileSystemService = fileSystemService
         if let imagePickerService = imagePickerService {
             self.imagePickerService = imagePickerService
         } else {
-            self.imagePickerService = DefaultImagePickerService()
+            // Create a placeholder that will be replaced on first use
+            self.imagePickerService = PlaceholderImagePickerService()
         }
         self.dataPersistenceService = dataPersistenceService
     }
@@ -176,10 +143,10 @@ final class PhotoService {
 
     /// Ensure the app has permission to add assets to user's photo library.
     func requestPhotoLibraryAuthorization() async -> PHAuthorizationStatus {
-        let status = await photoLibraryService.authorizationStatus()
+        let status = PHPhotoLibrary.authorizationStatus(for: .addOnly)
         switch status {
         case .notDetermined:
-            return await photoLibraryService.requestAuthorization()
+            return await PHPhotoLibrary.requestAuthorization(for: .addOnly)
         default:
             return status
         }
@@ -193,7 +160,9 @@ final class PhotoService {
         guard status == .authorized || status == .limited else {
             throw PhotoServiceError.authorizationDenied
         }
-        try await photoLibraryService.saveImage(image)
+        try await PHPhotoLibrary.shared().performChanges {
+            PHAssetChangeRequest.creationRequestForAsset(from: image)
+        }
     }
 
     // MARK: - Image Picking (Upload from library)
@@ -201,7 +170,11 @@ final class PhotoService {
     /// Present PHPicker UI and return the selected image (async/await).
     @MainActor
     func pickImage() async -> UIImage? {
-        await imagePickerService.pickImage()
+        // Replace placeholder with real implementation if needed
+        if imagePickerService is PlaceholderImagePickerService {
+            imagePickerService = DefaultImagePickerService()
+        }
+        return await imagePickerService.pickImage()
     }
 
     // MARK: - Cache & Persist

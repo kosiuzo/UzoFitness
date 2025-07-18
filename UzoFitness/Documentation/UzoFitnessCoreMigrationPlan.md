@@ -35,9 +35,9 @@ This document outlines the step-by-step process to create and integrate a new `U
     - [x] UzoFitness/ViewModels/LoggingViewModel.swift
     - [x] UzoFitness/ViewModels/ProgressViewModel.swift
     - [x] UzoFitness/ViewModels/HistoryViewModel.swift
-    - [ ] (Any other ViewModels or files referencing models)
-    - [ ] (Any SwiftUI Views referencing models directly)
-- [ ] Build the project to verify
+    - [x] (Any other ViewModels or files referencing models)
+    - [x] (Any SwiftUI Views referencing models directly)
+- [x] Build the project to verify
 
 ---
 
@@ -53,11 +53,23 @@ This document outlines the step-by-step process to create and integrate a new `U
 
 **Checklist:**
 - [x] Create Services directory in UzoFitnessCore
-- [ ] Move HealthStoreProtocol to UzoFitnessCore
-- [ ] Move PhotoServiceProtocol to UzoFitnessCore
-- [ ] Move other service protocols to UzoFitnessCore
-- [ ] Refactor references to use protocols from UzoFitnessCore
-- [ ] Build the project to verify
+- [x] Move HealthStoreProtocol to UzoFitnessCore
+- [x] Move PhotoServiceProtocol to UzoFitnessCore
+- [x] Move other service protocols to UzoFitnessCore
+- [x] Refactor references to use protocols from UzoFitnessCore
+- [x] Build the project to verify
+
+**Status:** ✅ **COMPLETED** - All service protocols have been successfully moved to UzoFitnessCore and the project builds successfully. The following protocols were moved:
+- HealthStoreProtocol
+- PhotoServiceProtocol  
+- FileSystemServiceProtocol
+- ImagePickerServiceProtocol
+- DataPersistenceServiceProtocol
+- QueryExecutorProtocol
+- CalendarProtocol
+- HealthKitTypeFactoryProtocol
+
+All references have been updated to use the protocols from UzoFitnessCore, and compilation errors have been resolved.
 
 ---
 
@@ -67,10 +79,17 @@ This document outlines the step-by-step process to create and integrate a new `U
 - **Remove or refactor any UIKit/SwiftUI dependencies** from these utilities.
 
 **Checklist:**
-- [ ] Move Logger.swift to UzoFitnessCore
-- [ ] Move other non-UI utilities to UzoFitnessCore
-- [ ] Refactor references to use utilities from UzoFitnessCore
-- [ ] Build the project to verify
+- [x] Move Logger.swift to UzoFitnessCore
+- [x] Move other non-UI utilities to UzoFitnessCore
+- [x] Refactor references to use utilities from UzoFitnessCore
+- [x] Build the project to verify
+
+**Status:** ✅ **COMPLETED** - All non-UI utilities have been successfully moved to UzoFitnessCore and the project builds successfully. The following utilities were moved:
+- Logger.swift (already moved)
+- DateFormatters.swift (new shared DateFormatter extensions)
+- FormattingUtilities.swift (new shared formatting functions for weight, volume, time, etc.)
+
+All references have been updated to use the utilities from UzoFitnessCore, and compilation errors have been resolved. The formatting utilities provide reusable functions for weight, volume, time, and duration formatting that can be shared between iOS and watchOS apps.
 
 ---
 
