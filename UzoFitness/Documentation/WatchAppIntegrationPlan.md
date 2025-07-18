@@ -24,7 +24,7 @@ The plan covers architecture, product requirements (PRDs), and necessary restruc
 - **Protocols**: Define protocols for services (e.g., WorkoutSessionServiceProtocol) to allow for dependency injection and mocking.
 
 ### 1.3. State Synchronization
-- **App Groups**: Use App Groups to share data between iOS and watchOS apps securely.
+- **App Groups**: Use App Groups (specifically, `group.com.yourname.UzoFitness`) to share data between iOS and watchOS apps securely.
 - **WatchConnectivity**: Use `WatchConnectivity` framework for real-time state sync (e.g., current exercise, set completion, rest timer events).
 - **Background Sync**: Implement background transfer for reliability if the watch is out of range.
 
@@ -68,7 +68,7 @@ The plan covers architecture, product requirements (PRDs), and necessary restruc
 - **Create Shared Module**: Move models, services, and business logic to `UzoFitnessCore` (Swift Package or static framework).
 - **Refactor Models**: Ensure all workout/session/exercise models conform to protocols and are serializable (Codable).
 - **Abstract Services**: Define protocols for session management, timer, and sync services.
-- **App Group Setup**: Configure App Groups in both targets for shared storage.
+- **App Group Setup**: Configure App Groups (use `group.com.yourname.UzoFitness`) in both targets for shared storage.
 
 ### 3.2. Watch App Target
 - **Add watchOS target**: Use Xcode’s template for a new watchOS app with SwiftUI.
@@ -82,7 +82,7 @@ The plan covers architecture, product requirements (PRDs), and necessary restruc
     - Background transfer for reliability
     - Handle conflicts and merge state
     - Ensure starting a workout session from the watch updates the iOS app and vice versa
-- **Shared Storage**: Use UserDefaults (with App Groups) or file-based storage for persistent state
+- **Shared Storage**: Use UserDefaults (with App Groups, i.e., `group.com.yourname.UzoFitness`) or file-based storage for persistent state
 - **Sync Logic**: Ensure marking a set complete or starting a timer updates both devices
 
 ### 3.4. Testing & QA
