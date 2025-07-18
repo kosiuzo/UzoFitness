@@ -1,4 +1,5 @@
 import SwiftUI
+import UzoFitnessCore
 
 // MARK: - Simple Workout Session Card
 struct WorkoutSessionSimpleCard: View {

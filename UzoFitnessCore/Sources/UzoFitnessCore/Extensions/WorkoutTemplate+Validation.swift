@@ -9,7 +9,7 @@ import SwiftData
 
 extension WorkoutTemplate {
     /// Validates that this template's name is unique in the context
-    func validateUniqueness(in context: ModelContext) throws {
+    public func validateUniqueness(in context: ModelContext) throws {
         let descriptor = FetchDescriptor<WorkoutTemplate>()
         let existing = try context.fetch(descriptor)
         
@@ -41,7 +41,7 @@ extension WorkoutTemplate {
     }
     
     /// Validates all business rules for this template
-    func validate(in context: ModelContext) throws {
+    public func validate(in context: ModelContext) throws {
         // Validate name format first
         try validateName()
         
@@ -53,13 +53,13 @@ extension WorkoutTemplate {
     }
     
     /// Convenience method to validate and save
-    func validateAndSave(in context: ModelContext) throws {
+    public func validateAndSave(in context: ModelContext) throws {
         try validate(in: context)
         try context.save()
     }
     
     /// Convenience method to validate before insert and save
-    static func createAndSave(
+    public static func createAndSave(
         name: String,
         summary: String = "",
         in context: ModelContext

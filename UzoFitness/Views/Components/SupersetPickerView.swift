@@ -1,4 +1,5 @@
 import SwiftUI
+import UzoFitnessCore
 
 struct SupersetPickerView: View {
     let exerciseTemplate: ExerciseTemplate

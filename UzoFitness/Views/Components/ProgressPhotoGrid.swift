@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import UzoFitnessCore
 
 // This view now correctly uses Application Support for storage, ensuring photos are persistent.
 struct ProgressPhotoGrid: View {

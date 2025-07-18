@@ -1,4 +1,5 @@
 import SwiftUI
+import UzoFitnessCore
 
 struct WorkoutPlanEditorView: View {
     let plan: WorkoutPlan

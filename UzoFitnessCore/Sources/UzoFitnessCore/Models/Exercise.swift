@@ -2,26 +2,26 @@ import Foundation
 import SwiftData
 
 @Model
-final class Exercise: Identified, Codable {
+public final class Exercise: Identified, Codable {
     // MARK: Stored
-    @Attribute(.unique) var id: UUID
-    @Attribute(.unique) var name: String
-    @Attribute var category: ExerciseCategory
-    @Attribute var instructions: String
-    @Attribute var mediaAssetID: String?
+    @Attribute(.unique) public var id: UUID
+    @Attribute(.unique) public var name: String
+    @Attribute public var category: ExerciseCategory
+    @Attribute public var instructions: String
+    @Attribute public var mediaAssetID: String?
     
     // MARK: - Cached Last Used Values
-    @Attribute var lastUsedWeight: Double?
-    @Attribute var lastUsedReps: Int?
-    @Attribute var lastTotalVolume: Double?
-    @Attribute var lastUsedDate: Date?
+    @Attribute public var lastUsedWeight: Double?
+    @Attribute public var lastUsedReps: Int?
+    @Attribute public var lastTotalVolume: Double?
+    @Attribute public var lastUsedDate: Date?
     
     // MARK: Relationships
-    @Relationship var completedSets: [CompletedSet]
-    @Relationship var performedRecords: [PerformedExercise] = []
+    @Relationship public var completedSets: [CompletedSet]
+    @Relationship public var performedRecords: [PerformedExercise] = []
 
     // MARK: Init
-    init(
+    public init(
         id: UUID = UUID(),
         name: String,
         category: ExerciseCategory,
@@ -46,11 +46,11 @@ final class Exercise: Identified, Codable {
     }
     
     // MARK: - Codable Implementation
-    enum CodingKeys: CodingKey {
+    public enum CodingKeys: CodingKey {
         case id, name, category, instructions, mediaAssetID
     }
     
-    func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
         try container.encode(name, forKey: .name)
@@ -59,7 +59,7 @@ final class Exercise: Identified, Codable {
         try container.encodeIfPresent(mediaAssetID, forKey: .mediaAssetID)
     }
     
-    required init(from decoder: Decoder) throws {
+    public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         // Handle missing ID by generating a new UUID
         self.id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()

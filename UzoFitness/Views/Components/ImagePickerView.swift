@@ -5,6 +5,8 @@ import PhotosUI
 import UIKit
 #endif
 
+import UzoFitnessCore
+
 struct ImagePickerView: View {
     let onImageSelected: (UIImage) -> Void
     @Environment(\.dismiss) private var dismiss

@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftData
 // Import new components
 import Foundation
+import UzoFitnessCore
 
 struct HistoryView: View {
     @Environment(\.modelContext) private var modelContext

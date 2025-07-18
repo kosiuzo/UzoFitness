@@ -1,10 +1,7 @@
 import SwiftUI
 import Photos
-@testable import UzoFitness
-// Explicitly import types from their files
-// If using a project without modules, use @testable import UzoFitness if needed
-// Otherwise, add file-level imports for clarity
-// These are for type resolution only
+import UzoFitnessCore
+
 
 struct GalleryPresentation: Identifiable {
     let id = UUID()

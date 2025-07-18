@@ -3,6 +3,7 @@ import OSLog
 import SwiftData
 import Combine
 import OSLog
+import UzoFitnessCore
 
 @MainActor
 class LibraryViewModel: ObservableObject {

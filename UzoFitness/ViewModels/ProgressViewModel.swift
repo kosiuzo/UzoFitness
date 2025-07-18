@@ -3,6 +3,7 @@ import SwiftData
 import Combine
 import UIKit
 import HealthKit
+import UzoFitnessCore
 
 // MARK: - ExerciseTrend Helper Struct
 struct ExerciseTrend: Identifiable, Hashable {

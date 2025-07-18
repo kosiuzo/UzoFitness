@@ -9,28 +9,28 @@
 // MARK: - ExerciseTemplate + Helper Methods
 extension ExerciseTemplate {
     /// Validates specific reps value without creating an instance
-    static func isValidReps(_ reps: Int) -> Bool {
+    public static func isValidReps(_ reps: Int) -> Bool {
         return reps >= 1
     }
     
     /// Validates specific set count value without creating an instance
-    static func isValidSetCount(_ setCount: Int) -> Bool {
+    public static func isValidSetCount(_ setCount: Int) -> Bool {
         return setCount >= 1
     }
     
     /// Validates specific weight value without creating an instance
-    static func isValidWeight(_ weight: Double?) -> Bool {
+    public static func isValidWeight(_ weight: Double?) -> Bool {
         guard let weight = weight else { return true } // nil is valid
         return weight >= 0
     }
     
     /// Validates specific position value without creating an instance
-    static func isValidPosition(_ position: Double) -> Bool {
+    public static func isValidPosition(_ position: Double) -> Bool {
         return position > 0
     }
     
     /// Validates all parameters without creating an instance
-    static func areParametersValid(
+    public static func areParametersValid(
         setCount: Int,
         reps: Int,
         weight: Double? = nil,
@@ -66,7 +66,7 @@ extension ExerciseTemplate {
     }
     
     /// Safely updates reps with validation
-    func updateReps(_ newReps: Int) throws {
+    public func updateReps(_ newReps: Int) throws {
         let oldReps = self.reps
         self.reps = newReps
         
@@ -80,7 +80,7 @@ extension ExerciseTemplate {
     }
     
     /// Safely updates set count with validation
-    func updateSetCount(_ newSetCount: Int) throws {
+    public func updateSetCount(_ newSetCount: Int) throws {
         let oldSetCount = self.setCount
         self.setCount = newSetCount
         
@@ -94,7 +94,7 @@ extension ExerciseTemplate {
     }
     
     /// Safely updates weight with validation
-    func updateWeight(_ newWeight: Double?) throws {
+    public func updateWeight(_ newWeight: Double?) throws {
         let oldWeight = self.weight
         self.weight = newWeight
         
@@ -108,7 +108,7 @@ extension ExerciseTemplate {
     }
     
     /// Safely updates position with validation
-    func updatePosition(_ newPosition: Double) throws {
+    public func updatePosition(_ newPosition: Double) throws {
         let oldPosition = self.position
         self.position = newPosition
         

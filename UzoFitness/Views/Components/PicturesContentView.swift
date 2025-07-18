@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import UzoFitnessCore
 #if canImport(UIKit)
 import UIKit
 #endif

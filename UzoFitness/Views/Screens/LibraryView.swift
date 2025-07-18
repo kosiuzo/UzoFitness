@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UzoFitnessCore
 // Import extracted components
 
 struct LibraryView: View {

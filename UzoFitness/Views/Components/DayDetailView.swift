@@ -1,4 +1,5 @@
 import SwiftUI
+import UzoFitnessCore
 
 struct DayDetailView: View {
     let dayTemplate: DayTemplate

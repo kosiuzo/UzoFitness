@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import UzoFitnessCore
 
 struct MainTabView: View {
     var body: some View {

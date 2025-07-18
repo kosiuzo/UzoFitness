@@ -1,4 +1,5 @@
 import SwiftUI
+import UzoFitnessCore
 
 struct RestWorkoutCapsuleButton: View {
     let isRest: Bool

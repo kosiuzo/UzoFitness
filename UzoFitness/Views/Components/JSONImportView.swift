@@ -1,5 +1,8 @@
 import SwiftUI
+import UniformTypeIdentifiers
+import UzoFitnessCore
 import OSLog
+
 
 struct JSONImportView: View {
     @State private var jsonText: String = """

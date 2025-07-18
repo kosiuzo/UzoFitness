@@ -1,4 +1,5 @@
 import SwiftUI
+import UzoFitnessCore
 
 struct WorkoutSessionView: View {
     @ObservedObject var viewModel: LoggingViewModel

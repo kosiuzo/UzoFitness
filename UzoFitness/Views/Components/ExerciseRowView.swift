@@ -1,4 +1,5 @@
 import SwiftUI
+import UzoFitnessCore
 
 struct ExerciseRowView: View {
     let exercise: Exercise

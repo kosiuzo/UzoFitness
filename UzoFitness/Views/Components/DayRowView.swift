@@ -1,4 +1,5 @@
 import SwiftUI
+import UzoFitnessCore
 
 struct DayRowView: View {
     let weekday: Weekday

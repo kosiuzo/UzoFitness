@@ -2,30 +2,30 @@ import Foundation
 import SwiftData
 
 @Model
-final class SessionExercise: Identified, Timestamped {
-    @Attribute(.unique) var id: UUID
-    @Relationship var exercise: Exercise
+public final class SessionExercise: Identified, Timestamped, Codable {
+    @Attribute(.unique) public var id: UUID
+    @Relationship public var exercise: Exercise
     
-    @Attribute var plannedSets: Int
-    @Attribute var plannedReps: Int
-    @Attribute var plannedWeight: Double?
-    @Attribute var position: Double
-    @Attribute var supersetID: UUID?
+    @Attribute public var plannedSets: Int
+    @Attribute public var plannedReps: Int
+    @Attribute public var plannedWeight: Double?
+    @Attribute public var position: Double
+    @Attribute public var supersetID: UUID?
     
     // Previous session data for comparison
-    @Attribute var previousTotalVolume: Double?
-    @Attribute var previousSessionDate: Date?
+    @Attribute public var previousTotalVolume: Double?
+    @Attribute public var previousSessionDate: Date?
     
     // Session-runtime state
-    @Attribute var currentSet: Int
-    @Attribute var isCompleted: Bool
-    @Attribute var restTimer: TimeInterval?
-    @Attribute var createdAt: Date
+    @Attribute public var currentSet: Int
+    @Attribute public var isCompleted: Bool
+    @Attribute public var restTimer: TimeInterval?
+    @Attribute public var createdAt: Date
     
-    @Relationship var session: WorkoutSession?
-    @Relationship(inverse: \CompletedSet.sessionExercise) var completedSets: [CompletedSet]
+    @Relationship public var session: WorkoutSession?
+    @Relationship(inverse: \CompletedSet.sessionExercise) public var completedSets: [CompletedSet]
 
-    var totalVolume: Double {
+    public var totalVolume: Double {
         completedSets.reduce(0) {
             $0 + (Double($1.reps) * $1.weight)
         }
@@ -45,7 +45,7 @@ final class SessionExercise: Identified, Timestamped {
         return ((currentVolume - previousVolume) / previousVolume) * 100
     }
 
-    init(
+    public init(
         id: UUID = UUID(),
         exercise: Exercise,
         plannedSets: Int,
@@ -113,5 +113,45 @@ final class SessionExercise: Identified, Timestamped {
         exercise.lastUsedDate = session?.date ?? createdAt
         
         AppLogger.info("[SessionExercise.updateExerciseCacheOnCompletion] Updated cache - Weight: \(exercise.lastUsedWeight ?? 0), Reps: \(exercise.lastUsedReps ?? 0), Volume: \(exercise.lastTotalVolume ?? 0)", category: "SessionExercise")
+    }
+    
+    // MARK: - Codable Implementation
+    enum CodingKeys: CodingKey {
+        case id, plannedSets, plannedReps, plannedWeight, position, supersetID, previousTotalVolume, previousSessionDate, currentSet, isCompleted, restTimer, createdAt
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(plannedSets, forKey: .plannedSets)
+        try container.encode(plannedReps, forKey: .plannedReps)
+        try container.encode(plannedWeight, forKey: .plannedWeight)
+        try container.encode(position, forKey: .position)
+        try container.encode(supersetID, forKey: .supersetID)
+        try container.encode(previousTotalVolume, forKey: .previousTotalVolume)
+        try container.encode(previousSessionDate, forKey: .previousSessionDate)
+        try container.encode(currentSet, forKey: .currentSet)
+        try container.encode(isCompleted, forKey: .isCompleted)
+        try container.encode(restTimer, forKey: .restTimer)
+        try container.encode(createdAt, forKey: .createdAt)
+    }
+    
+    public required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(UUID.self, forKey: .id)
+        self.plannedSets = try container.decode(Int.self, forKey: .plannedSets)
+        self.plannedReps = try container.decode(Int.self, forKey: .plannedReps)
+        self.plannedWeight = try container.decodeIfPresent(Double.self, forKey: .plannedWeight)
+        self.position = try container.decode(Double.self, forKey: .position)
+        self.supersetID = try container.decodeIfPresent(UUID.self, forKey: .supersetID)
+        self.previousTotalVolume = try container.decodeIfPresent(Double.self, forKey: .previousTotalVolume)
+        self.previousSessionDate = try container.decodeIfPresent(Date.self, forKey: .previousSessionDate)
+        self.currentSet = try container.decode(Int.self, forKey: .currentSet)
+        self.isCompleted = try container.decode(Bool.self, forKey: .isCompleted)
+        self.restTimer = try container.decodeIfPresent(TimeInterval.self, forKey: .restTimer)
+        self.createdAt = try container.decode(Date.self, forKey: .createdAt)
+        self.exercise = Exercise(id: UUID(), name: "", category: .strength) // Placeholder, should be set after decoding
+        self.session = nil
+        self.completedSets = []
     }
 }

@@ -10,7 +10,7 @@ import SwiftData
 
 extension ExerciseTemplate {
     /// Validates reps value
-     func validateReps() throws {
+    public func validateReps() throws {
         guard reps >= 1 else {
             if reps == 0 {
                 throw ValidationError.zeroReps
@@ -21,7 +21,7 @@ extension ExerciseTemplate {
     }
     
     /// Validates set count value
-     func validateSetCount() throws {
+    public func validateSetCount() throws {
         guard setCount >= 1 else {
             if setCount == 0 {
                 throw ValidationError.zeroSets
@@ -32,7 +32,7 @@ extension ExerciseTemplate {
     }
     
     /// Validates weight value (if provided)
-     func validateWeight() throws {
+    public func validateWeight() throws {
         if let weight = weight {
             guard weight >= 0 else {
                 throw ValidationError.negativeWeight(weight)
@@ -41,14 +41,14 @@ extension ExerciseTemplate {
     }
     
     /// Validates position value
-     func validatePosition() throws {
+    public func validatePosition() throws {
         guard position > 0 else {
             throw ValidationError.invalidPosition(position)
         }
     }
     
     /// Validates all business rules for this exercise template
-    func validate() throws {
+    public func validate() throws {
         try validateReps()
         try validateSetCount()
         try validateWeight()
@@ -56,13 +56,13 @@ extension ExerciseTemplate {
     }
     
     /// Convenience method to validate and save
-    func validateAndSave(in context: ModelContext) throws {
+    public func validateAndSave(in context: ModelContext) throws {
         try validate()
         try context.save()
     }
     
     /// Convenience method to validate before insert and save
-    static func createAndSave(
+    public static func createAndSave(
         exercise: Exercise,
         setCount: Int,
         reps: Int,

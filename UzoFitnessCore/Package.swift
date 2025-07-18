@@ -5,6 +5,10 @@ import PackageDescription
 
 let package = Package(
     name: "UzoFitnessCore",
+    platforms: [
+        .iOS(.v17), // <-- Set minimum to iOS 17
+        .watchOS(.v10) // or whatever is appropriate
+    ],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(

@@ -1,4 +1,5 @@
 import SwiftUI
+import UzoFitnessCore
 
 struct CheckmarkToggleStyle: ToggleStyle {
     func makeBody(configuration: Configuration) -> some View {

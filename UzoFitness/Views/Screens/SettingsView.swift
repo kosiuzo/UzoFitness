@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UzoFitnessCore
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var context

@@ -1,6 +1,7 @@
 import SwiftUI
 import Charts
 import Foundation
+import UzoFitnessCore
 
 struct ConsolidatedMetricChart: View {
     let title: String

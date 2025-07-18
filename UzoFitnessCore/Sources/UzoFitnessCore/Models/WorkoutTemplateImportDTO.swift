@@ -4,18 +4,18 @@ import SwiftData
 // MARK: - Data Transfer Objects for JSON Import
 
 /// Data Transfer Object for importing workout templates from JSON
-struct WorkoutTemplateImportDTO: Codable {
-    let name: String
-    let summary: String
-    let createdAt: Date?
-    let days: [DayImportDTO]
+public struct WorkoutTemplateImportDTO: Codable {
+    public let name: String
+    public let summary: String
+    public let createdAt: Date?
+    public let days: [DayImportDTO]
     
-    enum CodingKeys: String, CodingKey {
+    public enum CodingKeys: String, CodingKey {
         case name, summary, createdAt, days
     }
     
     /// Validates the imported data for consistency and completeness
-    func validate() throws {
+    public func validate() throws {
         AppLogger.debug("[WorkoutTemplateImportDTO.validate] Starting validation", category: "WorkoutTemplateImport")
         
         guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -44,18 +44,18 @@ struct WorkoutTemplateImportDTO: Codable {
 }
 
 /// Data Transfer Object for importing day templates from JSON
-struct DayImportDTO: Codable {
-    let dayIndex: Int?  // Optional for backward compatibility
-    let dayName: String?  // New field for day names
-    let name: String
-    let exercises: [ExerciseImportDTO]
+public struct DayImportDTO: Codable {
+    public let dayIndex: Int?  // Optional for backward compatibility
+    public let dayName: String?  // New field for day names
+    public let name: String
+    public let exercises: [ExerciseImportDTO]
     
-    enum CodingKeys: String, CodingKey {
+    public enum CodingKeys: String, CodingKey {
         case dayIndex, dayName, name, exercises
     }
     
     /// Computed property to get the weekday from either dayIndex or dayName
-    var weekday: Weekday? {
+    public var weekday: Weekday? {
         // First try to use dayName if provided
         if let dayName = dayName {
             return Weekday.from(string: dayName)
@@ -70,7 +70,7 @@ struct DayImportDTO: Codable {
     }
     
     /// Validates the imported day data
-    func validate() throws {
+    public func validate() throws {
         AppLogger.debug("[DayImportDTO.validate] Starting validation for day: \(name)", category: "WorkoutTemplateImport")
         
         guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -106,19 +106,19 @@ struct DayImportDTO: Codable {
 }
 
 /// Data Transfer Object for importing exercise templates from JSON
-struct ExerciseImportDTO: Codable {
-    let name: String
-    let sets: Int
-    let reps: Int
-    let weight: Double?
-    let supersetGroup: Int?
+public struct ExerciseImportDTO: Codable {
+    public let name: String
+    public let sets: Int
+    public let reps: Int
+    public let weight: Double?
+    public let supersetGroup: Int?
     
-    enum CodingKeys: String, CodingKey {
+    public enum CodingKeys: String, CodingKey {
         case name, sets, reps, weight, supersetGroup
     }
     
     /// Validates the imported exercise data
-    func validate() throws {
+    public func validate() throws {
         AppLogger.debug("[ExerciseImportDTO.validate] Starting validation for exercise: \(name)", category: "WorkoutTemplateImport")
         
         guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -147,7 +147,7 @@ struct ExerciseImportDTO: Codable {
 
 // MARK: - Import Errors
 
-enum ImportError: Error, LocalizedError {
+public enum ImportError: Error, LocalizedError {
     case emptyTemplateName
     case templateNameTooLong(Int)
     case noDaysProvided
@@ -166,7 +166,7 @@ enum ImportError: Error, LocalizedError {
     case jsonDecodingFailed(Error)
     case duplicateTemplate(String)
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .emptyTemplateName:
             return "Template name cannot be empty"

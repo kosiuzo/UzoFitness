@@ -1,0 +1,21 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "sweetpad",
+			"action": "debugging-build",
+			"problemMatcher": [
+				"$sweetpad-watch",
+				"$sweetpad-xcodebuild-default",
+				"$sweetpad-xcbeautify-errors",
+				"$sweetpad-xcbeautify-warnings"
+			],
+			"label": "sweetpad: debugging-build",
+			"detail": "Build the app (for debugging)",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		}
+	]
+}

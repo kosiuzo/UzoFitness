@@ -1,17 +1,17 @@
 import Foundation
 
-enum ExerciseCategory: String, Codable, CaseIterable {
+public enum ExerciseCategory: String, Codable, CaseIterable {
   case strength = "strength"
   case cardio = "cardio"
   case mobility = "mobility"
   case balance = "balance"
 }
 
-enum Weekday: Int, Codable, CaseIterable {
+public enum Weekday: Int, Codable, CaseIterable {
   case sunday = 1, monday, tuesday, wednesday, thursday, friday, saturday
 }
 
-extension Weekday {
+public extension Weekday {
     var abbreviation: String {
         switch self {
         case .sunday: return "SUN"
@@ -37,7 +37,7 @@ extension Weekday {
     }
     
     /// Creates a Weekday from a string representation (case-insensitive)
-    static func from(string: String) -> Weekday? {
+    public static func from(string: String) -> Weekday? {
         let lowercased = string.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         
         switch lowercased {
@@ -61,13 +61,13 @@ extension Weekday {
     }
 }
 
-enum PhotoAngle: String, Codable, CaseIterable {
+public enum PhotoAngle: String, Codable, CaseIterable {
   case front = "front"
   case side = "side"
   case back = "back"
 }
 
-extension PhotoAngle {
+public extension PhotoAngle {
     var displayName: String {
         switch self {
         case .front: return "Front"
@@ -78,7 +78,7 @@ extension PhotoAngle {
 }
 
 // MARK: - Validation Error Types
-enum ValidationError: Error, LocalizedError {
+public enum ValidationError: Error, LocalizedError {
     case duplicateWorkoutTemplateName(String)
     case emptyWorkoutTemplateName
     case workoutTemplateNameTooLong(Int)
@@ -90,7 +90,7 @@ enum ValidationError: Error, LocalizedError {
     case zeroSets
     case custom(String)
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .duplicateWorkoutTemplateName(let name):
             return "A workout template with name '\(name)' already exists"

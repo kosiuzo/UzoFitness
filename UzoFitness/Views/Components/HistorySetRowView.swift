@@ -1,4 +1,5 @@
 import SwiftUI
+import UzoFitnessCore
 
 struct HistorySetRowView: View {
     let setNumber: Int

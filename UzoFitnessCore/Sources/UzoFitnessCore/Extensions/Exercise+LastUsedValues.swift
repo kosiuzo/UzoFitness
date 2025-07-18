@@ -9,7 +9,7 @@
 // MARK: - Last Used Values Management
 extension Exercise {
     /// Updates the cached last used values based on the most recent completed session
-    func updateLastUsedValues() {
+    public func updateLastUsedValues() {
         AppLogger.debug("[Exercise.updateLastUsedValues] Updating cached values for: \(name)", category: "Exercise")
         
         // Find the most recent session exercise with completed sets
@@ -45,7 +45,7 @@ extension Exercise {
     }
     
     /// Returns suggested starting values for a new session exercise
-    var suggestedStartingValues: (weight: Double?, reps: Int?, totalVolume: Double?) {
+    public var suggestedStartingValues: (weight: Double?, reps: Int?, totalVolume: Double?) {
         return (lastUsedWeight, lastUsedReps, lastTotalVolume)
     }
 }

@@ -1,4 +1,5 @@
 import SwiftUI
+import UzoFitnessCore
 
 // MARK: - Set Row View
 struct SetRowView: View {

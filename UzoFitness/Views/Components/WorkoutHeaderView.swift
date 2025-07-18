@@ -1,4 +1,5 @@
 import SwiftUI
+import UzoFitnessCore
 
 struct WorkoutHeaderView: View {
     let date: Date

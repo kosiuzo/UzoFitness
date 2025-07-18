@@ -10,6 +10,7 @@ import UIKit
 import SwiftData
 import PhotosUI
 import Photos
+import UzoFitnessCore
 
 // MARK: - Protocols for Dependency Injection
 

@@ -1,5 +1,6 @@
 import SwiftUI
 import Charts
+import UzoFitnessCore
 
 struct MetricLineChart: View {
     let title: String

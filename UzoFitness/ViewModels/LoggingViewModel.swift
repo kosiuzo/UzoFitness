@@ -2,6 +2,7 @@ import Foundation
 import SwiftData
 import Combine
 import UIKit
+import UzoFitnessCore
 
 // MARK: - SessionExerciseUI Helper Struct
 struct SessionExerciseUI: Identifiable, Hashable {

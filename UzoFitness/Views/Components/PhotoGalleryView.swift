@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UzoFitnessCore
 
 /// A full-screen gallery for a specific angle
 struct PhotoGalleryView: View {

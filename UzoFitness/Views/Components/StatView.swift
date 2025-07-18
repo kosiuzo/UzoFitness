@@ -1,4 +1,5 @@
 import SwiftUI
+import UzoFitnessCore
 
 struct StatView: View {
     let title: String

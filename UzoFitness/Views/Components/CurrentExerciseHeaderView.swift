@@ -1,4 +1,5 @@
 import SwiftUI
+import UzoFitnessCore
 
 struct CurrentExerciseHeaderView: View {
     let currentExercise: SessionExerciseUI?

@@ -1,4 +1,5 @@
 import SwiftUI
+import UzoFitnessCore
 
 struct StatsContentView: View {
     @ObservedObject var viewModel: ProgressViewModel

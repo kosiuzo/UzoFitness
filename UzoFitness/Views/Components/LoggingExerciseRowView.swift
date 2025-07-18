@@ -1,4 +1,5 @@
 import SwiftUI
+import UzoFitnessCore
 
 // MARK: - Logging Exercise Row View
 struct LoggingExerciseRowView: View {

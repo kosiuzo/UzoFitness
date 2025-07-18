@@ -2,7 +2,7 @@ import Foundation
 import os.log
 
 /// A wrapper around OSLog to provide a simplified, centralized logging interface.
-struct AppLogger {
+public struct AppLogger {
     private static let subsystem = Bundle.main.bundleIdentifier ?? "com.yourapp.default"
 
     /// Creates a logger for a specific category.
@@ -17,7 +17,7 @@ struct AppLogger {
     /// - Parameters:
     ///   - message: The message to log.
     ///   - category: The category of the log message.
-    static func debug(_ message: String, category: String = "default") {
+    public static func debug(_ message: String, category: String = "default") {
         let log = makeLogger(category: category)
         os_log("%{public}s", log: log, type: .debug, message)
     }
@@ -27,7 +27,7 @@ struct AppLogger {
     /// - Parameters:
     ///   - message: The message to log.
     ///   - category: The category of the log message.
-    static func info(_ message: String, category: String = "default") {
+    public static func info(_ message: String, category: String = "default") {
         let log = makeLogger(category: category)
         os_log("%{public}s", log: log, type: .info, message)
     }
@@ -38,7 +38,7 @@ struct AppLogger {
     ///   - message: The error message to log.
     ///   - category: The category of the log message.
     ///   - error: An optional Error object to include in the log.
-    static func error(_ message: String, category: String = "default", error: Error? = nil) {
+    public static func error(_ message: String, category: String = "default", error: Error? = nil) {
         let log = makeLogger(category: category)
         if let error = error {
             os_log("%{public}s, Error: %{public}s", log: log, type: .error, message, error.localizedDescription)

@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import UzoFitnessCore
 
 // MARK: - Local File Image Helper
 

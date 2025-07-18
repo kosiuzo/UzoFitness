@@ -1,4 +1,5 @@
 import SwiftUI
+import UzoFitnessCore
 
 /// A view to edit the date and manual weight of a `ProgressPhoto`.
 ///

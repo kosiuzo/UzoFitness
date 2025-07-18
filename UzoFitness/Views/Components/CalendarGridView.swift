@@ -1,4 +1,5 @@
 import SwiftUI
+import UzoFitnessCore
 
 // MARK: - Calendar Grid View
 struct CalendarGridView: View {

@@ -1,4 +1,5 @@
 import SwiftUI
+import UzoFitnessCore
 
 /// A minimalist, iOS-native number pad text field with a custom "Done" button above the keyboard.
 /// - Parameters:

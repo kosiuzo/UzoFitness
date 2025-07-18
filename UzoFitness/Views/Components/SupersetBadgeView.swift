@@ -1,4 +1,5 @@
 import SwiftUI
+import UzoFitnessCore
 
 struct SupersetBadgeView: View {
     let supersetNumber: Int

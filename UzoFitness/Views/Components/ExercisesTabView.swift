@@ -1,4 +1,5 @@
 import SwiftUI
+import UzoFitnessCore
 
 struct ExercisesTabView: View {
     @ObservedObject var viewModel: LibraryViewModel

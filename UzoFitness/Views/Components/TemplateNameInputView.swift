@@ -1,4 +1,5 @@
 import SwiftUI
+import UzoFitnessCore
 
 struct TemplateNameInputView: View {
     let onSave: (String) -> Void

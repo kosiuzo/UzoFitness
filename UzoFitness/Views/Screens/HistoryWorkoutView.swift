@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import UzoFitnessCore
 // Import the new components
 // These are in Views/Components
 

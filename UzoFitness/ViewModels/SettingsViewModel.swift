@@ -2,6 +2,7 @@ import Foundation
 import SwiftData
 import Combine
 import UIKit
+import UzoFitnessCore
 
 // MARK: - App Settings Store
 @MainActor

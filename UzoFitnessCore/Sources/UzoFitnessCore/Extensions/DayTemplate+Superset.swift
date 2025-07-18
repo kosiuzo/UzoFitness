@@ -14,7 +14,7 @@ extension DayTemplate {
     /// Returns the 1-based position of a given superset in this day template.
     /// - Parameter supersetID: The UUID of the superset to locate.
     /// - Returns: The superset’s index (1-based) if found, otherwise nil.
-    func getSupersetNumber(for supersetID: UUID) -> Int? {
+    public func getSupersetNumber(for supersetID: UUID) -> Int? {
         // Gather all superset IDs on this day
         let allIDs = exerciseTemplates.compactMap { $0.supersetID }
         // Remove duplicates

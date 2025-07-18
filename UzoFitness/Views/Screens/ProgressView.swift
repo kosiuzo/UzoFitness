@@ -5,6 +5,7 @@ import PhotosUI
 #if canImport(UIKit)
 import UIKit
 #endif
+import UzoFitnessCore
 // Import extracted components
 
 struct ProgressView: View {

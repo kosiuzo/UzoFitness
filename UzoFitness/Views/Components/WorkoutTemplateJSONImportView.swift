@@ -1,5 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import UzoFitnessCore
 
 struct WorkoutTemplateJSONImportView: View {
     @ObservedObject var viewModel: LibraryViewModel

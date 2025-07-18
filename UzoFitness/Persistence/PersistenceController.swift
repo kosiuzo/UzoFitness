@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import UzoFitnessCore
 
 @MainActor
 class PersistenceController: ObservableObject {
