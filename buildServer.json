@@ -1,0 +1,19 @@
+{
+	"name": "xcode build server",
+	"version": "0.2",
+	"bspVersion": "2.0",
+	"languages": [
+		"c",
+		"cpp",
+		"objective-c",
+		"objective-cpp",
+		"swift"
+	],
+	"argv": [
+		"/opt/homebrew/bin/xcode-build-server"
+	],
+	"workspace": "/Users/kosiuzodinma/Documents/Documents-Kosi-Mac-mini/IosMobileApps/UzoFitness/UzoFitness.xcodeproj/project.xcworkspace",
+	"build_root": "/Users/kosiuzodinma/Library/Developer/Xcode/DerivedData/UzoFitness-aujurslhvttyobeiithxwexjigyh",
+	"scheme": "UzoFitness",
+	"kind": "xcode"
+}
