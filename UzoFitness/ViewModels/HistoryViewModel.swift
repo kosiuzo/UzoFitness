@@ -20,30 +20,15 @@ class HistoryViewModel: ObservableObject {
     }
     
     var workoutDates: Set<Date> {
-        Set(allWorkoutSessions.map { calendar.startOfDay(for: $0.date) })
+        ProgressAnalysisLogic.getWorkoutDates(from: allWorkoutSessions)
     }
     
     var streakCount: Int {
-        let uniqueDates = workoutDates.sorted(by: >)
-        guard !uniqueDates.isEmpty else { return 0 }
-        
-        var streak = 0
-        var currentDate = calendar.startOfDay(for: Date())
-        
-        for date in uniqueDates {
-            if calendar.isDate(date, inSameDayAs: currentDate) {
-                streak += 1
-                currentDate = calendar.date(byAdding: .day, value: -1, to: currentDate) ?? currentDate
-            } else if abs(calendar.dateComponents([.day], from: date, to: currentDate).day ?? 0) > 1 {
-                break
-            }
-        }
-        
-        return streak
+        ProgressAnalysisLogic.calculateWorkoutStreak(from: allWorkoutSessions)
     }
     
     var totalWorkoutDays: Int {
-        workoutDates.count
+        ProgressAnalysisLogic.calculateTotalWorkoutDays(from: allWorkoutSessions)
     }
     
     // MARK: - Properties
@@ -83,9 +68,7 @@ class HistoryViewModel: ObservableObject {
     
     // MARK: - Helper Methods
     func hasWorkoutData(for date: Date) -> Bool {
-        return allWorkoutSessions.contains { 
-            calendar.isDate($0.date, inSameDayAs: date)
-        }
+        return ProgressAnalysisLogic.hasWorkoutData(for: date, in: allWorkoutSessions)
     }
 }
 

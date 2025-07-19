@@ -5,78 +5,9 @@ import UIKit
 import HealthKit
 import UzoFitnessCore
 
-// MARK: - ExerciseTrend Helper Struct
-struct ExerciseTrend: Identifiable, Hashable {
-    let id: UUID
-    let exerciseID: UUID
-    let exerciseName: String
-    let maxWeight: Double
-    let totalVolume: Double
-    let totalSessions: Int
-    let totalReps: Int
-    let weekStartDate: Date
-    
-    init(exerciseID: UUID, exerciseName: String, performedExercises: [PerformedExercise], weekStartDate: Date) {
-        self.id = UUID()
-        self.exerciseID = exerciseID
-        self.exerciseName = exerciseName
-        self.weekStartDate = weekStartDate
-        self.totalSessions = performedExercises.count
-        
-        if performedExercises.isEmpty {
-            self.maxWeight = 0.0
-            self.totalVolume = 0.0
-            self.totalReps = 0
-        } else {
-            self.maxWeight = performedExercises.map { $0.weight }.max() ?? 0.0
-            self.totalReps = performedExercises.reduce(0) { $0 + $1.reps }
-            self.totalVolume = performedExercises.reduce(0) { total, exercise in
-                total + (exercise.weight * Double(exercise.reps))
-            }
-        }
-    }
-    
-    var formattedMaxWeight: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 1
-        return formatter.string(from: NSNumber(value: maxWeight)) ?? "0"
-    }
-    
-    var formattedTotalVolume: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: totalVolume)) ?? "0"
-    }
-}
+// ExerciseTrend moved to UzoFitnessCore
 
-// MARK: - Body Metrics Helper Struct
-struct BodyMetrics: Identifiable, Hashable {
-    let id: UUID
-    let photoID: UUID
-    let weight: Double? // in pounds
-    let bodyFat: Double? // as percentage (0-100)
-    let date: Date
-    
-    init(photoID: UUID, weight: Double? = nil, bodyFat: Double? = nil, date: Date) {
-        self.id = UUID()
-        self.photoID = photoID
-        self.weight = weight
-        self.bodyFat = bodyFat?.isNaN == false ? bodyFat : nil
-        self.date = date
-    }
-    
-    var formattedWeight: String {
-        guard let weight = weight else { return "N/A" }
-        return String(format: "%.1f lbs", weight)
-    }
-    
-    var formattedBodyFat: String {
-        guard let bodyFat = bodyFat else { return "N/A" }
-        return String(format: "%.1f%%", bodyFat * 100)
-    }
-}
+// BodyMetrics moved to UzoFitnessCore
 
 // ChartDataPoint is now imported from ProgressTypes.swift
 

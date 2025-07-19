@@ -4,41 +4,7 @@ import Combine
 import UIKit
 import UzoFitnessCore
 
-// MARK: - SessionExerciseUI Helper Struct
-struct SessionExerciseUI: Identifiable, Hashable {
-    let id: UUID
-    let name: String
-    let sets: [CompletedSet]
-    let plannedSets: Int
-    let plannedReps: Int
-    let plannedWeight: Double?
-    let currentSet: Int
-    let timerRemaining: TimeInterval?
-    let isSupersetHead: Bool
-    let isCompleted: Bool
-    let position: Double
-    let supersetID: UUID?
-    
-    init(from sessionExercise: SessionExercise) {
-        self.id = sessionExercise.id
-        self.name = sessionExercise.exercise.name
-        self.sets = sessionExercise.completedSets.sorted(by: { $0.position < $1.position }) // Sort sets by position
-        self.plannedSets = sessionExercise.plannedSets
-        self.plannedReps = sessionExercise.plannedReps
-        self.plannedWeight = sessionExercise.plannedWeight
-        self.currentSet = sessionExercise.currentSet
-        self.timerRemaining = sessionExercise.restTimer
-        self.isCompleted = sessionExercise.isCompleted
-        self.position = sessionExercise.position
-        self.supersetID = sessionExercise.supersetID
-        
-        // Determine if this is the head of a superset (first exercise in the group)
-        self.isSupersetHead = sessionExercise.supersetID != nil && 
-            sessionExercise.session?.sessionExercises
-                .filter { $0.supersetID == sessionExercise.supersetID }
-                .min(by: { $0.position < $1.position })?.id == sessionExercise.id
-    }
-}
+// SessionExerciseUI moved to UzoFitnessCore
 
 // MARK: - LoggingViewModel Intent Actions
 enum LoggingIntent {
@@ -96,17 +62,7 @@ enum LoggingError: Error, LocalizedError {
     }
 }
 
-// MARK: - TimerFactory Protocol
-protocol TimerFactory {
-    func createTimer(interval: TimeInterval, repeats: Bool, block: @escaping (Timer) -> Void) -> Timer
-}
-
-// MARK: - DefaultTimerFactory
-class DefaultTimerFactory: TimerFactory {
-    func createTimer(interval: TimeInterval, repeats: Bool, block: @escaping (Timer) -> Void) -> Timer {
-        return Timer.scheduledTimer(withTimeInterval: interval, repeats: repeats, block: block)
-    }
-}
+// TimerFactory moved to UzoFitnessCore
 
 // MARK: - LoggingViewModel
 @MainActor
@@ -130,8 +86,8 @@ class LoggingViewModel: ObservableObject {
     
     // MARK: - Computed Properties
     var canFinishSession: Bool {
-        guard session != nil else { return false }
-        return !exercises.isEmpty && exercises.allSatisfy { $0.isCompleted }
+        guard let session = session else { return false }
+        return WorkoutSessionLogic.canFinishSession(session)
     }
     
     var currentExercise: SessionExerciseUI? {
@@ -186,11 +142,8 @@ class LoggingViewModel: ObservableObject {
     }
     
     var totalVolume: Double {
-        exercises.reduce(0) { total, exercise in
-            total + exercise.sets.reduce(0) { setTotal, set in
-                setTotal + (Double(set.reps) * set.weight)
-            }
-        }
+        guard let session = session else { return 0 }
+        return WorkoutSessionLogic.calculateTotalVolume(session)
     }
     
     // MARK: - Private Properties
@@ -791,7 +744,7 @@ class LoggingViewModel: ObservableObject {
         
         exercises = session.sessionExercises
             .sorted(by: { $0.position < $1.position })
-            .map { SessionExerciseUI(from: $0) }
+            .map { WorkoutSessionLogic.convertToSessionExerciseUI($0) }
         
         // Update workout progress state
         isWorkoutInProgress = !exercises.isEmpty

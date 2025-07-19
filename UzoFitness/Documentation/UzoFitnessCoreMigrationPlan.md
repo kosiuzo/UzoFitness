@@ -93,18 +93,25 @@ All references have been updated to use the utilities from UzoFitnessCore, and c
 
 ---
 
-## 5. Refactor ViewModels for Shared Logic (Optional/Advanced)
+## 5. Refactor ViewModels for Shared Logic
 
-- **If any ViewModel contains pure business logic**, extract that logic into a new file in Core (e.g., `WorkoutSessionLogic.swift`).
-- **Define protocols for ViewModels** in Core if you want to enforce shared interfaces.
-- **Keep UI-specific ViewModel code in the iOS/watchOS targets.**
+- **Extract shared business logic** from ViewModels into UzoFitnessCore services.
+- **Keep UI-specific logic** in the iOS app ViewModels.
+- **Create shared logic services** for common operations.
 
 **Checklist:**
-- [ ] Identify shared logic in ViewModels
-- [ ] Extract shared logic to UzoFitnessCore
-- [ ] Define ViewModel protocols in UzoFitnessCore (if needed)
-- [ ] Refactor references to use shared logic/protocols
-- [ ] Build the project to verify
+- [x] Identify shared business logic in ViewModels
+- [x] Create shared logic services in UzoFitnessCore
+- [x] Refactor ViewModels to use shared logic
+- [x] Build the project to verify
+
+**Status:** ✅ **COMPLETED** - All shared business logic has been successfully extracted to UzoFitnessCore and the project builds successfully. The following shared logic services were created:
+
+- **WorkoutSessionLogic** - Session state management, volume calculations, duration tracking
+- **ProgressAnalysisLogic** - Exercise trend analysis, workout streak calculations, date filtering
+- **TimerLogic** - Time formatting and duration calculations
+
+All ViewModels have been refactored to use these shared services, reducing code duplication and improving maintainability.
 
 ---
 
@@ -115,11 +122,20 @@ All references have been updated to use the utilities from UzoFitnessCore, and c
 - **Add UzoFitnessCore as a dependency** to your iOS target (and later, your watchOS target).
 
 **Checklist:**
-- [ ] Replace imports in iOS app
-- [ ] Update all references to moved code
-- [ ] Add UzoFitnessCore as a dependency to iOS target
+- [x] Replace imports in iOS app
+- [x] Update all references to moved code
+- [x] Add UzoFitnessCore as a dependency to iOS target
 - [ ] Add UzoFitnessCore as a dependency to watchOS target (when created)
-- [ ] Build the project to verify
+- [x] Build the project to verify
+
+**Status:** ✅ **COMPLETED** - All imports and references have been successfully updated and the project builds successfully. The following was accomplished:
+
+- **All iOS app files** now properly import `UzoFitnessCore` where needed
+- **All references** to moved types, protocols, and utilities have been updated
+- **UzoFitnessCore dependency** is properly configured in the iOS target
+- **Build verification** completed successfully with only minor warnings
+
+The project now properly uses the shared UzoFitnessCore module for all models, protocols, services, and utilities. The watchOS target dependency will be added when that target is created in the future.
 
 ---
 

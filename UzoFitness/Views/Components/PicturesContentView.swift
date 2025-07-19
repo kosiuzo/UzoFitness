@@ -18,8 +18,6 @@ struct PicturesContentView: View {
                     SwiftUI.ProgressView("Loading photos...")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .padding(.top, 100)
-                } else if viewModel.totalPhotos == 0 {
-                    emptyPhotosView
                 } else {
                     photosContent
                 }
@@ -70,31 +68,7 @@ struct PicturesContentView: View {
         }
     }
     
-    private var emptyPhotosView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "camera")
-                .font(.system(size: 48))
-                .foregroundColor(.secondary)
-            
-            Text("No Progress Photos")
-                .font(.title2)
-                .fontWeight(.medium)
-            
-            Text("Add your first progress photo to track your transformation")
-                .font(.body)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-            
-            Button("Add Photo") {
-                Task {
-                    await viewModel.handleIntent(.showImagePicker(.front))
-                }
-            }
-            .buttonStyle(.borderedProminent)
-            .padding(.top, 8)
-        }
-        .padding(.top, 100)
-    }
+
     
     private var photosContent: some View {
         VStack(spacing: 24) {
@@ -106,7 +80,7 @@ struct PicturesContentView: View {
                 photoComparisonSection
             }
             
-            // Photo Grid by Angle
+            // Photo Grid by Angle - Always show all angles, even when empty
             ForEach(PhotoAngle.allCases, id: \.self) { angle in
                 ProgressPhotoGrid(
                     angle: angle,
