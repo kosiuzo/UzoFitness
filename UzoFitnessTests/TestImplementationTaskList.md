@@ -181,127 +181,127 @@ This task list is based on the TestCodeMapping.md file and provides a structured
 
 ### 2.1 Mock Infrastructure Setup
 
-#### Task 2.1.1: Recreate MockPhotoLibraryService
-- [ ] **Reference Files**:
+#### Task 2.1.1: Recreate MockPhotoLibraryService ✅ COMPLETED
+- [x] **Reference Files**:
   - `UzoFitnessCore/Sources/UzoFitnessCore/Services/PhotoServiceProtocol.swift`
   - `UzoFitness/Services/PhotoService.swift`
-- [ ] Create `MockPhotoLibraryService.swift`
-- [ ] Mock `requestPhotoLibraryAuthorization()`
-- [ ] Mock `saveToPhotoLibrary(image:)`
-- [ ] Mock `pickImage()`
-- [ ] Support different authorization states
-- [ ] Track method calls for verification
-- [ ] **Success Criteria**: Mock behavior is verified correctly
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for photo library mock tests
-- [ ] **Verify**: All photo library mock tests compile and pass in simulator
+- [x] Create `MockPhotoLibraryService.swift`
+- [x] Mock `requestPhotoLibraryAuthorization()`
+- [x] Mock `saveToPhotoLibrary(image:)`
+- [x] Mock `pickImage()`
+- [x] Support different authorization states
+- [x] Track method calls for verification
+- [x] **Success Criteria**: Mock behavior is verified correctly ✅
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for photo library mock tests ✅ ALL TESTS PASS
+- [x] **Verify**: All photo library mock tests compile and pass in simulator ✅
 
-#### Task 2.1.2: Recreate MockFileSystemService
-- [ ] **Reference Files**:
+#### Task 2.1.2: Recreate MockFileSystemService ✅ COMPLETED
+- [x] **Reference Files**:
   - `UzoFitnessCore/Sources/UzoFitnessCore/Services/FileSystemServiceProtocol.swift`
   - `UzoFitness/Services/PhotoService.swift`
-- [ ] Create `MockFileSystemService.swift`
-- [ ] Mock `cacheDirectory()`
-- [ ] Mock `writeData(_:to:)`
-- [ ] Simulate cache directory access
-- [ ] Track write operations
-- [ ] Support error simulation
-- [ ] **Success Criteria**: Mock behavior is verified correctly
+- [x] Create `MockFileSystemService.swift`
+- [x] Mock `cacheDirectory()`
+- [x] Mock `writeData(_:to:)`
+- [x] Simulate cache directory access
+- [x] Track write operations
+- [x] Support error simulation
+- [x] **Success Criteria**: Mock behavior is verified correctly ✅
 
-#### Task 2.1.3: Recreate MockHealthStore and related mocks
-- [ ] **Reference Files**:
+#### Task 2.1.3: Recreate MockHealthStore and related mocks ✅ COMPLETED
+- [x] **Reference Files**:
   - `UzoFitnessCore/Sources/UzoFitnessCore/Services/HealthStoreProtocol.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Services/QueryExecutorProtocol.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Services/HealthKitTypeFactoryProtocol.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Services/CalendarProtocol.swift`
-- [ ] Create `MockHealthStore.swift`
-- [ ] Create `MockQueryExecutor.swift`
-- [ ] Create `MockHealthKitTypeFactory.swift`
-- [ ] Create `MockCalendar.swift`
-- [ ] Mock HealthKit authorization methods
-- [ ] Mock query execution methods
-- [ ] Mock type factory methods
-- [ ] Mock calendar operations
-- [ ] **Success Criteria**: All HealthKit mocks work correctly
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for HealthKit mock tests
-- [ ] **Verify**: All HealthKit mock tests compile and pass in simulator
+- [x] Create `MockHealthStore.swift`
+- [x] Create `MockQueryExecutor.swift`
+- [x] Create `MockHealthKitTypeFactory.swift`
+- [x] Create `MockCalendar.swift`
+- [x] Mock HealthKit authorization methods
+- [x] Mock query execution methods
+- [x] Mock type factory methods
+- [x] Mock calendar operations
+- [x] **Success Criteria**: All HealthKit mocks work correctly ✅
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for HealthKit mock tests ✅ ALL TESTS PASS
+- [x] **Verify**: All HealthKit mock tests compile and pass in simulator ✅
 
 ### 2.2 PhotoService Tests
 
-#### Task 2.2.1: Recreate PhotoService authorization tests
-- [ ] **Reference Files**:
+#### Task 2.2.1: Recreate PhotoService authorization tests ✅ COMPLETED
+- [x] **Reference Files**:
   - `UzoFitness/Services/PhotoService.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Services/PhotoServiceProtocol.swift`
-- [ ] Create `PhotoServiceTests.swift`
-- [ ] Test `testRequestPhotoLibraryAuthorization_WhenAlreadyAuthorized_ReturnsAuthorized()`
-- [ ] Test `testRequestPhotoLibraryAuthorization_WhenNotDetermined_RequestsAuthorization()`
-- [ ] Test `testRequestPhotoLibraryAuthorization_WhenDenied_ReturnsDenied()`
-- [ ] Test all authorization states
-- [ ] **Success Criteria**: All authorization states are handled correctly
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for photo service authorization tests
-- [ ] **Verify**: All photo service authorization tests compile and pass in simulator
+- [x] Create `PhotoServiceTests.swift`
+- [x] Test `testRequestPhotoLibraryAuthorization_WhenAlreadyAuthorized_ReturnsAuthorized()`
+- [x] Test `testRequestPhotoLibraryAuthorization_WhenNotDetermined_RequestsAuthorization()`
+- [x] Test `testRequestPhotoLibraryAuthorization_WhenDenied_ReturnsDenied()`
+- [x] Test all authorization states
+- [x] **Success Criteria**: All authorization states are handled correctly ✅
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for photo service authorization tests ✅ ALL TESTS PASS
+- [x] **Verify**: All photo service authorization tests compile and pass in simulator ✅
 
-#### Task 2.2.2: Recreate PhotoService save functionality tests
-- [ ] **Reference Files**:
+#### Task 2.2.2: Recreate PhotoService save functionality tests ✅ COMPLETED
+- [x] **Reference Files**:
   - `UzoFitness/Services/PhotoService.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Services/DataPersistenceServiceProtocol.swift`
-- [ ] Test `testSaveToPhotoLibrary_WhenAuthorized_SavesImage()`
-- [ ] Test `testSaveToCache_ValidImage_SavesSuccessfully()`
-- [ ] Test error handling for denied access
-- [ ] Test file system error handling
-- [ ] **Success Criteria**: Image saving functionality works correctly
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for photo service save tests
-- [ ] **Verify**: All photo service save tests compile and pass in simulator
+- [x] Test `testSaveToPhotoLibrary_WhenAuthorized_SavesImage()`
+- [x] Test `testSaveToCache_ValidImage_SavesSuccessfully()`
+- [x] Test error handling for denied access
+- [x] Test file system error handling
+- [x] **Success Criteria**: Image saving functionality works correctly ✅
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for photo service save tests ✅ ALL TESTS PASS
+- [x] **Verify**: All photo service save tests compile and pass in simulator ✅
 
-#### Task 2.2.3: Recreate PhotoService image picker tests
-- [ ] **Reference Files**:
+#### Task 2.2.3: Recreate PhotoService image picker tests ✅ COMPLETED
+- [x] **Reference Files**:
   - `UzoFitness/Services/PhotoService.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Services/ImagePickerServiceProtocol.swift`
-- [ ] Test `testPickImage_UserSelectsImage_ReturnsImage()`
-- [ ] Test `testPickImage_UserCancels_ReturnsNil()`
-- [ ] Test progress photo saving
-- [ ] Test invalid image data handling
-- [ ] **Success Criteria**: Image picker integration works correctly
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for photo service picker tests
-- [ ] **Verify**: All photo service picker tests compile and pass in simulator
+- [x] Test `testPickImage_UserSelectsImage_ReturnsImage()`
+- [x] Test `testPickImage_UserCancels_ReturnsNil()`
+- [x] Test progress photo saving
+- [x] Test invalid image data handling
+- [x] **Success Criteria**: Image picker integration works correctly ✅
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for photo service picker tests ✅ ALL TESTS PASS
+- [x] **Verify**: All photo service picker tests compile and pass in simulator ✅
 
 ### 2.3 HealthKitManager Tests
 
-#### Task 2.3.1: Recreate HealthKit authorization tests
-- [ ] **Reference Files**:
+#### Task 2.3.1: Recreate HealthKit authorization tests ✅ COMPLETED
+- [x] **Reference Files**:
   - `UzoFitness/Services/HealthKitManager.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Services/HealthStoreProtocol.swift`
-- [ ] Create `HealthKitManagerTests.swift`
-- [ ] Test `testRequestAuthorizationSuccess()`
-- [ ] Test `testRequestAuthorizationFailure()`
-- [ ] Test `testRequestAuthorizationTypeUnavailable()`
-- [ ] Test all authorization scenarios
-- [ ] **Success Criteria**: All authorization scenarios are handled
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for HealthKit authorization tests
-- [ ] **Verify**: All HealthKit authorization tests compile and pass in simulator
+- [x] Create `HealthKitManagerTests.swift`
+- [x] Test `testRequestAuthorizationSuccess()`
+- [x] Test `testRequestAuthorizationFailure()`
+- [x] Test `testRequestAuthorizationTypeUnavailable()`
+- [x] Test all authorization scenarios
+- [x] **Success Criteria**: All authorization scenarios are handled ✅
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for HealthKit authorization tests ✅ ALL TESTS PASS
+- [x] **Verify**: All HealthKit authorization tests compile and pass in simulator ✅
 
-#### Task 2.3.2: Recreate HealthKit body mass tests
-- [ ] **Reference Files**:
+#### Task 2.3.2: Recreate HealthKit body mass tests ✅ COMPLETED
+- [x] **Reference Files**:
   - `UzoFitness/Services/HealthKitManager.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Services/QueryExecutorProtocol.swift`
-- [ ] Test `testFetchLatestBodyMassInPoundsSuccess()`
-- [ ] Test `testFetchBodyMassInPoundsOnSpecificDate()`
-- [ ] Test weight conversion (kg to lbs)
-- [ ] Test error handling for unavailable types
-- [ ] **Success Criteria**: Body mass data retrieval works correctly
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for HealthKit body mass tests
-- [ ] **Verify**: All HealthKit body mass tests compile and pass in simulator
+- [x] Test `testFetchLatestBodyMassInPoundsSuccess()`
+- [x] Test `testFetchBodyMassInPoundsOnSpecificDate()`
+- [x] Test weight conversion (kg to lbs)
+- [x] Test error handling for unavailable types
+- [x] **Success Criteria**: Body mass data retrieval works correctly ✅
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for HealthKit body mass tests ✅ ALL TESTS PASS
+- [x] **Verify**: All HealthKit body mass tests compile and pass in simulator ✅
 
-#### Task 2.3.3: Recreate HealthKit body fat tests
-- [ ] **Reference Files**:
+#### Task 2.3.3: Recreate HealthKit body fat tests ✅ COMPLETED
+- [x] **Reference Files**:
   - `UzoFitness/Services/HealthKitManager.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Services/QueryExecutorProtocol.swift`
-- [ ] Test `testFetchLatestBodyFatSuccess()`
-- [ ] Test `testFetchBodyFatOnSpecificDate()`
-- [ ] Test percentage value handling
-- [ ] Test no data scenarios
-- [ ] **Success Criteria**: Body fat data retrieval works correctly
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for HealthKit body fat tests
-- [ ] **Verify**: All HealthKit body fat tests compile and pass in simulator
+- [x] Test `testFetchLatestBodyFatSuccess()`
+- [x] Test `testFetchBodyFatOnSpecificDate()`
+- [x] Test percentage value handling
+- [x] Test no data scenarios
+- [x] **Success Criteria**: Body fat data retrieval works correctly ✅
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for HealthKit body fat tests ✅ ALL TESTS PASS
+- [x] **Verify**: All HealthKit body fat tests compile and pass in simulator ✅
 
 ### 2.4 Data Persistence Tests
 
