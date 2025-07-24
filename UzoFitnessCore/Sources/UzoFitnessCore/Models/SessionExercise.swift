@@ -93,7 +93,7 @@ public final class SessionExercise: Identified, Timestamped, Codable {
     }
     
     /// Updates the exercise's cached values when this session is completed
-    func updateExerciseCacheOnCompletion() {
+    public func updateExerciseCacheOnCompletion() {
         guard isCompleted && !completedSets.isEmpty else {
             AppLogger.debug("[SessionExercise.updateExerciseCacheOnCompletion] Cannot update - not completed or no sets", category: "SessionExercise")
             return
