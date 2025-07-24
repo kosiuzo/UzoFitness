@@ -50,75 +50,75 @@ This task list is based on the TestCodeMapping.md file and provides a structured
 ### 1.2 Core Model Validation Tests
 
 #### Task 1.2.1: Recreate RelationshipIntegrityTests
-- [ ] **Reference Files**:
+- [x] **Reference Files**:
   - `UzoFitnessCore/Sources/UzoFitnessCore/Models/WorkoutSession.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Models/SessionExercise.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Models/CompletedSet.swift`
-- [ ] Create `RelationshipIntegrityTests.swift`
-- [ ] Test `WorkoutSession.totalVolume` computed property
-- [ ] Test cascade delete behavior for `WorkoutSession`
-- [ ] Test cascade delete behavior for `SessionExercise`
-- [ ] Test cascade delete behavior for `CompletedSet`
-- [ ] Verify no orphaned objects remain after deletion
-- [ ] **Success Criteria**: `testCascadeDeleteSessionRemovesChildren()` passes
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for relationship integrity tests
-- [ ] **Verify**: All relationship integrity tests compile and pass in simulator
+- [x] Create `RelationshipIntegrityTests.swift`
+- [x] Test `WorkoutSession.totalVolume` computed property
+- [x] Test cascade delete behavior for `WorkoutSession`
+- [x] Test cascade delete behavior for `SessionExercise`
+- [x] Test cascade delete behavior for `CompletedSet`
+- [x] Verify no orphaned objects remain after deletion
+- [x] **Success Criteria**: `testCascadeDeleteSessionRemovesChildren()` passes
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16 Pro Max'` for relationship integrity tests
+- [x] **Verify**: All relationship integrity tests compile and pass in simulator
 
 #### Task 1.2.2: Recreate ValidationTests - WorkoutTemplate validation
-- [ ] **Reference Files**:
+- [x] **Reference Files**:
   - `UzoFitnessCore/Sources/UzoFitnessCore/Extensions/WorkoutTemplate+Validation.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Models/Enums.swift`
-- [ ] Create `ValidationTests.swift`
-- [ ] Test `testUniqueWorkoutTemplateName()`
-- [ ] Test `testWorkoutTemplateNameValidation()`
-- [ ] Test `testWorkoutTemplateNameSuggestion()`
-- [ ] Test `ValidationError` enum cases and error descriptions
-- [ ] Test name uniqueness validation
-- [ ] **Success Criteria**: All template validation tests pass
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for template validation tests
-- [ ] **Verify**: All template validation tests compile and pass in simulator
+- [x] Create `ValidationTests.swift`
+- [x] Test `testUniqueWorkoutTemplateName()`
+- [x] Test `testWorkoutTemplateNameValidation()`
+- [x] Test `testWorkoutTemplateNameSuggestion()`
+- [x] Test `ValidationError` enum cases and error descriptions
+- [x] Test name uniqueness validation
+- [x] **Success Criteria**: All template validation tests pass
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16 Pro Max'` for template validation tests
+- [x] **Verify**: All template validation tests compile and pass in simulator
 
 #### Task 1.2.3: Recreate ValidationTests - ExerciseTemplate validation
-- [ ] **Reference Files**:
+- [x] **Reference Files**:
   - `UzoFitnessCore/Sources/UzoFitnessCore/Extensions/Exercise+Validation.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Models/ExerciseTemplate.swift`
-- [ ] Test parameter validation (reps, sets, weight, position)
-- [ ] Test `testExerciseTemplateSafeUpdates()` with rollback
-- [ ] Test negative value validation
-- [ ] Test zero value validation
-- [ ] Test invalid position validation
-- [ ] **Success Criteria**: All exercise template validation tests pass
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for exercise validation tests
-- [ ] **Verify**: All exercise validation tests compile and pass in simulator
+- [x] Test parameter validation (reps, sets, weight, position)
+- [x] Test `testExerciseTemplateSafeUpdates()` with rollback
+- [x] Test negative value validation
+- [x] Test zero value validation
+- [x] Test invalid position validation
+- [x] **Success Criteria**: All exercise template validation tests pass
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16 Pro Max'` for exercise validation tests
+- [x] **Verify**: All exercise validation tests compile and pass in simulator
 
 #### Task 1.2.4: Recreate WorkoutDomainTests
-- [ ] **Reference Files**:
+- [x] **Reference Files**:
   - `UzoFitnessCore/Sources/UzoFitnessCore/Models/WorkoutSession.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Models/SessionExercise.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Models/CompletedSet.swift`
-- [ ] Create `WorkoutDomainTests.swift`
-- [ ] Test `testTotalVolumePerExerciseAndSession()`
-- [ ] Test `testAddWeightedVolume()`
-- [ ] Test volume calculations for body-weight exercises
-- [ ] Test volume calculations for weighted exercises
-- [ ] **Success Criteria**: Volume calculations are mathematically correct
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for workout domain tests
-- [ ] **Verify**: All workout domain tests compile and pass in simulator
+- [x] Create `WorkoutDomainTests.swift`
+- [x] Test `testTotalVolumePerExerciseAndSession()`
+- [x] Test `testAddWeightedVolume()`
+- [x] Test volume calculations for body-weight exercises
+- [x] Test volume calculations for weighted exercises
+- [x] **Success Criteria**: Volume calculations are mathematically correct
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16 Pro Max'` for workout domain tests
+- [x] **Verify**: All workout domain tests compile and pass in simulator
 
 ### 1.3 Data Import/Export Tests
 
 #### Task 1.3.1: Recreate WorkoutTemplateImportTests
-- [ ] **Reference Files**:
+- [x] **Reference Files**:
   - `UzoFitnessCore/Sources/UzoFitnessCore/Models/WorkoutTemplateImportDTO.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Models/WorkoutTemplate.swift`
-- [ ] Create `WorkoutTemplateImportTests.swift`
-- [ ] Test `testValidWorkoutTemplateImport()`
-- [ ] Test `testMinimalValidWorkoutTemplate()`
-- [ ] Test JSON validation and error handling
-- [ ] Test auto-ID generation for missing IDs
-- [ ] **Success Criteria**: JSON import functionality works with various scenarios
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for template import tests
-- [ ] **Verify**: All template import tests compile and pass in simulator
+- [x] Create `WorkoutTemplateImportTests.swift`
+- [x] Test `testValidWorkoutTemplateImport()`
+- [x] Test `testMinimalValidWorkoutTemplate()`
+- [x] Test JSON validation and error handling
+- [x] Test auto-ID generation for missing IDs
+- [x] **Success Criteria**: JSON import functionality works with various scenarios
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for template import tests
+- [x] **Verify**: All template import tests compile and pass in simulator
 
 #### Task 1.3.2: Recreate JSONImportTests
 - [ ] **Reference Files**:
