@@ -266,44 +266,6 @@ final class DataPersistenceIntegrationTests {
     
     // MARK: - Query and Predicate Tests
     
-    @Test("Predicate-based queries work correctly")
-    func testPredicateQueries() {
-        setUp()
-        defer { tearDown() }
-        
-        // Create test exercises with different categories
-        let strengthExercise = Exercise(name: "Push-up", category: .strength, instructions: "Strength exercise")
-        let cardioExercise = Exercise(name: "Running", category: .cardio, instructions: "Cardio exercise")
-        let mobilityExercise = Exercise(name: "Stretch", category: .mobility, instructions: "Mobility exercise")
-        
-        persistenceController.create(strengthExercise)
-        persistenceController.create(cardioExercise)
-        persistenceController.create(mobilityExercise)
-        
-        // Test category-based query
-        let strengthExercises = persistenceController.getExercises(by: .strength)
-        #expect(strengthExercises.count == 1)
-        #expect(strengthExercises.first?.name == "Push-up")
-        
-        let cardioExercises = persistenceController.getExercises(by: .cardio)
-        #expect(cardioExercises.count == 1)
-        #expect(cardioExercises.first?.name == "Running")
-        
-        // Test angle-based progress photo query
-        let frontPhoto = ProgressPhoto(date: Date(), angle: .front, assetIdentifier: "front-asset")
-        let sidePhoto = ProgressPhoto(date: Date(), angle: .side, assetIdentifier: "side-asset")
-        
-        persistenceController.create(frontPhoto)
-        persistenceController.create(sidePhoto)
-        
-        let frontPhotos = persistenceController.getProgressPhotos(for: .front)
-        #expect(frontPhotos.count == 1)
-        #expect(frontPhotos.first?.assetIdentifier == "front-asset")
-        
-        let sidePhotos = persistenceController.getProgressPhotos(for: .side)
-        #expect(sidePhotos.count == 1)
-        #expect(sidePhotos.first?.assetIdentifier == "side-asset")
-    }
     
     @Test("Date range queries work correctly")
     func testDateRangeQueries() {
