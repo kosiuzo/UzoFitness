@@ -6,13 +6,13 @@ import UzoFitnessCore
 /// In-memory persistence controller for testing purposes
 /// Provides isolated data storage that doesn't persist between test runs
 @MainActor
-class InMemoryPersistenceController: PersistenceController {
+public class InMemoryPersistenceController: PersistenceController {
     
     // MARK: - Test-specific properties
     private var testDataInserted = false
     
     // MARK: - Initialization
-    override init(inMemory: Bool = true) {
+    public override init(inMemory: Bool = true) {
         // Force in-memory for testing
         super.init(inMemory: true)
         print("🔄 [InMemoryPersistenceController.init] Created in-memory container for testing")
@@ -21,7 +21,7 @@ class InMemoryPersistenceController: PersistenceController {
     // MARK: - Test Setup and Teardown
     
     /// Set up test data for a specific test
-    func setupTestData() {
+    public func setupTestData() {
         guard !testDataInserted else {
             print("📊 [InMemoryPersistenceController.setupTestData] Test data already inserted, skipping")
             return
@@ -46,7 +46,7 @@ class InMemoryPersistenceController: PersistenceController {
     }
     
     /// Clean up all test data
-    func cleanupTestData() {
+    public func cleanupTestData() {
         print("🔄 [InMemoryPersistenceController.cleanupTestData] Cleaning up test data")
         deleteAllData()
         testDataInserted = false
@@ -54,7 +54,7 @@ class InMemoryPersistenceController: PersistenceController {
     }
     
     /// Reset the test environment
-    func resetTestEnvironment() {
+    public func resetTestEnvironment() {
         print("🔄 [InMemoryPersistenceController.resetTestEnvironment] Resetting test environment")
         cleanupTestData()
         setupTestData()
@@ -102,7 +102,7 @@ class InMemoryPersistenceController: PersistenceController {
     // MARK: - Test Helper Methods
     
     /// Verify that all model types can be inserted and fetched
-    func verifyAllModelTypes() -> Bool {
+    public func verifyAllModelTypes() -> Bool {
         print("🔄 [InMemoryPersistenceController.verifyAllModelTypes] Verifying all model types")
         
         let testResults = [

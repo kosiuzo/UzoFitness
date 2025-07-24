@@ -6,17 +6,17 @@ import UzoFitnessCore
 /// Test helper utilities for UzoFitness tests
 /// Provides common functionality used across multiple test files
 @MainActor
-class TestHelpers {
+public class TestHelpers {
     
     // MARK: - Async/Await Support
     
     /// Wait for a specified duration (useful for async operations)
-    static func wait(seconds: TimeInterval) async {
+    public static func wait(seconds: TimeInterval) async {
         try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
     }
     
     /// Wait for a condition to become true with timeout
-    static func waitForCondition(
+    public static func waitForCondition(
         timeout: TimeInterval = 5.0,
         condition: @escaping () -> Bool
     ) async -> Bool {
@@ -35,7 +35,7 @@ class TestHelpers {
     // MARK: - Test Data Creation
     
     /// Create a test exercise with default values
-    static func createTestExercise(
+    public static func createTestExercise(
         name: String = "Test Exercise",
         category: ExerciseCategory = .strength,
         instructions: String = "Test instructions"
@@ -44,7 +44,7 @@ class TestHelpers {
     }
     
     /// Create a test workout template with default values
-    static func createTestWorkoutTemplate(
+    public static func createTestWorkoutTemplate(
         name: String = "Test Template",
         summary: String = "Test summary"
     ) -> WorkoutTemplate {
@@ -52,7 +52,7 @@ class TestHelpers {
     }
     
     /// Create a test workout session with default values
-    static func createTestWorkoutSession(
+    public static func createTestWorkoutSession(
         date: Date = Date(),
         title: String = "Test Session",
         plan: WorkoutPlan? = nil
@@ -61,7 +61,7 @@ class TestHelpers {
     }
     
     /// Create a test session exercise with default values
-    static func createTestSessionExercise(
+    public static func createTestSessionExercise(
         exercise: Exercise,
         plannedSets: Int = 3,
         plannedReps: Int = 10,
@@ -78,7 +78,7 @@ class TestHelpers {
     }
     
     /// Create a test completed set with default values
-    static func createTestCompletedSet(
+    public static func createTestCompletedSet(
         reps: Int = 10,
         weight: Double = 0,
         sessionExercise: SessionExercise? = nil
@@ -89,7 +89,7 @@ class TestHelpers {
     }
     
     /// Create a test progress photo with default values
-    static func createTestProgressPhoto(
+    public static func createTestProgressPhoto(
         date: Date = Date(),
         angle: PhotoAngle = .front,
         assetIdentifier: String = "test-asset-identifier",
@@ -104,7 +104,7 @@ class TestHelpers {
     }
     
     /// Create a test exercise template with default values
-    static func createTestExerciseTemplate(
+    public static func createTestExerciseTemplate(
         exercise: Exercise,
         setCount: Int = 3,
         reps: Int = 10,
@@ -124,7 +124,7 @@ class TestHelpers {
     }
     
     /// Create a test day template with default values
-    static func createTestDayTemplate(
+    public static func createTestDayTemplate(
         weekday: Weekday = .monday,
         notes: String = "Test day",
         workoutTemplate: WorkoutTemplate? = nil
@@ -135,7 +135,7 @@ class TestHelpers {
     }
     
     /// Create a test workout plan with default values
-    static func createTestWorkoutPlan(
+    public static func createTestWorkoutPlan(
         customName: String = "Test Plan",
         template: WorkoutTemplate
     ) -> WorkoutPlan {
@@ -143,7 +143,7 @@ class TestHelpers {
     }
     
     /// Create a test performed exercise with default values
-    static func createTestPerformedExercise(
+    public static func createTestPerformedExercise(
         exercise: Exercise,
         reps: Int = 10,
         weight: Double = 0,
@@ -160,12 +160,12 @@ class TestHelpers {
     // MARK: - Mock Factory Methods
     
     /// Create a mock persistence controller for testing
-    static func createMockPersistenceController() -> InMemoryPersistenceController {
+    public static func createMockPersistenceController() -> InMemoryPersistenceController {
         return InMemoryPersistenceController()
     }
     
     /// Create a complete test workout setup
-    static func createCompleteTestWorkout(
+    public static func createCompleteTestWorkout(
         persistenceController: InMemoryPersistenceController
     ) -> (Exercise, WorkoutTemplate, DayTemplate, ExerciseTemplate, WorkoutPlan, WorkoutSession, SessionExercise, CompletedSet) {
         
@@ -225,7 +225,7 @@ class TestHelpers {
     // MARK: - Validation Helpers
     
     /// Validate that a model has been properly persisted
-    static func validateModelPersisted<T: PersistentModel & Identified>(
+    public static func validateModelPersisted<T: PersistentModel & Identified>(
         _ model: T,
         in persistenceController: InMemoryPersistenceController
     ) -> Bool {
@@ -234,7 +234,7 @@ class TestHelpers {
     }
     
     /// Validate that a model has been properly deleted
-    static func validateModelDeleted<T: PersistentModel & Identified>(
+    public static func validateModelDeleted<T: PersistentModel & Identified>(
         _ model: T,
         in persistenceController: InMemoryPersistenceController
     ) -> Bool {
@@ -243,7 +243,7 @@ class TestHelpers {
     }
     
     /// Validate that relationships are properly established
-    static func validateRelationship<T: PersistentModel & Identified, U: PersistentModel & Identified>(
+    public static func validateRelationship<T: PersistentModel & Identified, U: PersistentModel & Identified>(
         parent: T,
         child: U,
         relationshipName: String,
@@ -258,7 +258,7 @@ class TestHelpers {
     // MARK: - Error Simulation
     
     /// Simulate a database error by corrupting the context
-    static func simulateDatabaseError(in persistenceController: InMemoryPersistenceController) {
+    public static func simulateDatabaseError(in persistenceController: InMemoryPersistenceController) {
         // This would need to be implemented based on specific error scenarios
         // For now, we'll just log that we're simulating an error
         print("🔄 [TestHelpers.simulateDatabaseError] Simulating database error")
@@ -267,7 +267,7 @@ class TestHelpers {
     // MARK: - Performance Testing
     
     /// Create a large dataset for performance testing
-    static func createLargeDataset(
+    public static func createLargeDataset(
         exerciseCount: Int = 100,
         sessionCount: Int = 50,
         in persistenceController: InMemoryPersistenceController
@@ -322,7 +322,7 @@ class TestHelpers {
     // MARK: - Test Data Cleanup
     
     /// Clean up all test data from a persistence controller
-    static func cleanupTestData(in persistenceController: InMemoryPersistenceController) {
+    public static func cleanupTestData(in persistenceController: InMemoryPersistenceController) {
         print("🔄 [TestHelpers.cleanupTestData] Cleaning up test data")
         persistenceController.cleanupTestData()
         print("✅ [TestHelpers.cleanupTestData] Test data cleanup completed")

@@ -6,12 +6,12 @@ import UzoFitnessCore
 /// Test data factories for creating realistic test data
 /// Provides factory methods for all model types with various configurations
 @MainActor
-class TestDataFactories {
+public class TestDataFactories {
     
     // MARK: - Exercise Factory
     
     /// Create a realistic exercise with specified parameters
-    static func createExercise(
+    public static func createExercise(
         name: String,
         category: ExerciseCategory,
         instructions: String? = nil,
@@ -24,17 +24,14 @@ class TestDataFactories {
             instructions: instructions ?? "Standard \(name.lowercased()) exercise"
         )
         
-        // Set additional properties if available
-        if let equipment = equipment {
-            // Note: This would require the Exercise model to have an equipment property
-            // For now, we'll just create the basic exercise
-        }
+        // Note: Equipment and muscleGroups properties would need to be added to Exercise model
+        // For now, we'll just create the basic exercise
         
         return exercise
     }
     
     /// Create a collection of common exercises
-    static func createCommonExercises() -> [Exercise] {
+    public static func createCommonExercises() -> [Exercise] {
         return [
             createExercise(name: "Push-up", category: .strength, instructions: "Standard push-up exercise"),
             createExercise(name: "Pull-up", category: .strength, instructions: "Pull-up exercise"),
@@ -57,7 +54,7 @@ class TestDataFactories {
     // MARK: - WorkoutTemplate Factory
     
     /// Create a realistic workout template
-    static func createWorkoutTemplate(
+    public static func createWorkoutTemplate(
         name: String,
         summary: String,
         difficulty: String = "Intermediate",
@@ -67,7 +64,7 @@ class TestDataFactories {
     }
     
     /// Create common workout templates
-    static func createCommonWorkoutTemplates() -> [WorkoutTemplate] {
+    public static func createCommonWorkoutTemplates() -> [WorkoutTemplate] {
         return [
             createWorkoutTemplate(
                 name: "Upper Body Blast",
@@ -95,7 +92,7 @@ class TestDataFactories {
     // MARK: - WorkoutSession Factory
     
     /// Create a realistic workout session
-    static func createWorkoutSession(
+    public static func createWorkoutSession(
         date: Date = Date(),
         title: String,
         plan: WorkoutPlan? = nil,
@@ -104,17 +101,14 @@ class TestDataFactories {
     ) -> WorkoutSession {
         let session = WorkoutSession(date: date, title: title, plan: plan)
         
-        // Set additional properties if available
-        if let notes = notes {
-            // Note: This would require the WorkoutSession model to have a notes property
-            // For now, we'll just create the basic session
-        }
+        // Note: Duration and notes properties would need to be added to WorkoutSession model
+        // For now, we'll just create the basic session
         
         return session
     }
     
     /// Create workout sessions for a date range
-    static func createWorkoutSessionsForDateRange(
+    public static func createWorkoutSessionsForDateRange(
         from startDate: Date,
         to endDate: Date,
         plan: WorkoutPlan? = nil
@@ -142,7 +136,7 @@ class TestDataFactories {
     // MARK: - SessionExercise Factory
     
     /// Create a realistic session exercise
-    static func createSessionExercise(
+    public static func createSessionExercise(
         exercise: Exercise,
         plannedSets: Int,
         plannedReps: Int,
@@ -162,7 +156,7 @@ class TestDataFactories {
     }
     
     /// Create session exercises for a workout session
-    static func createSessionExercisesForWorkout(
+    public static func createSessionExercisesForWorkout(
         session: WorkoutSession,
         exercises: [Exercise]
     ) -> [SessionExercise] {
@@ -186,7 +180,7 @@ class TestDataFactories {
     // MARK: - CompletedSet Factory
     
     /// Create a realistic completed set
-    static func createCompletedSet(
+    public static func createCompletedSet(
         reps: Int,
         weight: Double = 0,
         sessionExercise: SessionExercise? = nil,
@@ -195,17 +189,14 @@ class TestDataFactories {
         let set = CompletedSet(reps: reps, weight: weight)
         set.sessionExercise = sessionExercise
         
-        // Set additional properties if available
-        if let restTime = restTime {
-            // Note: This would require the CompletedSet model to have a restTime property
-            // For now, we'll just create the basic set
-        }
+        // Note: RestTime property would need to be added to CompletedSet model
+        // For now, we'll just create the basic set
         
         return set
     }
     
     /// Create completed sets for a session exercise
-    static func createCompletedSetsForSessionExercise(
+    public static func createCompletedSetsForSessionExercise(
         sessionExercise: SessionExercise,
         setCount: Int? = nil
     ) -> [CompletedSet] {
@@ -233,7 +224,7 @@ class TestDataFactories {
     // MARK: - ProgressPhoto Factory
     
     /// Create a realistic progress photo
-    static func createProgressPhoto(
+    public static func createProgressPhoto(
         date: Date = Date(),
         angle: PhotoAngle,
         assetIdentifier: String = "progress-photo-\(UUID().uuidString)",
@@ -253,7 +244,7 @@ class TestDataFactories {
     }
     
     /// Create progress photos for a date range
-    static func createProgressPhotosForDateRange(
+    public static func createProgressPhotosForDateRange(
         from startDate: Date,
         to endDate: Date,
         angles: [PhotoAngle] = [.front, .side, .back]
@@ -283,7 +274,7 @@ class TestDataFactories {
     // MARK: - ExerciseTemplate Factory
     
     /// Create a realistic exercise template
-    static func createExerciseTemplate(
+    public static func createExerciseTemplate(
         exercise: Exercise,
         setCount: Int,
         reps: Int,
@@ -304,7 +295,7 @@ class TestDataFactories {
     }
     
     /// Create exercise templates for a day template
-    static func createExerciseTemplatesForDay(
+    public static func createExerciseTemplatesForDay(
         dayTemplate: DayTemplate,
         exercises: [Exercise]
     ) -> [ExerciseTemplate] {
@@ -328,7 +319,7 @@ class TestDataFactories {
     // MARK: - DayTemplate Factory
     
     /// Create a realistic day template
-    static func createDayTemplate(
+    public static func createDayTemplate(
         weekday: Weekday,
         notes: String? = nil,
         workoutTemplate: WorkoutTemplate? = nil,
@@ -336,14 +327,14 @@ class TestDataFactories {
     ) -> DayTemplate {
         let dayTemplate = DayTemplate(
             weekday: weekday,
-            notes: notes ?? "\(weekday.rawValue) workout"
+            notes: notes ?? "\(weekday.fullName) workout"
         )
         dayTemplate.workoutTemplate = workoutTemplate
         return dayTemplate
     }
     
     /// Create day templates for a workout template
-    static func createDayTemplatesForWorkout(
+    public static func createDayTemplatesForWorkout(
         workoutTemplate: WorkoutTemplate,
         weekdays: [Weekday] = [.monday, .wednesday, .friday]
     ) -> [DayTemplate] {
@@ -358,7 +349,7 @@ class TestDataFactories {
     // MARK: - WorkoutPlan Factory
     
     /// Create a realistic workout plan
-    static func createWorkoutPlan(
+    public static func createWorkoutPlan(
         customName: String,
         template: WorkoutTemplate,
         startDate: Date = Date(),
@@ -367,17 +358,14 @@ class TestDataFactories {
     ) -> WorkoutPlan {
         let plan = WorkoutPlan(customName: customName, template: template)
         
-        // Set additional properties if available
-        if let endDate = endDate {
-            // Note: This would require the WorkoutPlan model to have startDate/endDate properties
-            // For now, we'll just create the basic plan
-        }
+        // Note: StartDate, endDate, and isActive properties would need to be added to WorkoutPlan model
+        // For now, we'll just create the basic plan
         
         return plan
     }
     
     /// Create common workout plans
-    static func createCommonWorkoutPlans(templates: [WorkoutTemplate]) -> [WorkoutPlan] {
+    public static func createCommonWorkoutPlans(templates: [WorkoutTemplate]) -> [WorkoutPlan] {
         return templates.enumerated().map { index, template in
             createWorkoutPlan(
                 customName: "Plan \(index + 1) - \(template.name)",
@@ -389,7 +377,7 @@ class TestDataFactories {
     // MARK: - PerformedExercise Factory
     
     /// Create a realistic performed exercise
-    static func createPerformedExercise(
+    public static func createPerformedExercise(
         exercise: Exercise,
         reps: Int = 10,
         weight: Double = 0,
@@ -408,7 +396,7 @@ class TestDataFactories {
     }
     
     /// Create performed exercises for a date range
-    static func createPerformedExercisesForDateRange(
+    public static func createPerformedExercisesForDateRange(
         from startDate: Date,
         to endDate: Date,
         exercises: [Exercise]
@@ -440,7 +428,7 @@ class TestDataFactories {
     // MARK: - Complete Workout Setup Factory
     
     /// Create a complete workout setup with all related entities
-    static func createCompleteWorkoutSetup(
+    public static func createCompleteWorkoutSetup(
         persistenceController: InMemoryPersistenceController
     ) -> (Exercise, WorkoutTemplate, DayTemplate, ExerciseTemplate, WorkoutPlan, WorkoutSession, SessionExercise, CompletedSet) {
         
