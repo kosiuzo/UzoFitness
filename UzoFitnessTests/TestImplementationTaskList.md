@@ -107,18 +107,20 @@ This task list is based on the TestCodeMapping.md file and provides a structured
 
 ### 1.3 Data Import/Export Tests
 
-#### Task 1.3.1: Recreate WorkoutTemplateImportTests
+#### Task 1.3.1: Recreate WorkoutTemplateImportTests ✅ COMPLETED
 - [x] **Reference Files**:
   - `UzoFitnessCore/Sources/UzoFitnessCore/Models/WorkoutTemplateImportDTO.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Models/WorkoutTemplate.swift`
 - [x] Create `WorkoutTemplateImportTests.swift`
-- [x] Test `testValidWorkoutTemplateImport()`
 - [x] Test `testMinimalValidWorkoutTemplate()`
-- [x] Test JSON validation and error handling
+- [x] Test `testWorkoutTemplateWithDayNames()`
+- [x] Test JSON validation and error handling (12 comprehensive test cases)
 - [x] Test auto-ID generation for missing IDs
-- [x] **Success Criteria**: JSON import functionality works with various scenarios
-- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for template import tests
-- [x] **Verify**: All template import tests compile and pass in simulator
+- [x] Test malformed JSON handling and missing required fields
+- [x] Test invalid exercise parameters (zero sets/reps, negative weights)
+- [x] **Success Criteria**: JSON import functionality works with various scenarios ✅
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16 Pro Max'` for template import tests ✅ ALL TESTS PASS
+- [x] **Verify**: All template import tests compile and pass in simulator ✅
 
 #### Task 1.3.2: Recreate JSONImportTests
 - [ ] **Reference Files**:
