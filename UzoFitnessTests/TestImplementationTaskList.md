@@ -139,18 +139,23 @@ This task list is based on the TestCodeMapping.md file and provides a structured
 - [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16 Pro Max'` for JSON import tests ✅ ALL TESTS PASS
 - [x] **Verify**: All JSON import tests compile and pass in simulator ✅
 
-#### Task 1.3.3: Recreate ProgressPhotoTests
-- [ ] **Reference Files**:
+#### Task 1.3.3: Recreate ProgressPhotoTests ✅ COMPLETED
+- [x] **Reference Files**:
   - `UzoFitnessCore/Sources/UzoFitnessCore/Models/ProgressPhoto.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Models/Enums.swift`
-- [ ] Create `ProgressPhotoTests.swift`
-- [ ] Test `testInitializerSetsAllProperties()`
-- [ ] Test `testInsertAndFetchProgressPhoto()`
-- [ ] Test SwiftData persistence operations
-- [ ] Test `Codable` implementation
-- [ ] **Success Criteria**: Progress photo model functionality works correctly
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for progress photo tests
-- [ ] **Verify**: All progress photo tests compile and pass in simulator
+- [x] Create `ProgressPhotoTests.swift`
+- [x] Test `testInitializerSetsAllProperties()`
+- [x] Test `testInsertAndFetchProgressPhoto()`
+- [x] Test SwiftData persistence operations (insert, fetch, update, delete)
+- [x] Test `Codable` implementation with JSON encoding/decoding
+- [x] Test all PhotoAngle enum values (.front, .side, .back)
+- [x] Test protocol conformance (Identified, Timestamped)
+- [x] Test error handling for invalid JSON and missing fields
+- [x] Created 15 comprehensive test cases covering all functionality
+- [x] **Success Criteria**: Progress photo model functionality works correctly ✅
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16 Pro Max' -only-testing:UzoFitnessTests/ProgressPhotoTests` ✅ ALL TESTS PASS
+- [x] **Verify**: All progress photo tests compile and pass in simulator ✅
+- [x] **Note**: Fixed floating-point precision issue in date comparisons for JSON encoding/decoding test
 
 ### 1.4 Advanced Model Tests
 
@@ -164,7 +169,10 @@ This task list is based on the TestCodeMapping.md file and provides a structured
 - [ ] Test cache updates after workout completion
 - [ ] Test manual overrides
 - [ ] **Success Criteria**: All caching behavior tests pass
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for exercise caching tests
+- [ ] **Run Simulator Test**: Execute `xcodebuild test \
+  -scheme UzoFitness \
+  -destination 'platform=iOS Simulator,name=iPhone 16 Pro Max' \
+  -only-testing:UzoFitnessTests/ExerciseCachingTests`
 - [ ] **Verify**: All exercise caching tests compile and pass in simulator
 
 #### Task 1.5: Run Unit Tests for Milestone 1
@@ -427,7 +435,10 @@ This task list is based on the TestCodeMapping.md file and provides a structured
 - [ ] Test date selection functionality
 - [ ] Test empty states handling
 - [ ] **Success Criteria**: Date selection functionality works correctly
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for HistoryViewModel date selection tests
+- [ ] **Run Simulator Test**: Execute `xcodebuild test \
+  -scheme UzoFitness \
+  -destination 'platform=iOS Simulator,name=iPhone 16 Pro Max' \
+  -only-testing:UzoFitnessTests/HistoryViewModelTests`
 - [ ] **Verify**: All HistoryViewModel date selection tests compile and pass in simulator
 
 ### 3.3 LoggingViewModel Tests
@@ -687,7 +698,9 @@ This task list is based on the TestCodeMapping.md file and provides a structured
 
 #### Task 5: Final Comprehensive Test Suite Run
 - [ ] **Reference Files**: All test files created across all milestones
-- [ ] Run complete test suite: `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'`
+- [ ] Run complete test suite: `xcodebuild test \
+  -scheme UzoFitness \
+  -destination 'platform=iOS Simulator,name=iPhone 16 Pro Max'`
 - [ ] Verify all tests compile successfully
 - [ ] Verify all tests pass (100% success rate)
 - [ ] Check for any compilation errors or warnings
