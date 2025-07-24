@@ -122,18 +122,22 @@ This task list is based on the TestCodeMapping.md file and provides a structured
 - [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16 Pro Max'` for template import tests ✅ ALL TESTS PASS
 - [x] **Verify**: All template import tests compile and pass in simulator ✅
 
-#### Task 1.3.2: Recreate JSONImportTests
-- [ ] **Reference Files**:
+#### Task 1.3.2: Recreate JSONImportTests ✅ COMPLETED
+- [x] **Reference Files**:
   - `UzoFitnessCore/Sources/UzoFitnessCore/Models/Exercise.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Models/Enums.swift`
-- [ ] Create `JSONImportTests.swift`
-- [ ] Test `testExerciseJSONImport_WithMissingID()`
-- [ ] Test `testExerciseJSONImport_WithExistingID()`
-- [ ] Test ID handling in JSON import
-- [ ] Test error handling for malformed JSON
-- [ ] **Success Criteria**: Exercise JSON import functionality works correctly
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for JSON import tests
-- [ ] **Verify**: All JSON import tests compile and pass in simulator
+- [x] Create `JSONImportTests.swift`
+- [x] Test `testExerciseJSONImport_WithMissingID()`
+- [x] Test `testExerciseJSONImport_WithExistingID()`
+- [x] Test `testExerciseJSONImport_AllCategories()`
+- [x] Test `testExerciseJSONImport_MinimalData()`
+- [x] Test ID handling in JSON import (auto-generation and preservation)
+- [x] Test error handling for malformed JSON and invalid categories
+- [x] Test round-trip encoding/decoding and array import/export
+- [x] Test unique ID generation for multiple exercises
+- [x] **Success Criteria**: Exercise JSON import functionality works correctly ✅
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16 Pro Max'` for JSON import tests ✅ ALL TESTS PASS
+- [x] **Verify**: All JSON import tests compile and pass in simulator ✅
 
 #### Task 1.3.3: Recreate ProgressPhotoTests
 - [ ] **Reference Files**:
