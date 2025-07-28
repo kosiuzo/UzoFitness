@@ -336,167 +336,167 @@ This task list is based on the TestCodeMapping.md file and provides a structured
 
 ## Milestone 3: ViewModel Tests (Week 3)
 
-### 3.1 LibraryViewModel Tests
+### 3.1 LibraryViewModel Tests ✅ COMPLETED
 
-#### Task 3.1.1: Recreate LibraryViewModel initialization tests
-- [ ] **Reference File**: `UzoFitness/ViewModels/LibraryViewModel.swift`
-- [ ] Create `LibraryViewModelTests.swift`
-- [ ] Test `testInitialization_SetsDefaultState()`
-- [ ] Test ViewModel initialization with correct default values
-- [ ] Test dependency injection
-- [ ] Test state consistency after initialization
-- [ ] **Success Criteria**: ViewModel initialization works correctly
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for LibraryViewModel initialization tests
-- [ ] **Verify**: All LibraryViewModel initialization tests compile and pass in simulator
+#### Task 3.1.1: Recreate LibraryViewModel initialization tests ✅ COMPLETED
+- [x] **Reference File**: `UzoFitness/ViewModels/LibraryViewModel.swift`
+- [x] Create `LibraryViewModelTests.swift`
+- [x] Test `testInitialization_SetsDefaultState()`
+- [x] Test ViewModel initialization with correct default values
+- [x] Test dependency injection
+- [x] Test state consistency after initialization
+- [x] **Success Criteria**: ViewModel initialization works correctly ✅
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for LibraryViewModel initialization tests ✅ ALL TESTS PASS
+- [x] **Verify**: All LibraryViewModel initialization tests compile and pass in simulator ✅
 
-#### Task 3.1.2: Recreate LibraryViewModel template management tests
-- [ ] **Reference Files**:
+#### Task 3.1.2: Recreate LibraryViewModel template management tests ✅ COMPLETED
+- [x] **Reference Files**:
   - `UzoFitness/ViewModels/LibraryViewModel.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Extensions/WorkoutTemplate+HelperMethods.swift`
-- [ ] Test `testCreateTemplate_ValidData_CreatesTemplate()`
-- [ ] Test `testCreateTemplate_DuplicateName_SetsError()`
-- [ ] Test `testDuplicateTemplate_ValidTemplate_CreatesCopy()`
-- [ ] Test `testDeleteTemplate_ValidTemplate_RemovesTemplate()`
-- [ ] Test template validation and error handling
-- [ ] **Success Criteria**: Template CRUD operations work correctly
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for LibraryViewModel template management tests
-- [ ] **Verify**: All LibraryViewModel template management tests compile and pass in simulator
+- [x] Test `testCreateTemplate_ValidData_CreatesTemplate()`
+- [x] Test `testCreateTemplate_DuplicateName_SetsError()`
+- [x] Test `testDuplicateTemplate_ValidTemplate_CreatesCopy()`
+- [x] Test `testDeleteTemplate_ValidTemplate_RemovesTemplate()`
+- [x] Test template validation and error handling
+- [x] **Success Criteria**: Template CRUD operations work correctly ✅
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for LibraryViewModel template management tests ✅ ALL TESTS PASS
+- [x] **Verify**: All LibraryViewModel template management tests compile and pass in simulator ✅
 
-#### Task 3.1.3: Recreate LibraryViewModel exercise management tests
-- [ ] **Reference Files**:
+#### Task 3.1.3: Recreate LibraryViewModel exercise management tests ✅ COMPLETED
+- [x] **Reference Files**:
   - `UzoFitness/ViewModels/LibraryViewModel.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Extensions/Exercise+HelperMethods.swift`
-- [ ] Test `testCreateExercise_ValidData_CreatesExercise()`
-- [ ] Test `testDeleteExercise_ExerciseInUse_SetsError()`
-- [ ] Test exercise catalog management
-- [ ] Test error handling for invalid operations
-- [ ] **Success Criteria**: Exercise management functionality works correctly
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for LibraryViewModel exercise management tests
-- [ ] **Verify**: All LibraryViewModel exercise management tests compile and pass in simulator
+- [x] Test `testCreateExercise_ValidData_CreatesExercise()`
+- [x] Test `testDeleteExercise_ExerciseInUse_SetsError()`
+- [x] Test exercise catalog management
+- [x] Test error handling for invalid operations
+- [x] **Success Criteria**: Exercise management functionality works correctly ✅
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for LibraryViewModel exercise management tests ✅ ALL TESTS PASS
+- [x] **Verify**: All LibraryViewModel exercise management tests compile and pass in simulator ✅
 
-#### Task 3.1.4: Recreate LibraryViewModel import/export tests
-- [ ] **Reference Files**:
+#### Task 3.1.4: Recreate LibraryViewModel import/export tests ✅ COMPLETED (SKIPPED - Methods don't exist)
+- [x] **Reference Files**:
   - `UzoFitness/ViewModels/LibraryViewModel.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Models/WorkoutTemplateImportDTO.swift`
-- [ ] Test `testImportExercises_ValidJSON_ImportsSuccessfully()`
-- [ ] Test `testImportExercises_InvalidJSON_SetsError()`
-- [ ] Test JSON import/export functionality
-- [ ] Test error handling for malformed data
-- [ ] **Success Criteria**: Import/export functionality works correctly
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for LibraryViewModel import/export tests
-- [ ] **Verify**: All LibraryViewModel import/export tests compile and pass in simulator
+- [x] Test `testImportExercises_ValidJSON_ImportsSuccessfully()` ✅ SKIPPED - Methods don't exist in current implementation
+- [x] Test `testImportExercises_InvalidJSON_SetsError()` ✅ SKIPPED - Methods don't exist in current implementation
+- [x] Test JSON import/export functionality ✅ SKIPPED - Methods don't exist in current implementation
+- [x] Test error handling for malformed data ✅ SKIPPED - Methods don't exist in current implementation
+- [x] **Success Criteria**: Import/export functionality works correctly ✅ SKIPPED - Methods don't exist
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for LibraryViewModel import/export tests ✅ SKIPPED
+- [x] **Verify**: All LibraryViewModel import/export tests compile and pass in simulator ✅ SKIPPED
 
 ### 3.2 HistoryViewModel Tests
 
 #### Task 3.2.1: Recreate HistoryViewModel initialization tests
-- [ ] **Reference File**: `UzoFitness/ViewModels/HistoryViewModel.swift`
-- [ ] Create `HistoryViewModelTests.swift`
-- [ ] Test `testInitialization_SetsDefaultState()`
-- [ ] Test calendar data initialization
-- [ ] Test default state setup
-- [ ] **Success Criteria**: HistoryViewModel initialization works correctly
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for HistoryViewModel initialization tests
-- [ ] **Verify**: All HistoryViewModel initialization tests compile and pass in simulator
+- [x] **Reference File**: `UzoFitness/ViewModels/HistoryViewModel.swift`
+- [x] Create `HistoryViewModelTests.swift`
+- [x] Test `testInitialization_SetsDefaultState()`
+- [x] Test calendar data initialization
+- [x] Test default state setup
+- [x] **Success Criteria**: HistoryViewModel initialization works correctly
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for HistoryViewModel initialization tests
+- [x] **Verify**: All HistoryViewModel initialization tests compile and pass in simulator
 
 #### Task 3.2.2: Recreate HistoryViewModel workout summary tests
-- [ ] **Reference Files**:
+- [x] **Reference Files**:
   - `UzoFitness/ViewModels/HistoryViewModel.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Models/WorkoutSession.swift`
-- [ ] Test `testWorkoutSessionSummary_CreatesCorrectSummary()`
-- [ ] Test `testWorkoutSessionSummary_EmptyTitle_UsesDefaultTitle()`
-- [ ] Test summary calculations
-- [ ] Test default values application
-- [ ] **Success Criteria**: Workout summary functionality works correctly
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for HistoryViewModel workout summary tests
-- [ ] **Verify**: All HistoryViewModel workout summary tests compile and pass in simulator
+- [x] Test `testWorkoutSessionSummary_CreatesCorrectSummary()`
+- [x] Test `testWorkoutSessionSummary_EmptyTitle_UsesDefaultTitle()`
+- [x] Test summary calculations
+- [x] Test default values application
+- [x] **Success Criteria**: Workout summary functionality works correctly
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for HistoryViewModel workout summary tests
+- [x] **Verify**: All HistoryViewModel workout summary tests compile and pass in simulator
 
 #### Task 3.2.3: Recreate HistoryViewModel date selection tests
-- [ ] **Reference File**: `UzoFitness/ViewModels/HistoryViewModel.swift`
-- [ ] Test `testSelectDate_WithNoWorkoutData_SetsSelectedDateWithEmptyDetails()`
-- [ ] Test `testClearSelection_ClearsSelectedDateAndDetails()`
-- [ ] Test date selection functionality
-- [ ] Test empty states handling
-- [ ] **Success Criteria**: Date selection functionality works correctly
-- [ ] **Run Simulator Test**: Execute `xcodebuild test \
+- [x] **Reference File**: `UzoFitness/ViewModels/HistoryViewModel.swift`
+- [x] Test `testSelectDate_WithNoWorkoutData_SetsSelectedDateWithEmptyDetails()`
+- [x] Test `testClearSelection_ClearsSelectedDateAndDetails()`
+- [x] Test date selection functionality
+- [x] Test empty states handling
+- [x] **Success Criteria**: Date selection functionality works correctly
+- [x] **Run Simulator Test**: Execute `xcodebuild test \
   -scheme UzoFitness \
   -destination 'platform=iOS Simulator,name=iPhone 16 Pro Max' \
   -only-testing:UzoFitnessTests/HistoryViewModelTests`
-- [ ] **Verify**: All HistoryViewModel date selection tests compile and pass in simulator
+- [x] **Verify**: All HistoryViewModel date selection tests compile and pass in simulator
 
 ### 3.3 LoggingViewModel Tests
 
 #### Task 3.3.1: Recreate LoggingViewModel plan selection tests
-- [ ] **Reference Files**:
+- [x] **Reference Files**:
   - `UzoFitness/ViewModels/LoggingViewModel.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Models/WorkoutPlan.swift`
-- [ ] Create `LoggingViewModelTests.swift`
-- [ ] Test `testSelectPlan_ValidPlan_SetsActivePlan()`
-- [ ] Test `testSelectPlan_InvalidPlanID_SetsError()`
-- [ ] Test plan selection functionality
-- [ ] Test error handling for invalid plans
-- [ ] **Success Criteria**: Plan selection functionality works correctly
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for LoggingViewModel plan selection tests
-- [ ] **Verify**: All LoggingViewModel plan selection tests compile and pass in simulator
+- [x] Create `LoggingViewModelTests.swift`
+- [x] Test `testSelectPlan_ValidPlan_SetsActivePlan()`
+- [x] Test `testSelectPlan_InvalidPlanID_SetsError()`
+- [x] Test plan selection functionality
+- [x] Test error handling for invalid plans
+- [x] **Success Criteria**: Plan selection functionality works correctly
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for LoggingViewModel plan selection tests
+- [x] **Verify**: All LoggingViewModel plan selection tests compile and pass in simulator
 
 #### Task 3.3.2: Recreate LoggingViewModel day selection tests
-- [ ] **Reference Files**:
+- [x] **Reference Files**:
   - `UzoFitness/ViewModels/LoggingViewModel.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Models/DayTemplate.swift`
-- [ ] Test `testSelectDay_ValidDay_SetsSelectedDay()`
-- [ ] Test day selection within plans
-- [ ] Test rest day detection
-- [ ] **Success Criteria**: Day selection functionality works correctly
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for LoggingViewModel day selection tests
-- [ ] **Verify**: All LoggingViewModel day selection tests compile and pass in simulator
+- [x] Test `testSelectDay_ValidDay_SetsSelectedDay()`
+- [x] Test day selection within plans
+- [x] Test rest day detection
+- [x] **Success Criteria**: Day selection functionality works correctly
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for LoggingViewModel day selection tests
+- [x] **Verify**: All LoggingViewModel day selection tests compile and pass in simulator
 
 #### Task 3.3.3: Recreate LoggingViewModel exercise logging tests
-- [ ] **Reference Files**:
+- [x] **Reference Files**:
   - `UzoFitness/ViewModels/LoggingViewModel.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Models/SessionExercise.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Models/CompletedSet.swift`
-- [ ] Test `testAddSet_InvalidExerciseID_SetsError()`
-- [ ] Test set logging functionality
-- [ ] Test error handling for invalid exercises
-- [ ] **Success Criteria**: Exercise logging functionality works correctly
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for LoggingViewModel exercise logging tests
-- [ ] **Verify**: All LoggingViewModel exercise logging tests compile and pass in simulator
+- [x] Test `testAddSet_InvalidExerciseID_SetsError()`
+- [x] Test set logging functionality
+- [x] Test error handling for invalid exercises
+- [x] **Success Criteria**: Exercise logging functionality works correctly
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for LoggingViewModel exercise logging tests
+- [x] **Verify**: All LoggingViewModel exercise logging tests compile and pass in simulator
 
 ### 3.4 ProgressViewModel Tests
 
 #### Task 3.4.1: Recreate ProgressViewModel state tests
-- [ ] **Reference Files**:
+- [x] **Reference Files**:
   - `UzoFitness/ViewModels/ProgressViewModel.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Models/ProgressPhoto.swift`
-- [ ] Create `ProgressViewModelTests.swift`
-- [ ] Test `testGetPhotosForAngle_WithEmptyState_ReturnsEmptyArray()`
-- [ ] Test `testGetExerciseOptions_WithEmptyState_ReturnsEmptyArray()`
-- [ ] Test empty state handling
-- [ ] **Success Criteria**: Empty state handling works correctly
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for ProgressViewModel state tests
-- [ ] **Verify**: All ProgressViewModel state tests compile and pass in simulator
+- [x] Create `ProgressViewModelTests.swift`
+- [x] Test `testGetPhotosForAngle_WithEmptyState_ReturnsEmptyArray()`
+- [x] Test `testGetExerciseOptions_WithEmptyState_ReturnsEmptyArray()`
+- [x] Test empty state handling
+- [x] **Success Criteria**: Empty state handling works correctly
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for ProgressViewModel state tests
+- [x] **Verify**: All ProgressViewModel state tests compile and pass in simulator
 
 #### Task 3.4.2: Recreate ProgressViewModel metrics tests
-- [ ] **Reference Files**:
+- [x] **Reference Files**:
   - `UzoFitness/ViewModels/ProgressViewModel.swift`
   - `UzoFitnessCore/Sources/UzoFitnessCore/Services/ProgressAnalysisLogic.swift`
-- [ ] Test `testExerciseTrend_CalculatesMetricsCorrectly()`
-- [ ] Test `testBodyMetrics_FormatsValuesCorrectly()`
-- [ ] Test `testBodyMetrics_HandlesNilValues()`
-- [ ] Test metrics calculations
-- [ ] **Success Criteria**: Metrics calculation and formatting works correctly
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for ProgressViewModel metrics tests
-- [ ] **Verify**: All ProgressViewModel metrics tests compile and pass in simulator
+- [x] Test `testExerciseTrend_CalculatesMetricsCorrectly()`
+- [x] Test `testBodyMetrics_FormatsValuesCorrectly()`
+- [x] Test `testBodyMetrics_HandlesNilValues()`
+- [x] Test metrics calculations
+- [x] **Success Criteria**: Metrics calculation and formatting works correctly
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for ProgressViewModel metrics tests
+- [x] **Verify**: All ProgressViewModel metrics tests compile and pass in simulator
 
 #### Task 3.4.3: Recreate ProgressViewModel photo management tests
-- [ ] **Reference Files**:
+- [x] **Reference Files**:
   - `UzoFitness/ViewModels/ProgressViewModel.swift`
   - `UzoFitness/Services/PhotoService.swift`
-- [ ] Test `testAddPhoto_SavesToCacheAndUpdatesViewModel()`
-- [ ] Test photo addition functionality
-- [ ] Test ViewModel state updates
-- [ ] **Success Criteria**: Photo management functionality works correctly
-- [ ] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for ProgressViewModel photo management tests
-- [ ] **Verify**: All ProgressViewModel photo management tests compile and pass in simulator
+- [x] Test `testAddPhoto_SavesToCacheAndUpdatesViewModel()`
+- [x] Test photo addition functionality
+- [x] Test ViewModel state updates
+- [x] **Success Criteria**: Photo management functionality works correctly
+- [x] **Run Simulator Test**: Execute `xcodebuild test -scheme UzoFitness -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5'` for ProgressViewModel photo management tests
+- [x] **Verify**: All ProgressViewModel photo management tests compile and pass in simulator
 
 ### 3.5 SettingsViewModel Tests
 
