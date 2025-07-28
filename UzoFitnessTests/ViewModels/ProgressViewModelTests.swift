@@ -495,5 +495,307 @@ class ProgressViewModelTests: XCTestCase {
         XCTAssertEqual(latest?.id, photo2.id, "Should return the most recent photo")
         XCTAssertEqual(latest?.angle, .side, "Latest photo should be the side angle photo")
     }
+    
+    // MARK: - Photo Management Tests
+    
+    func testPhotoManagement_GetPhotosForAngleEmptyState() {
+        // Given: A ProgressViewModel with no photos
+        // (viewModel created in setUp with empty data)
+        
+        // When: Getting photos for each angle
+        for angle in PhotoAngle.allCases {
+            let photos = viewModel.getPhotosForAngle(angle)
+            
+            // Then: Should return empty array for all angles
+            XCTAssertEqual(photos.count, 0, "Should return empty array for angle \(angle)")
+        }
+    }
+    
+    func testPhotoManagement_GetPhotosForAngleWithData() {
+        // Given: A ProgressViewModel with photos for different angles
+        let frontPhoto1 = TestHelpers.createTestProgressPhoto(angle: .front)
+        let frontPhoto2 = TestHelpers.createTestProgressPhoto(angle: .front)
+        let sidePhoto = TestHelpers.createTestProgressPhoto(angle: .side)
+        let backPhoto = TestHelpers.createTestProgressPhoto(angle: .back)
+        
+        viewModel.photosByAngle = [
+            .front: [frontPhoto1, frontPhoto2],
+            .side: [sidePhoto],
+            .back: [backPhoto]
+        ]
+        
+        // When: Getting photos for each angle
+        let frontPhotos = viewModel.getPhotosForAngle(.front)
+        let sidePhotos = viewModel.getPhotosForAngle(.side)
+        let backPhotos = viewModel.getPhotosForAngle(.back)
+        
+        // Then: Should return correct photos for each angle
+        XCTAssertEqual(frontPhotos.count, 2, "Should return 2 front photos")
+        XCTAssertEqual(sidePhotos.count, 1, "Should return 1 side photo")
+        XCTAssertEqual(backPhotos.count, 1, "Should return 1 back photo")
+        
+        XCTAssertTrue(frontPhotos.contains { $0.id == frontPhoto1.id }, "Should contain first front photo")
+        XCTAssertTrue(frontPhotos.contains { $0.id == frontPhoto2.id }, "Should contain second front photo")
+        XCTAssertEqual(sidePhotos.first?.id, sidePhoto.id, "Should return correct side photo")
+        XCTAssertEqual(backPhotos.first?.id, backPhoto.id, "Should return correct back photo")
+    }
+    
+    func testPhotoManagement_ComparisonFunctionalityEmpty() {
+        // Given: A ProgressViewModel with no photos
+        // (viewModel created in setUp with empty data)
+        
+        // When: Checking comparison capability
+        let canCompare = viewModel.canCompare
+        let (firstPhoto, secondPhoto) = viewModel.comparisonPhotos
+        
+        // Then: Should not be able to compare
+        XCTAssertFalse(canCompare, "Should not be able to compare with no photos")
+        XCTAssertNil(firstPhoto, "First comparison photo should be nil")
+        XCTAssertNil(secondPhoto, "Second comparison photo should be nil")
+        XCTAssertNil(viewModel.compareSelection.0, "First selection should be nil")
+        XCTAssertNil(viewModel.compareSelection.1, "Second selection should be nil")
+    }
+    
+    func testPhotoManagement_ComparisonFunctionalityWithPhotos() {
+        // Given: A ProgressViewModel with photos
+        let photo1 = TestHelpers.createTestProgressPhoto(angle: .front)
+        let photo2 = TestHelpers.createTestProgressPhoto(angle: .side)
+        let photo3 = TestHelpers.createTestProgressPhoto(angle: .back)
+        
+        viewModel.photosByAngle = [
+            .front: [photo1],
+            .side: [photo2],
+            .back: [photo3]
+        ]
+        
+        // When: Selecting photos for comparison
+        viewModel.compareSelection = (photo1.id, photo2.id)
+        
+        // Then: Should be able to compare
+        XCTAssertTrue(viewModel.canCompare, "Should be able to compare with two different photos selected")
+        
+        let (firstPhoto, secondPhoto) = viewModel.comparisonPhotos
+        XCTAssertNotNil(firstPhoto, "First comparison photo should not be nil")
+        XCTAssertNotNil(secondPhoto, "Second comparison photo should not be nil")
+        XCTAssertEqual(firstPhoto?.id, photo1.id, "First photo should match selection")
+        XCTAssertEqual(secondPhoto?.id, photo2.id, "Second photo should match selection")
+    }
+    
+    func testPhotoManagement_ComparisonSamePhoto() {
+        // Given: A ProgressViewModel with photos
+        let photo1 = TestHelpers.createTestProgressPhoto(angle: .front)
+        let photo2 = TestHelpers.createTestProgressPhoto(angle: .side)
+        
+        viewModel.photosByAngle = [
+            .front: [photo1],
+            .side: [photo2]
+        ]
+        
+        // When: Selecting the same photo twice
+        viewModel.compareSelection = (photo1.id, photo1.id)
+        
+        // Then: Should not be able to compare
+        XCTAssertFalse(viewModel.canCompare, "Should not be able to compare the same photo with itself")
+    }
+    
+    func testPhotoManagement_ComparisonPartialSelection() {
+        // Given: A ProgressViewModel with photos
+        let photo1 = TestHelpers.createTestProgressPhoto(angle: .front)
+        
+        viewModel.photosByAngle = [
+            .front: [photo1]
+        ]
+        
+        // When: Selecting only one photo
+        viewModel.compareSelection = (photo1.id, nil)
+        
+        // Then: Should not be able to compare
+        XCTAssertFalse(viewModel.canCompare, "Should not be able to compare with only one photo selected")
+        
+        // When: Selecting second photo as nil
+        viewModel.compareSelection = (nil, photo1.id)
+        
+        // Then: Should still not be able to compare
+        XCTAssertFalse(viewModel.canCompare, "Should not be able to compare with only second photo selected")
+    }
+    
+    func testPhotoManagement_LoadingStatesInitialization() {
+        // Given: A newly initialized ProgressViewModel
+        // (viewModel created in setUp)
+        
+        // Then: Photo loading states should be properly initialized
+        XCTAssertFalse(viewModel.isLoadingPhotos, "Photo loading should be false initially")
+        XCTAssertFalse(viewModel.showImagePicker, "Image picker should be hidden initially")
+        XCTAssertEqual(viewModel.selectedPhotoAngle, .front, "Default photo angle should be front")
+    }
+    
+    
+    func testPhotoManagement_PhotoAngleSelection() {
+        // Given: A ProgressViewModel with default angle
+        // (viewModel created in setUp)
+        
+        // Then: Default selected angle should be front
+        XCTAssertEqual(viewModel.selectedPhotoAngle, .front, "Default selected angle should be front")
+        
+        // When: Manually changing selected angle (simulating UI interaction)
+        viewModel.selectedPhotoAngle = .side
+        
+        // Then: Selected angle should be updated
+        XCTAssertEqual(viewModel.selectedPhotoAngle, .side, "Selected angle should be updated to side")
+        
+        // When: Changing to back angle
+        viewModel.selectedPhotoAngle = .back
+        
+        // Then: Selected angle should be back
+        XCTAssertEqual(viewModel.selectedPhotoAngle, .back, "Selected angle should be updated to back")
+    }
+    
+    func testPhotoManagement_ImagePickerState() {
+        // Given: A ProgressViewModel with image picker hidden
+        // (viewModel created in setUp)
+        
+        // Then: Image picker should be hidden initially
+        XCTAssertFalse(viewModel.showImagePicker, "Image picker should be hidden initially")
+        
+        // When: Manually showing image picker (simulating UI interaction)
+        viewModel.showImagePicker = true
+        
+        // Then: Image picker should be shown
+        XCTAssertTrue(viewModel.showImagePicker, "Image picker should be shown")
+        
+        // When: Hiding image picker
+        viewModel.showImagePicker = false
+        
+        // Then: Image picker should be hidden
+        XCTAssertFalse(viewModel.showImagePicker, "Image picker should be hidden")
+    }
+    
+    func testPhotoManagement_PhotoMetricsHandling() {
+        // Given: A ProgressViewModel with photo metrics
+        let photo1 = TestHelpers.createTestProgressPhoto(angle: .front)
+        let photo2 = TestHelpers.createTestProgressPhoto(angle: .side)
+        
+        let metrics1 = BodyMetrics(
+            photoID: photo1.id,
+            weight: 180.0,
+            bodyFat: 0.15,
+            date: photo1.date
+        )
+        let metrics2 = BodyMetrics(
+            photoID: photo2.id,
+            weight: 175.0,
+            bodyFat: 0.12,
+            date: photo2.date
+        )
+        
+        viewModel.photosByAngle = [
+            .front: [photo1],
+            .side: [photo2]
+        ]
+        viewModel.photoMetrics = [
+            photo1.id: metrics1,
+            photo2.id: metrics2
+        ]
+        
+        // When: Getting metrics for existing photos
+        let retrievedMetrics1 = viewModel.getMetricsForPhoto(photo1.id)
+        let retrievedMetrics2 = viewModel.getMetricsForPhoto(photo2.id)
+        
+        // Then: Should return correct metrics
+        XCTAssertNotNil(retrievedMetrics1, "Should return metrics for first photo")
+        XCTAssertEqual(retrievedMetrics1?.weight, 180.0, "First photo weight should match")
+        XCTAssertEqual(retrievedMetrics1?.bodyFat, 0.15, "First photo body fat should match")
+        
+        XCTAssertNotNil(retrievedMetrics2, "Should return metrics for second photo")
+        XCTAssertEqual(retrievedMetrics2?.weight, 175.0, "Second photo weight should match")
+        XCTAssertEqual(retrievedMetrics2?.bodyFat, 0.12, "Second photo body fat should match")
+        
+        // When: Getting metrics for non-existent photo
+        let nonExistentMetrics = viewModel.getMetricsForPhoto(UUID())
+        
+        // Then: Should return nil
+        XCTAssertNil(nonExistentMetrics, "Should return nil for non-existent photo")
+    }
+    
+    func testPhotoManagement_ComparisonPhotosRetrieval() {
+        // Given: A ProgressViewModel with photos and comparison selection
+        let photo1 = TestHelpers.createTestProgressPhoto(angle: .front)
+        let photo2 = TestHelpers.createTestProgressPhoto(angle: .side)
+        let photo3 = TestHelpers.createTestProgressPhoto(angle: .back)
+        
+        viewModel.photosByAngle = [
+            .front: [photo1],
+            .side: [photo2],
+            .back: [photo3]
+        ]
+        
+        // When: No comparison selection
+        viewModel.compareSelection = (nil, nil)
+        var (firstPhoto, secondPhoto) = viewModel.comparisonPhotos
+        
+        // Then: Should return nil for both
+        XCTAssertNil(firstPhoto, "First photo should be nil with no selection")
+        XCTAssertNil(secondPhoto, "Second photo should be nil with no selection")
+        
+        // When: Partial selection
+        viewModel.compareSelection = (photo1.id, nil)
+        (firstPhoto, secondPhoto) = viewModel.comparisonPhotos
+        
+        // Then: Should return first photo only
+        XCTAssertNotNil(firstPhoto, "First photo should not be nil")
+        XCTAssertNil(secondPhoto, "Second photo should be nil")
+        XCTAssertEqual(firstPhoto?.id, photo1.id, "First photo should match selection")
+        
+        // When: Full selection
+        viewModel.compareSelection = (photo1.id, photo2.id)
+        (firstPhoto, secondPhoto) = viewModel.comparisonPhotos
+        
+        // Then: Should return both photos
+        XCTAssertNotNil(firstPhoto, "First photo should not be nil")
+        XCTAssertNotNil(secondPhoto, "Second photo should not be nil")
+        XCTAssertEqual(firstPhoto?.id, photo1.id, "First photo should match selection")
+        XCTAssertEqual(secondPhoto?.id, photo2.id, "Second photo should match selection")
+        
+        // When: Selection with non-existent photo
+        viewModel.compareSelection = (photo1.id, UUID())
+        (firstPhoto, secondPhoto) = viewModel.comparisonPhotos
+        
+        // Then: Should return first photo and nil for second
+        XCTAssertNotNil(firstPhoto, "First photo should not be nil")
+        XCTAssertNil(secondPhoto, "Second photo should be nil for non-existent ID")
+        XCTAssertEqual(firstPhoto?.id, photo1.id, "First photo should match selection")
+    }
+    
+    func testPhotoManagement_MultiplePhotosPerAngle() {
+        // Given: A ProgressViewModel with multiple photos per angle
+        let frontPhoto1 = TestHelpers.createTestProgressPhoto(date: Date().addingTimeInterval(-86400), angle: .front)
+        let frontPhoto2 = TestHelpers.createTestProgressPhoto(date: Date(), angle: .front)
+        let sidePhoto1 = TestHelpers.createTestProgressPhoto(date: Date().addingTimeInterval(-172800), angle: .side)
+        let sidePhoto2 = TestHelpers.createTestProgressPhoto(date: Date().addingTimeInterval(-43200), angle: .side)
+        
+        viewModel.photosByAngle = [
+            .front: [frontPhoto1, frontPhoto2],
+            .side: [sidePhoto1, sidePhoto2],
+            .back: []
+        ]
+        
+        // When: Getting photos for angles with multiple photos
+        let frontPhotos = viewModel.getPhotosForAngle(.front)
+        let sidePhotos = viewModel.getPhotosForAngle(.side)
+        let backPhotos = viewModel.getPhotosForAngle(.back)
+        
+        // Then: Should return all photos for each angle
+        XCTAssertEqual(frontPhotos.count, 2, "Should return 2 front photos")
+        XCTAssertEqual(sidePhotos.count, 2, "Should return 2 side photos")
+        XCTAssertEqual(backPhotos.count, 0, "Should return 0 back photos")
+        
+        // Verify total photo count
+        XCTAssertEqual(viewModel.totalPhotos, 4, "Total photos should be 4")
+        
+        // Verify latest photo is the most recent
+        let latestPhoto = viewModel.latestPhoto
+        XCTAssertNotNil(latestPhoto, "Latest photo should not be nil")
+        XCTAssertEqual(latestPhoto?.id, frontPhoto2.id, "Latest photo should be the most recent front photo")
+    }
 }
 
