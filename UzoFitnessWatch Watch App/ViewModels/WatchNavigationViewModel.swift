@@ -93,7 +93,7 @@ public final class WatchNavigationViewModel: ObservableObject {
                 
                 // Set to ready state
                 navigationState = .ready
-                AppLogger.info("[WatchNavigationViewModel] App initialized successfully", category: "WatchNavigation")
+                AppLogger.info("[WatchNavigationViewModel] App initialized successfully - State set to READY", category: "WatchNavigation")
                 
             } catch {
                 AppLogger.error("[WatchNavigationViewModel] App initialization failed: \(error.localizedDescription)", category: "WatchNavigation")

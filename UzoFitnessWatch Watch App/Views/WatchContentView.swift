@@ -9,54 +9,7 @@ struct WatchContentView: View {
     var body: some View {
         Group {
             if let navigationViewModel = navigationViewModel {
-                switch navigationViewModel.navigationState {
-                case .loading:
-                    LoadingView()
-                    
-                case .ready:
-                    TabView(selection: Binding(
-                        get: { navigationViewModel.selectedTab },
-                        set: { navigationViewModel.selectTab($0) }
-                    )) {
-                        WorkoutTabView()
-                            .tabItem {
-                                Image(systemName: WatchTab.workout.systemImage)
-                                Text(WatchTab.workout.rawValue)
-                            }
-                            .tag(WatchTab.workout)
-                            .environmentObject(navigationViewModel)
-                        
-                        TimerTabView()
-                            .tabItem {
-                                Image(systemName: WatchTab.timer.systemImage)
-                                Text(WatchTab.timer.rawValue)
-                            }
-                            .tag(WatchTab.timer)
-                            .environmentObject(navigationViewModel)
-                        
-                        ProgressTabView()
-                            .tabItem {
-                                Image(systemName: WatchTab.progress.systemImage)
-                                Text(WatchTab.progress.rawValue)
-                            }
-                            .tag(WatchTab.progress)
-                            .environmentObject(navigationViewModel)
-                        
-                        TestTabView()
-                            .tabItem {
-                                Image(systemName: WatchTab.test.systemImage)
-                                Text(WatchTab.test.rawValue)
-                            }
-                            .tag(WatchTab.test)
-                            .environmentObject(navigationViewModel)
-                    }
-                    .tabViewStyle(.page)
-                    
-                case .error(let message):
-                    ErrorView(message: message) {
-                        navigationViewModel.retryAfterError()
-                    }
-                }
+                NavigationObservingView(navigationViewModel: navigationViewModel)
             } else {
                 LoadingView()
             }
@@ -84,6 +37,68 @@ struct WatchContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: WKExtension.applicationDidEnterBackgroundNotification)) { _ in
             navigationViewModel?.handleAppDidEnterBackground()
+        }
+    }
+}
+
+// MARK: - Navigation Observing View
+struct NavigationObservingView: View {
+    @ObservedObject var navigationViewModel: WatchNavigationViewModel
+    
+    var body: some View {
+        switch navigationViewModel.navigationState {
+        case .loading:
+            LoadingView()
+                .onAppear {
+                    AppLogger.info("[NavigationObservingView] Showing loading state", category: "WatchUI")
+                }
+            
+        case .ready:
+            TabView(selection: Binding(
+                get: { navigationViewModel.selectedTab },
+                set: { navigationViewModel.selectTab($0) }
+            )) {
+                WorkoutTabView()
+                    .tabItem {
+                        Image(systemName: WatchTab.workout.systemImage)
+                        Text(WatchTab.workout.rawValue)
+                    }
+                    .tag(WatchTab.workout)
+                    .environmentObject(navigationViewModel)
+                
+                TimerTabView()
+                    .tabItem {
+                        Image(systemName: WatchTab.timer.systemImage)
+                        Text(WatchTab.timer.rawValue)
+                    }
+                    .tag(WatchTab.timer)
+                    .environmentObject(navigationViewModel)
+                
+                ProgressTabView()
+                    .tabItem {
+                        Image(systemName: WatchTab.progress.systemImage)
+                        Text(WatchTab.progress.rawValue)
+                    }
+                    .tag(WatchTab.progress)
+                    .environmentObject(navigationViewModel)
+                
+                TestTabView()
+                    .tabItem {
+                        Image(systemName: WatchTab.test.systemImage)
+                        Text(WatchTab.test.rawValue)
+                    }
+                    .tag(WatchTab.test)
+                    .environmentObject(navigationViewModel)
+            }
+            .tabViewStyle(.page)
+            .onAppear {
+                AppLogger.info("[NavigationObservingView] Showing ready state - TabView loaded", category: "WatchUI")
+            }
+            
+        case .error(let message):
+            ErrorView(message: message) {
+                navigationViewModel.retryAfterError()
+            }
         }
     }
 }
