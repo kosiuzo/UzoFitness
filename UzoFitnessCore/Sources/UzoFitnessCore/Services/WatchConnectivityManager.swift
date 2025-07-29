@@ -13,6 +13,7 @@ public enum WatchMessage: String, CaseIterable, Codable {
     case currentExerciseUpdate = "currentExerciseUpdate"
     case syncRequest = "syncRequest"
     case heartbeat = "heartbeat"
+    case testMessage = "testMessage"
 }
 
 // MARK: - Message Payloads
@@ -76,11 +77,32 @@ public struct CurrentExercisePayload: Codable {
     }
 }
 
+public struct TestPayload: Codable {
+    public let message: String
+    public let timestamp: Date
+    
+    public init(message: String, timestamp: Date) {
+        self.message = message
+        self.timestamp = timestamp
+    }
+}
+
+public struct WorkoutCompletionPayload: Codable {
+    public let sessionId: UUID
+    public let completedAt: Date
+    
+    public init(sessionId: UUID, completedAt: Date) {
+        self.sessionId = sessionId
+        self.completedAt = completedAt
+    }
+}
+
 // MARK: - WatchConnectivity Protocol
 @MainActor
 public protocol WatchConnectivityProtocol: AnyObject {
     var isReachable: Bool { get }
     var isWatchAppInstalled: Bool { get }
+    var isSessionSupported: Bool { get }
     
     func activateSession()
     func sendMessage(_ message: WatchMessage, payload: Data?, replyHandler: (([String: Any]) -> Void)?, errorHandler: ((Error) -> Void)?)
@@ -104,6 +126,10 @@ public final class WatchConnectivityManager: NSObject, WatchConnectivityProtocol
     @Published public private(set) var isReachable: Bool = false
     @Published public private(set) var isWatchAppInstalled: Bool = false
     @Published public private(set) var connectionState: ConnectionState = .disconnected
+    
+    public var isSessionSupported: Bool {
+        WCSession.isSupported()
+    }
     
     private var session: WCSession?
     private let syncQueue = DispatchQueue(label: "com.kosiuzodinma.UzoFitness.watchSync", qos: .utility)
