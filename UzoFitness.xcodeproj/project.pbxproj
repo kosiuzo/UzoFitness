@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F6EE002B2E3845F20062D158 /* UzoFitnessWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = F6EE00212E3845F20062D158 /* UzoFitnessWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		F6EEFA5D2E2ADDDD0062D158 /* UzoFitnessCore in Frameworks */ = {isa = PBXBuildFile; productRef = F6EEFA5C2E2ADDDD0062D158 /* UzoFitnessCore */; };
 /* End PBXBuildFile section */
 
@@ -25,12 +26,34 @@
 			remoteGlobalIDString = F65E613A2DFFA78900A2D01C;
 			remoteInfo = UzoFitness;
 		};
+		F6EE00292E3845F20062D158 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F65E61332DFFA78900A2D01C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F6EE00202E3845F20062D158;
+			remoteInfo = "UzoFitnessWatch Watch App";
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		F6EE002C2E3845F20062D158 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				F6EE002B2E3845F20062D158 /* UzoFitnessWatch Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		F65E613B2DFFA78900A2D01C /* UzoFitness.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = UzoFitness.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F65E614A2DFFA78A00A2D01C /* UzoFitnessTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = UzoFitnessTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F65E61542DFFA78A00A2D01C /* UzoFitnessUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = UzoFitnessUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F6EE00212E3845F20062D158 /* UzoFitnessWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "UzoFitnessWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -62,6 +85,11 @@
 			path = UzoFitnessUITests;
 			sourceTree = "<group>";
 		};
+		F6EE00222E3845F20062D158 /* UzoFitnessWatch Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "UzoFitnessWatch Watch App";
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -87,6 +115,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F6EE001E2E3845F20062D158 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -96,6 +131,7 @@
 				F65E613D2DFFA78900A2D01C /* UzoFitness */,
 				F65E614D2DFFA78A00A2D01C /* UzoFitnessTests */,
 				F65E61572DFFA78A00A2D01C /* UzoFitnessUITests */,
+				F6EE00222E3845F20062D158 /* UzoFitnessWatch Watch App */,
 				F65E613C2DFFA78900A2D01C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -106,6 +142,7 @@
 				F65E613B2DFFA78900A2D01C /* UzoFitness.app */,
 				F65E614A2DFFA78A00A2D01C /* UzoFitnessTests.xctest */,
 				F65E61542DFFA78A00A2D01C /* UzoFitnessUITests.xctest */,
+				F6EE00212E3845F20062D158 /* UzoFitnessWatch Watch App.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -120,10 +157,12 @@
 				F65E61372DFFA78900A2D01C /* Sources */,
 				F65E61382DFFA78900A2D01C /* Frameworks */,
 				F65E61392DFFA78900A2D01C /* Resources */,
+				F6EE002C2E3845F20062D158 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				F6EE002A2E3845F20062D158 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				F65E613D2DFFA78900A2D01C /* UzoFitness */,
@@ -182,6 +221,28 @@
 			productReference = F65E61542DFFA78A00A2D01C /* UzoFitnessUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		F6EE00202E3845F20062D158 /* UzoFitnessWatch Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F6EE002F2E3845F20062D158 /* Build configuration list for PBXNativeTarget "UzoFitnessWatch Watch App" */;
+			buildPhases = (
+				F6EE001D2E3845F20062D158 /* Sources */,
+				F6EE001E2E3845F20062D158 /* Frameworks */,
+				F6EE001F2E3845F20062D158 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				F6EE00222E3845F20062D158 /* UzoFitnessWatch Watch App */,
+			);
+			name = "UzoFitnessWatch Watch App";
+			packageProductDependencies = (
+			);
+			productName = "UzoFitnessWatch Watch App";
+			productReference = F6EE00212E3845F20062D158 /* UzoFitnessWatch Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -202,6 +263,9 @@
 					F65E61532DFFA78A00A2D01C = {
 						CreatedOnToolsVersion = 16.4;
 						TestTargetID = F65E613A2DFFA78900A2D01C;
+					};
+					F6EE00202E3845F20062D158 = {
+						CreatedOnToolsVersion = 16.4;
 					};
 				};
 			};
@@ -225,6 +289,7 @@
 				F65E613A2DFFA78900A2D01C /* UzoFitness */,
 				F65E61492DFFA78A00A2D01C /* UzoFitnessTests */,
 				F65E61532DFFA78A00A2D01C /* UzoFitnessUITests */,
+				F6EE00202E3845F20062D158 /* UzoFitnessWatch Watch App */,
 			);
 		};
 /* End PBXProject section */
@@ -245,6 +310,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F65E61522DFFA78A00A2D01C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F6EE001F2E3845F20062D158 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -275,6 +347,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F6EE001D2E3845F20062D158 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -287,6 +366,11 @@
 			isa = PBXTargetDependency;
 			target = F65E613A2DFFA78900A2D01C /* UzoFitness */;
 			targetProxy = F65E61552DFFA78A00A2D01C /* PBXContainerItemProxy */;
+		};
+		F6EE002A2E3845F20062D158 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F6EE00202E3845F20062D158 /* UzoFitnessWatch Watch App */;
+			targetProxy = F6EE00292E3845F20062D158 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -450,7 +534,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = UzoFitness/UzoFitness.entitlements;
+				CODE_SIGN_ENTITLEMENTS = UzoFitness/UzoFitnessRelease.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 4Q3A2PZ842;
@@ -550,6 +634,65 @@
 			};
 			name = Release;
 		};
+		F6EE002D2E3845F20062D158 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4Q3A2PZ842;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = UzoFitnessWatch;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = kosiuzodinma.UzoFitness;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = kosiuzodinma.UzoFitness.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.5;
+			};
+			name = Debug;
+		};
+		F6EE002E2E3845F20062D158 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "UzoFitnessWatch Watch App/UzoFitnessWatch Watch AppRelease.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4Q3A2PZ842;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = UzoFitnessWatch;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = kosiuzodinma.UzoFitness;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = kosiuzodinma.UzoFitness.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.5;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -585,6 +728,15 @@
 			buildConfigurations = (
 				F65E61652DFFA78A00A2D01C /* Debug */,
 				F65E61662DFFA78A00A2D01C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F6EE002F2E3845F20062D158 /* Build configuration list for PBXNativeTarget "UzoFitnessWatch Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F6EE002D2E3845F20062D158 /* Debug */,
+				F6EE002E2E3845F20062D158 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

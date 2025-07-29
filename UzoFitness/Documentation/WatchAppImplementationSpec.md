@@ -17,7 +17,7 @@ This document provides detailed task specifications for implementing the watchOS
 #### 2.1 App Groups Configuration
 - [ ] Add App Groups capability to iOS target
 - [ ] Add App Groups capability to watchOS target (when created)
-- [ ] Configure shared App Group identifier: `group.kosiuzodinma.UzoFitness`
+- [ ] Configure shared App Group identifier: `group.com.kosiuzodinma.UzoFitness`
 - [ ] Update entitlements files for both targets
 - [ ] Test App Groups access in iOS app
 

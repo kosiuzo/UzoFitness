@@ -9,6 +9,11 @@
 			<key>orderHint</key>
 			<integer>0</integer>
 		</dict>
+		<key>UzoFitnessWatch Watch App.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>2</integer>
+		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
@@ -23,6 +28,11 @@
 			<true/>
 		</dict>
 		<key>F65E61532DFFA78A00A2D01C</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>F6EE00202E3845F20062D158</key>
 		<dict>
 			<key>primary</key>
 			<true/>
