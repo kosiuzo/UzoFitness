@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		F6EE002B2E3845F20062D158 /* UzoFitnessWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = F6EE00212E3845F20062D158 /* UzoFitnessWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		F6EE00412E3856C30062D158 /* UzoFitnessCore in Frameworks */ = {isa = PBXBuildFile; productRef = F6EE00402E3856C30062D158 /* UzoFitnessCore */; };
 		F6EEFA5D2E2ADDDD0062D158 /* UzoFitnessCore in Frameworks */ = {isa = PBXBuildFile; productRef = F6EEFA5C2E2ADDDD0062D158 /* UzoFitnessCore */; };
 /* End PBXBuildFile section */
 
@@ -119,6 +120,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F6EE00412E3856C30062D158 /* UzoFitnessCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -132,6 +134,7 @@
 				F65E614D2DFFA78A00A2D01C /* UzoFitnessTests */,
 				F65E61572DFFA78A00A2D01C /* UzoFitnessUITests */,
 				F6EE00222E3845F20062D158 /* UzoFitnessWatch Watch App */,
+				F6EE003C2E3856640062D158 /* Frameworks */,
 				F65E613C2DFFA78900A2D01C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -145,6 +148,13 @@
 				F6EE00212E3845F20062D158 /* UzoFitnessWatch Watch App.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		F6EE003C2E3856640062D158 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -238,6 +248,7 @@
 			);
 			name = "UzoFitnessWatch Watch App";
 			packageProductDependencies = (
+				F6EE00402E3856C30062D158 /* UzoFitnessCore */,
 			);
 			productName = "UzoFitnessWatch Watch App";
 			productReference = F6EE00212E3845F20062D158 /* UzoFitnessWatch Watch App.app */;
@@ -279,7 +290,7 @@
 			mainGroup = F65E61322DFFA78900A2D01C;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				F6EEFA5B2E2ADDDD0062D158 /* XCLocalSwiftPackageReference "UzoFitnessCore" */,
+				F6EE003F2E38567D0062D158 /* XCLocalSwiftPackageReference "UzoFitnessCore" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F65E613C2DFFA78900A2D01C /* Products */;
@@ -744,13 +755,18 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		F6EEFA5B2E2ADDDD0062D158 /* XCLocalSwiftPackageReference "UzoFitnessCore" */ = {
+		F6EE003F2E38567D0062D158 /* XCLocalSwiftPackageReference "UzoFitnessCore" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = UzoFitnessCore;
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		F6EE00402E3856C30062D158 /* UzoFitnessCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F6EE003F2E38567D0062D158 /* XCLocalSwiftPackageReference "UzoFitnessCore" */;
+			productName = UzoFitnessCore;
+		};
 		F6EEFA5C2E2ADDDD0062D158 /* UzoFitnessCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = UzoFitnessCore;

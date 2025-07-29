@@ -287,7 +287,7 @@ public final class WatchConnectivityManager: NSObject, WatchConnectivityProtocol
 extension WatchConnectivityManager: WCSessionDelegate {
     
     #if os(iOS)
-    nonisolated public func session(_ session: WCSession, activationDidCompleteWith activationState: WCSession.ActivationState, error: Error?) {
+    nonisolated public func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
         let isReachable = session.isReachable
         let isWatchAppInstalled = session.isWatchAppInstalled
         
@@ -422,10 +422,11 @@ extension WatchConnectivityManager: WCSessionDelegate {
     }
     
     nonisolated public func sessionWatchStateDidChange(_ session: WCSession) {
+        let isWatchAppInstalled = session.isWatchAppInstalled
         Task { @MainActor in
-            self.isWatchAppInstalled = session.isWatchAppInstalled
+            self.isWatchAppInstalled = isWatchAppInstalled
             self.sessionWatchStateDidChange()
-            AppLogger.info("[WatchConnectivityManager] Watch state changed - App installed: \(session.isWatchAppInstalled)", category: "WatchConnectivity")
+            AppLogger.info("[WatchConnectivityManager] Watch state changed - App installed: \(isWatchAppInstalled)", category: "WatchConnectivity")
         }
     }
     #endif

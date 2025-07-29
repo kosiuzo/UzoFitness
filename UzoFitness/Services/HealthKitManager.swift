@@ -17,7 +17,7 @@ import UzoFitnessCore
 
 // MARK: - Protocol Extensions for Real Implementations
 
-extension HKHealthStore: HealthStoreProtocol {}
+extension HKHealthStore: @retroactive HealthStoreProtocol {}
 
 // Real implementation using HKHealthStore
 struct HealthKitQueryExecutor: QueryExecutorProtocol {
@@ -51,6 +51,21 @@ struct CalendarWrapper: CalendarProtocol {
     
     func date(byAdding component: Calendar.Component, value: Int, to date: Date) -> Date? {
         return calendar.date(byAdding: component, value: value, to: date)
+    }
+    
+    func getCurrentWeekday() -> Weekday {
+        let weekdayIndex = calendar.component(.weekday, from: Date())
+        
+        switch weekdayIndex {
+        case 1: return .sunday
+        case 2: return .monday
+        case 3: return .tuesday
+        case 4: return .wednesday
+        case 5: return .thursday
+        case 6: return .friday
+        case 7: return .saturday
+        default: return .monday
+        }
     }
 }
 
