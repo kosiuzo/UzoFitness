@@ -63,7 +63,20 @@ struct WatchContentView: View {
         }
         .onAppear {
             if navigationViewModel == nil {
+                AppLogger.info("[WatchContentView] Creating WatchNavigationViewModel", category: "WatchUI")
                 self.navigationViewModel = WatchNavigationViewModel(modelContext: modelContext)
+                AppLogger.info("[WatchContentView] WatchNavigationViewModel created successfully", category: "WatchUI")
+            }
+        }
+        .task {
+            // Add a timeout to prevent infinite loading
+            try? await Task.sleep(nanoseconds: 5_000_000_000) // 5 seconds
+            if let navViewModel = navigationViewModel, 
+               case .loading = navViewModel.navigationState {
+                AppLogger.warning("[WatchContentView] Initialization timeout - forcing ready state", category: "WatchUI")
+                await MainActor.run {
+                    navViewModel.forceReadyState()
+                }
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: WKExtension.applicationWillEnterForegroundNotification)) { _ in

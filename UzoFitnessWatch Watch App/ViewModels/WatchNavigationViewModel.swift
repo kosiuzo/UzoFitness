@@ -64,25 +64,41 @@ public final class WatchNavigationViewModel: ObservableObject {
     private func initializeApp() {
         navigationState = .loading
         
-        Task {
-            // Initialize sync coordinator
-            syncCoordinator.initialize()
-            
-            // Setup observers
-            setupObservers()
-            
-            // Initialize child view models
-            initializeChildViewModels()
-            
-            // Initialize user flow coordinator
-            initializeUserFlowCoordinator()
-            
-            // Check initial connectivity
-            checkConnectivity()
-            
-            navigationState = .ready
-            
-            AppLogger.info("[WatchNavigationViewModel] App initialized successfully", category: "WatchNavigation")
+        Task { @MainActor in
+            do {
+                AppLogger.info("[WatchNavigationViewModel] Starting app initialization", category: "WatchNavigation")
+                
+                // Initialize sync coordinator
+                syncCoordinator.initialize()
+                AppLogger.debug("[WatchNavigationViewModel] Sync coordinator initialized", category: "WatchNavigation")
+                
+                // Setup observers
+                setupObservers()
+                AppLogger.debug("[WatchNavigationViewModel] Observers setup completed", category: "WatchNavigation")
+                
+                // Initialize child view models
+                initializeChildViewModels()
+                AppLogger.debug("[WatchNavigationViewModel] Child view models initialized", category: "WatchNavigation")
+                
+                // Initialize user flow coordinator
+                initializeUserFlowCoordinator()
+                AppLogger.debug("[WatchNavigationViewModel] User flow coordinator initialized", category: "WatchNavigation")
+                
+                // Check initial connectivity (don't wait for this)
+                Task.detached {
+                    await MainActor.run {
+                        self.checkConnectivity()
+                    }
+                }
+                
+                // Set to ready state
+                navigationState = .ready
+                AppLogger.info("[WatchNavigationViewModel] App initialized successfully", category: "WatchNavigation")
+                
+            } catch {
+                AppLogger.error("[WatchNavigationViewModel] App initialization failed: \(error.localizedDescription)", category: "WatchNavigation")
+                navigationState = .error("Initialization failed: \(error.localizedDescription)")
+            }
         }
     }
     
@@ -104,19 +120,29 @@ public final class WatchNavigationViewModel: ObservableObject {
     }
     
     private func initializeChildViewModels() {
-        // Initialize workout view model
-        workoutViewModel = WatchWorkoutViewModel(
-            modelContext: modelContext,
-            syncCoordinator: SyncCoordinator.shared,
-            sharedData: sharedData,
-            calendar: CalendarService()
-        )
-        
-        // Initialize timer view model
-        timerViewModel = WatchTimerViewModel(
-            syncCoordinator: SyncCoordinator.shared,
-            sharedData: sharedData
-        )
+        do {
+            // Initialize workout view model
+            workoutViewModel = WatchWorkoutViewModel(
+                modelContext: modelContext,
+                syncCoordinator: SyncCoordinator.shared,
+                sharedData: sharedData,
+                calendar: CalendarService()
+            )
+            AppLogger.debug("[WatchNavigationViewModel] Workout view model initialized", category: "WatchNavigation")
+            
+            // Initialize timer view model
+            timerViewModel = WatchTimerViewModel(
+                syncCoordinator: SyncCoordinator.shared,
+                sharedData: sharedData
+            )
+            AppLogger.debug("[WatchNavigationViewModel] Timer view model initialized", category: "WatchNavigation")
+            
+        } catch {
+            AppLogger.error("[WatchNavigationViewModel] Failed to initialize child view models: \(error.localizedDescription)", category: "WatchNavigation")
+            // Set a minimal state to prevent app from hanging
+            workoutViewModel = nil
+            timerViewModel = nil
+        }
         
         AppLogger.debug("[WatchNavigationViewModel] Child view models initialized", category: "WatchNavigation")
     }
@@ -230,6 +256,11 @@ public final class WatchNavigationViewModel: ObservableObject {
     
     public func retryAfterError() {
         initializeApp()
+    }
+    
+    public func forceReadyState() {
+        AppLogger.warning("[WatchNavigationViewModel] Forcing ready state due to timeout", category: "WatchNavigation")
+        navigationState = .ready
     }
     
     // MARK: - Helper Methods
