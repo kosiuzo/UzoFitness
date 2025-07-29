@@ -173,6 +173,12 @@ public final class WatchNavigationViewModel: ObservableObject {
     private func checkConnectivity() {
         isConnectedToPhone = syncCoordinator.isConnected
         
+        // Enhanced debugging for WatchConnectivity status
+        if let syncCoord = syncCoordinator as? SyncCoordinator {
+            let connectionDetails = syncCoord.validateConnection()
+            AppLogger.info("[WatchNavigationViewModel] Detailed connectivity check - isConnected: \(isConnectedToPhone), validConnection: \(connectionDetails)", category: "WatchNavigation")
+        }
+        
         if isConnectedToPhone {
             // Request full sync when connected
             syncCoordinator.requestFullSync()
@@ -185,6 +191,14 @@ public final class WatchNavigationViewModel: ObservableObject {
     public func retryConnection() {
         syncCoordinator.initialize()
         checkConnectivity()
+    }
+    
+    // MARK: - Testing Methods
+    public func sendTestMessage() {
+        if let syncCoord = syncCoordinator as? SyncCoordinator {
+            syncCoord.sendTestMessage()
+            AppLogger.info("[WatchNavigationViewModel] Test message sent from Watch", category: "WatchNavigation")
+        }
     }
     
     // MARK: - Sync State Handling
