@@ -112,26 +112,22 @@ struct ErrorView: View {
     }
 }
 
-// MARK: - Tab Views (Placeholders)
+// MARK: - Tab Views
 struct WorkoutTabView: View {
     @EnvironmentObject var navigationViewModel: WatchNavigationViewModel
     
     var body: some View {
-        VStack {
-            if navigationViewModel.workoutViewModel != nil {
-                // Workout view will be implemented in Milestone 3
-                Text("Workout")
-                    .font(.headline)
-                Text("Ready for your workout!")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            } else {
+        if let workoutViewModel = navigationViewModel.workoutViewModel {
+            WorkoutView(viewModel: workoutViewModel)
+        } else {
+            VStack {
+                ProgressView()
                 Text("Loading workout...")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
+            .padding()
         }
-        .padding()
     }
 }
 
@@ -139,21 +135,17 @@ struct TimerTabView: View {
     @EnvironmentObject var navigationViewModel: WatchNavigationViewModel
     
     var body: some View {
-        VStack {
-            if navigationViewModel.timerViewModel != nil {
-                // Timer view will be implemented in Milestone 3
-                Text("Timer")
-                    .font(.headline)
-                Text("Rest between sets")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            } else {
+        if let timerViewModel = navigationViewModel.timerViewModel {
+            TimerView(viewModel: timerViewModel)
+        } else {
+            VStack {
+                ProgressView()
                 Text("Loading timer...")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
+            .padding()
         }
-        .padding()
     }
 }
 
@@ -161,27 +153,8 @@ struct ProgressTabView: View {
     @EnvironmentObject var navigationViewModel: WatchNavigationViewModel
     
     var body: some View {
-        VStack {
-            Text("Progress")
-                .font(.headline)
-            
-            Text("View your stats")
-                .font(.caption)
-                .foregroundColor(.secondary)
-            
-            // Connection status
-            HStack {
-                Circle()
-                    .fill(navigationViewModel.isConnectedToPhone ? .green : .red)
-                    .frame(width: 8, height: 8)
-                
-                Text(navigationViewModel.connectionStatusText)
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            }
-            .padding(.top, 8)
-        }
-        .padding()
+        WatchProgressView()
+            .environmentObject(navigationViewModel)
     }
 }
 
