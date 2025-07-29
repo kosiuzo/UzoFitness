@@ -41,7 +41,7 @@ class PersistenceController: ObservableObject {
             schema: schema,
             isStoredInMemoryOnly: inMemory,
             allowsSave: true,
-            groupContainer: .none,
+            groupContainer: .identifier("group.com.kosiuzodinma.UzoFitness"),
             cloudKitDatabase: .automatic // Enable CloudKit sync
         )
         
