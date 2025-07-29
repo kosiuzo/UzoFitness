@@ -251,18 +251,9 @@ class LoggingViewModel: ObservableObject {
             
             // Check if current active plan still exists (use object identity first, then ID)
             if let currentActivePlan = activePlan {
+                // Use object identity comparison to avoid ID access crashes
                 let planStillExists = availablePlans.contains { plan in
-                    // First try object identity
-                    if plan === currentActivePlan {
-                        return true
-                    }
-                    // Then try ID comparison with safety check
-                    do {
-                        return plan.id == currentActivePlan.id
-                    } catch {
-                        AppLogger.warning("[LoggingViewModel.loadAvailablePlans] Failed to compare plan IDs: \(error)", category: "LoggingViewModel")
-                        return false
-                    }
+                    plan === currentActivePlan
                 }
                 
                 if !planStillExists {
@@ -281,12 +272,9 @@ class LoggingViewModel: ObservableObject {
             // Auto-select the first active plan if none selected
             if activePlan == nil, let newActivePlan = availablePlans.first(where: { $0.isActive }) {
                 AppLogger.info("[LoggingViewModel.loadAvailablePlans] Auto-selecting active plan: \(newActivePlan.customName)", category: "LoggingViewModel")
-                // Safely access ID
-                do {
-                    handleIntent(.selectPlan(newActivePlan.id))
-                } catch {
-                    AppLogger.error("[LoggingViewModel.loadAvailablePlans] Failed to access plan ID: \(error)", category: "LoggingViewModel")
-                }
+                // Use object reference directly instead of ID
+                activePlan = newActivePlan
+                autoSelectCurrentDay()
             } else if activePlan != nil {
                 // If we already have an active plan, auto-select current day
                 autoSelectCurrentDay()
@@ -359,14 +347,8 @@ class LoggingViewModel: ObservableObject {
             let incompleteSessions = todaySessions.filter { session in
                 guard let sessionPlan = session.plan else { return false }
                 
-                // Safe ID comparison with error handling
-                let planMatches: Bool
-                do {
-                    planMatches = sessionPlan.id == activePlan.id
-                } catch {
-                    AppLogger.warning("[LoggingViewModel.checkForIncompleteSession] Failed to compare plan IDs: \(error)", category: "LoggingViewModel")
-                    planMatches = sessionPlan === activePlan // Fallback to object identity
-                }
+                // Use object identity comparison to avoid ID access crashes
+                let planMatches = sessionPlan === activePlan
                 
                 return planMatches &&
                 (session.title.contains(selectedDay.weekday.fullName) || session.title.contains(selectedDay.weekday.abbreviation))
@@ -517,13 +499,8 @@ class LoggingViewModel: ObservableObject {
             let planSessions = allTodaySessions.filter { session in
                 guard let sessionPlan = session.plan else { return false }
                 
-                // Safe ID comparison with error handling
-                do {
-                    return sessionPlan.id == activePlan.id
-                } catch {
-                    AppLogger.warning("[LoggingViewModel.createOrResumeSession] Failed to compare plan IDs: \(error)", category: "LoggingViewModel")
-                    return sessionPlan === activePlan // Fallback to object identity
-                }
+                // Use object identity comparison to avoid ID access crashes
+                return sessionPlan === activePlan
             }
             
             // Further filter for the specific day/workout
