@@ -41,6 +41,14 @@ struct WatchContentView: View {
                             }
                             .tag(WatchTab.progress)
                             .environmentObject(navigationViewModel)
+                        
+                        TestTabView()
+                            .tabItem {
+                                Image(systemName: WatchTab.test.systemImage)
+                                Text(WatchTab.test.rawValue)
+                            }
+                            .tag(WatchTab.test)
+                            .environmentObject(navigationViewModel)
                     }
                     .tabViewStyle(.page)
                     
@@ -154,6 +162,15 @@ struct ProgressTabView: View {
     
     var body: some View {
         WatchProgressView()
+            .environmentObject(navigationViewModel)
+    }
+}
+
+struct TestTabView: View {
+    @EnvironmentObject var navigationViewModel: WatchNavigationViewModel
+    
+    var body: some View {
+        UserFlowTestView()
             .environmentObject(navigationViewModel)
     }
 }

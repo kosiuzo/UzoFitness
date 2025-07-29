@@ -466,7 +466,7 @@ struct SetCompletionSheet: View {
 
 #Preview {
     WorkoutView(viewModel: WatchWorkoutViewModel(
-        modelContext: ModelContext.preview,
+        modelContext: ModelContext.previewNavigation,
         syncCoordinator: SyncCoordinator.shared,
         sharedData: SharedDataManager.shared,
         calendar: CalendarService()

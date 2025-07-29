@@ -9,12 +9,14 @@ enum WatchTab: String, CaseIterable {
     case workout = "Workout"
     case timer = "Timer"
     case progress = "Progress"
+    case test = "Test"
     
     var systemImage: String {
         switch self {
         case .workout: return "figure.strengthtraining.traditional"
         case .timer: return "timer"
         case .progress: return "chart.line.uptrend.xyaxis"
+        case .test: return "gear"
         }
     }
 }
@@ -39,6 +41,7 @@ public final class WatchNavigationViewModel: ObservableObject {
     // MARK: - Child ViewModels
     @Published var workoutViewModel: WatchWorkoutViewModel?
     @Published var timerViewModel: WatchTimerViewModel?
+    @Published var userFlowCoordinator: UserFlowCoordinator?
     
     // MARK: - Dependencies
     private let modelContext: ModelContext
@@ -70,6 +73,9 @@ public final class WatchNavigationViewModel: ObservableObject {
             
             // Initialize child view models
             initializeChildViewModels()
+            
+            // Initialize user flow coordinator
+            initializeUserFlowCoordinator()
             
             // Check initial connectivity
             checkConnectivity()
@@ -113,6 +119,16 @@ public final class WatchNavigationViewModel: ObservableObject {
         )
         
         AppLogger.debug("[WatchNavigationViewModel] Child view models initialized", category: "WatchNavigation")
+    }
+    
+    private func initializeUserFlowCoordinator() {
+        // Initialize user flow coordinator
+        userFlowCoordinator = UserFlowCoordinator(
+            syncCoordinator: SyncCoordinator.shared,
+            navigationViewModel: self
+        )
+        
+        AppLogger.debug("[WatchNavigationViewModel] User flow coordinator initialized", category: "WatchNavigation")
     }
     
     // MARK: - Tab Management
@@ -249,5 +265,14 @@ public final class WatchNavigationViewModel: ObservableObject {
     deinit {
         // Note: deinit is synchronous, async cleanup should be handled elsewhere
         AppLogger.debug("[WatchNavigationViewModel] Deinitialized", category: "WatchNavigation")
+    }
+}
+
+// MARK: - ModelContext Extension for Preview
+extension ModelContext {
+    @MainActor
+    static var previewNavigation: ModelContext {
+        let container = try! ModelContainer(for: Exercise.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        return container.mainContext
     }
 }

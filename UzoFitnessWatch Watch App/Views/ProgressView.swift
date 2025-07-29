@@ -358,5 +358,5 @@ struct StatusIndicator: View {
 
 #Preview {
     WatchProgressView()
-        .environmentObject(WatchNavigationViewModel(modelContext: ModelContext.preview))
+        .environmentObject(WatchNavigationViewModel(modelContext: ModelContext.previewNavigation))
 }
