@@ -464,6 +464,7 @@ class LibraryViewModel: ObservableObject {
             modelContext.insert(newPlan)
             try modelContext.save()
             
+            // Access ID only after save operation completes
             activePlanID = newPlan.id
             
             // Refresh the workout plans list to update the UI
