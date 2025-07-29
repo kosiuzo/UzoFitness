@@ -32,6 +32,16 @@ public struct AppLogger {
         os_log("%{public}s", log: log, type: .info, message)
     }
 
+    /// Logs a warning message.
+    /// These messages indicate potential issues that should be noted.
+    /// - Parameters:
+    ///   - message: The warning message to log.
+    ///   - category: The category of the log message.
+    public static func warning(_ message: String, category: String = "default") {
+        let log = makeLogger(category: category)
+        os_log("%{public}s", log: log, type: .default, message)
+    }
+
     /// Logs an error message.
     /// These messages indicate a problem that has occurred.
     /// - Parameters:
