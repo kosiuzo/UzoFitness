@@ -449,7 +449,7 @@ class LoggingViewModel: ObservableObject {
     }
     
     func startWorkoutSession() {
-        AppLogger.info("[LoggingViewModel.startWorkoutSession] Starting workout session manually", category: "LoggingViewModel")
+        AppLogger.info("[LoggingViewModel.startWorkoutSession] 🚀 Starting workout session manually", category: "LoggingViewModel")
         
         // Check if there's already an active session in progress
         if let existingSession = session, existingSession.duration == nil {
@@ -462,10 +462,10 @@ class LoggingViewModel: ObservableObject {
         checkForIncompleteSession()
         
         if hasIncompleteSession {
-            AppLogger.info("[LoggingViewModel.startWorkoutSession] Continuing incomplete session", category: "LoggingViewModel")
+            AppLogger.info("[LoggingViewModel.startWorkoutSession] 📋 Continuing incomplete session", category: "LoggingViewModel")
             createOrResumeSession()
         } else {
-            AppLogger.info("[LoggingViewModel.startWorkoutSession] Creating new session", category: "LoggingViewModel")
+            AppLogger.info("[LoggingViewModel.startWorkoutSession] 🆕 Creating new session", category: "LoggingViewModel")
             createFreshSessionWithAutoPopulation()
         }
     }
@@ -528,6 +528,9 @@ class LoggingViewModel: ObservableObject {
                     AppLogger.debug("[LoggingViewModel.createOrResumeSession] Resumed session has no exercises, creating them", category: "LoggingViewModel")
                     createSessionExercises(for: existingSession, from: selectedDay)
                 }
+                
+                // Sync workout session to Watch after resuming
+                syncWorkoutSessionToWatch(existingSession)
             } else {
                 AppLogger.info("[LoggingViewModel.createOrResumeSession] Creating new session", category: "LoggingViewModel")
                 let newSession = WorkoutSession(
@@ -550,6 +553,10 @@ class LoggingViewModel: ObservableObject {
                     AppLogger.debug("[LoggingViewModel.createOrResumeSession] New session created with ID: \(newSession.id)", category: "LoggingViewModel")
                     AppLogger.debug("[LoggingViewModel.createOrResumeSession] Session title: '\(newSession.title)'", category: "LoggingViewModel")
                     AppLogger.info("[LoggingViewModel.createOrResumeSession] New session saved successfully", category: "LoggingViewModel")
+                    
+                    // Sync workout session to Watch after successful save
+                    syncWorkoutSessionToWatch(newSession)
+                    
                 } catch {
                     AppLogger.error("[LoggingViewModel.createOrResumeSession] Failed to save new session", category: "LoggingViewModel", error: error)
                 }
@@ -1305,22 +1312,58 @@ class LoggingViewModel: ObservableObject {
     
     // MARK: - Watch Synchronization
     private func syncWorkoutSessionToWatch(_ session: WorkoutSession) {
-        AppLogger.info("[LoggingViewModel.syncWorkoutSessionToWatch] Syncing workout session to Watch", category: "LoggingViewModel")
+        AppLogger.info("[LoggingViewModel.syncWorkoutSessionToWatch] 🚀 Starting sync for workout session to Watch", category: "LoggingViewModel")
+        AppLogger.debug("[LoggingViewModel.syncWorkoutSessionToWatch] 📊 Session details - ID: \(session.id), Title: '\(session.title)', Exercises: \(session.sessionExercises.count)", category: "LoggingViewModel")
         
-        // Only sync after the session is saved and ID is available
+        // Convert SessionExercises to SharedSessionExercises
+        let sharedExercises = session.sessionExercises.map { sessionExercise in
+            let sharedCompletedSets = sessionExercise.completedSets.map { completedSet in
+                SharedCompletedSet(
+                    id: completedSet.id,
+                    reps: completedSet.reps,
+                    weight: completedSet.weight,
+                    timestamp: Date() // Use current date since CompletedSet doesn't have a timestamp property
+                )
+            }
+            
+            AppLogger.debug("[LoggingViewModel.syncWorkoutSessionToWatch] 🏋️ Converting exercise: \(sessionExercise.exercise.name) with \(sessionExercise.completedSets.count) sets", category: "LoggingViewModel")
+            
+            return SharedSessionExercise(
+                id: sessionExercise.id,
+                exerciseId: sessionExercise.exercise.id,
+                name: sessionExercise.exercise.name,
+                category: sessionExercise.exercise.category.rawValue,
+                plannedSets: sessionExercise.plannedSets,
+                plannedReps: sessionExercise.plannedReps,
+                plannedWeight: sessionExercise.plannedWeight,
+                position: sessionExercise.position,
+                currentSet: sessionExercise.currentSet,
+                isCompleted: sessionExercise.isCompleted,
+                completedSets: sharedCompletedSets
+            )
+        }
+        
+        AppLogger.info("[LoggingViewModel.syncWorkoutSessionToWatch] 📋 Converted \(sharedExercises.count) exercises for shared session", category: "LoggingViewModel")
+        
+        // Create SharedWorkoutSession
         let sharedSession = SharedWorkoutSession(
             id: session.id,
             title: session.title,
             startTime: session.date,
             duration: session.duration,
-            currentExerciseIndex: currentExerciseIndex,
-            totalExercises: session.sessionExercises.count
+            currentExerciseIndex: 0,
+            totalExercises: sharedExercises.count,
+            exercises: sharedExercises
         )
         
-        // Use SyncCoordinator to sync workout start to Watch
+        AppLogger.info("[LoggingViewModel.syncWorkoutSessionToWatch] 🔄 Created SharedWorkoutSession with \(sharedSession.exercises.count) exercises", category: "LoggingViewModel")
+        AppLogger.debug("[LoggingViewModel.syncWorkoutSessionToWatch] 📊 SharedSession details - Current exercise index: \(sharedSession.currentExerciseIndex), Total exercises: \(sharedSession.totalExercises)", category: "LoggingViewModel")
+        
+        // Sync to Watch via SyncCoordinator
+        AppLogger.info("[LoggingViewModel.syncWorkoutSessionToWatch] 📡 Calling SyncCoordinator.syncWorkoutStart", category: "LoggingViewModel")
         SyncCoordinator.shared.syncWorkoutStart(sharedSession)
         
-        AppLogger.info("[LoggingViewModel.syncWorkoutSessionToWatch] Workout session synced to Watch: \(session.title)", category: "LoggingViewModel")
+        AppLogger.info("[LoggingViewModel.syncWorkoutSessionToWatch] ✅ Workout session synced to Watch: '\(session.title)' with \(sharedExercises.count) exercises", category: "LoggingViewModel")
     }
     
     // MARK: - Cleanup

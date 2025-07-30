@@ -169,10 +169,25 @@ public final class SharedDataManager: SharedDataProtocol, @unchecked Sendable {
     }()
     
     private init() {
+        AppLogger.info("[SharedDataManager] 🔧 Initializing SharedDataManager", category: "SharedData")
+        AppLogger.info("[SharedDataManager] 📋 App Group Identifier: \(appGroupIdentifier)", category: "SharedData")
+        
+        // Check if the app group container URL is available
+        if let containerURL = fileManager.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier) {
+            AppLogger.info("[SharedDataManager] 📁 App Group Container URL: \(containerURL.path)", category: "SharedData")
+        } else {
+            AppLogger.error("[SharedDataManager] ❌ Failed to get app group container URL for: \(appGroupIdentifier)", category: "SharedData")
+        }
+        
+        // Try to initialize UserDefaults with the app group
         guard let userDefaults = UserDefaults(suiteName: appGroupIdentifier) else {
+            AppLogger.error("[SharedDataManager] ❌ Failed to initialize UserDefaults with App Group identifier: \(appGroupIdentifier)", category: "SharedData")
             fatalError("Failed to initialize UserDefaults with App Group identifier: \(appGroupIdentifier)")
         }
+        
         self.userDefaults = userDefaults
+        AppLogger.info("[SharedDataManager] ✅ UserDefaults initialized successfully", category: "SharedData")
+        
         createDocumentsDirectoryIfNeeded()
         AppLogger.info("[SharedDataManager] Initialized with App Group: \(appGroupIdentifier)", category: "SharedData")
     }
@@ -195,29 +210,52 @@ public final class SharedDataManager: SharedDataProtocol, @unchecked Sendable {
     
     // MARK: - Core Storage Methods
     public func store<T: Codable>(_ object: T, forKey key: SharedDataKey) throws {
+        AppLogger.debug("[SharedDataManager] 💾 Attempting to store object for key: \(key.rawValue)", category: "SharedData")
+        
         do {
             let data = try JSONEncoder().encode(object)
             userDefaults.set(data, forKey: key.rawValue)
             
-            AppLogger.debug("[SharedDataManager] Stored object for key: \(key.rawValue)", category: "SharedData")
+            // Force synchronization
+            let synced = userDefaults.synchronize()
+            AppLogger.debug("[SharedDataManager] 🔄 UserDefaults synchronize result: \(synced)", category: "SharedData")
+            
+            AppLogger.debug("[SharedDataManager] ✅ Successfully stored object for key: \(key.rawValue) (size: \(data.count) bytes)", category: "SharedData")
+            
+            // Verify the data was stored by immediately reading it back
+            if let verifyData = userDefaults.data(forKey: key.rawValue) {
+                AppLogger.debug("[SharedDataManager] ✅ Verification: Data found in UserDefaults (size: \(verifyData.count) bytes)", category: "SharedData")
+            } else {
+                AppLogger.warning("[SharedDataManager] ⚠️ Verification failed: No data found immediately after storing", category: "SharedData")
+            }
+            
         } catch {
-            AppLogger.error("[SharedDataManager] Failed to encode object for key \(key.rawValue): \(error.localizedDescription)", category: "SharedData")
+            AppLogger.error("[SharedDataManager] ❌ Failed to encode object for key \(key.rawValue): \(error.localizedDescription)", category: "SharedData")
             throw SharedDataError.encodingFailed(error)
         }
     }
     
     public func retrieve<T: Codable>(_ type: T.Type, forKey key: SharedDataKey) -> T? {
+        AppLogger.debug("[SharedDataManager] 📖 Attempting to retrieve object for key: \(key.rawValue)", category: "SharedData")
+        
         guard let data = userDefaults.data(forKey: key.rawValue) else {
-            AppLogger.debug("[SharedDataManager] No data found for key: \(key.rawValue)", category: "SharedData")
+            AppLogger.debug("[SharedDataManager] 🔍 No data found for key: \(key.rawValue)", category: "SharedData")
+            
+            // List all keys in UserDefaults for debugging
+            let allKeys = userDefaults.dictionaryRepresentation().keys
+            AppLogger.debug("[SharedDataManager] 📋 Available keys in UserDefaults: \(Array(allKeys))", category: "SharedData")
+            
             return nil
         }
         
+        AppLogger.debug("[SharedDataManager] 📦 Found data for key: \(key.rawValue) (size: \(data.count) bytes)", category: "SharedData")
+        
         do {
             let object = try JSONDecoder().decode(type, from: data)
-            AppLogger.debug("[SharedDataManager] Retrieved object for key: \(key.rawValue)", category: "SharedData")
+            AppLogger.debug("[SharedDataManager] ✅ Successfully decoded object for key: \(key.rawValue)", category: "SharedData")
             return object
         } catch {
-            AppLogger.error("[SharedDataManager] Failed to decode object for key \(key.rawValue): \(error.localizedDescription)", category: "SharedData")
+            AppLogger.error("[SharedDataManager] ❌ Failed to decode object for key \(key.rawValue): \(error.localizedDescription)", category: "SharedData")
             return nil
         }
     }
@@ -246,12 +284,25 @@ public final class SharedDataManager: SharedDataProtocol, @unchecked Sendable {
     
     // MARK: - Convenience Methods
     public func storeCurrentWorkoutSession(_ session: SharedWorkoutSession) throws {
+        AppLogger.info("[SharedDataManager] 💾 Storing workout session: '\(session.title)' with \(session.exercises.count) exercises", category: "SharedData")
+        AppLogger.debug("[SharedDataManager] 📊 Session details - ID: \(session.id), current index: \(session.currentExerciseIndex), total exercises: \(session.totalExercises)", category: "SharedData")
+        
         try store(session, forKey: .currentWorkoutSession)
         updateLastSyncTimestamp()
+        
+        AppLogger.info("[SharedDataManager] ✅ Successfully stored workout session in shared container", category: "SharedData")
     }
     
     public func getCurrentWorkoutSession() -> SharedWorkoutSession? {
-        return retrieve(SharedWorkoutSession.self, forKey: .currentWorkoutSession)
+        let session = retrieve(SharedWorkoutSession.self, forKey: .currentWorkoutSession)
+        
+        if let session = session {
+            AppLogger.debug("[SharedDataManager] 📖 Retrieved workout session: '\(session.title)' with \(session.exercises.count) exercises", category: "SharedData")
+        } else {
+            AppLogger.debug("[SharedDataManager] 🔍 No workout session found in shared container", category: "SharedData")
+        }
+        
+        return session
     }
     
     public func storeTimerState(_ timerState: SharedTimerState) throws {

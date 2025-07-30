@@ -607,15 +607,29 @@ extension SyncCoordinator: WatchConnectivityDelegate {
             let notification = try JSONDecoder().decode(DataChangeNotification.self, from: payload)
             AppLogger.info("[SyncCoordinator] 🚀 Received workout started notification from remote device", category: "Sync")
             
-            // Read the workout session from shared container
-            if let session = sharedData.getCurrentWorkoutSession() {
-                AppLogger.info("[SyncCoordinator] 💾 Successfully read started workout from shared container: '\(session.title)'", category: "Sync")
-                AppLogger.info("[SyncCoordinator] 🏋️ Workout contains \(session.exercises.count) exercises: \(session.exercises.map { $0.name }.joined(separator: ", "))", category: "Sync")
-                
-                let deviceSource = getCurrentDeviceSource() == .iPhone ? DeviceSource.appleWatch : DeviceSource.iPhone
-                notifyEventHandlers(.init(type: .workoutStarted, deviceSource: deviceSource))
-            } else {
-                AppLogger.warning("[SyncCoordinator] ⚠️ No workout session found in shared container after workout started notification", category: "Sync")
+            // Add a small delay to allow for shared data synchronization
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                // Read the workout session from shared container
+                if let session = self.sharedData.getCurrentWorkoutSession() {
+                    AppLogger.info("[SyncCoordinator] 💾 Successfully read started workout from shared container: '\(session.title)'", category: "Sync")
+                    AppLogger.info("[SyncCoordinator] 🏋️ Workout contains \(session.exercises.count) exercises: \(session.exercises.map { $0.name }.joined(separator: ", "))", category: "Sync")
+                    
+                    let deviceSource = self.getCurrentDeviceSource() == .iPhone ? DeviceSource.appleWatch : DeviceSource.iPhone
+                    self.notifyEventHandlers(.init(type: .workoutStarted, deviceSource: deviceSource))
+                } else {
+                    AppLogger.warning("[SyncCoordinator] ⚠️ No workout session found in shared container after workout started notification", category: "Sync")
+                    
+                    // Try again after a longer delay
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                        if let session = self.sharedData.getCurrentWorkoutSession() {
+                            AppLogger.info("[SyncCoordinator] 🔄 Successfully read workout session on retry: '\(session.title)'", category: "Sync")
+                            let deviceSource = self.getCurrentDeviceSource() == .iPhone ? DeviceSource.appleWatch : DeviceSource.iPhone
+                            self.notifyEventHandlers(.init(type: .workoutStarted, deviceSource: deviceSource))
+                        } else {
+                            AppLogger.error("[SyncCoordinator] ❌ Still no workout session found after retry", category: "Sync")
+                        }
+                    }
+                }
             }
             
         } catch {
