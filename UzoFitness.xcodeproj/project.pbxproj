@@ -6,10 +6,6 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXBuildFile section */
-		F6EEFA5D2E2ADDDD0062D158 /* UzoFitnessCore in Frameworks */ = {isa = PBXBuildFile; productRef = F6EEFA5C2E2ADDDD0062D158 /* UzoFitnessCore */; };
-/* End PBXBuildFile section */
-
 /* Begin PBXContainerItemProxy section */
 		F65E614B2DFFA78A00A2D01C /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -69,7 +65,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F6EEFA5D2E2ADDDD0062D158 /* UzoFitnessCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -130,7 +125,6 @@
 			);
 			name = UzoFitness;
 			packageProductDependencies = (
-				F6EEFA5C2E2ADDDD0062D158 /* UzoFitnessCore */,
 			);
 			productName = UzoFitness;
 			productReference = F65E613B2DFFA78900A2D01C /* UzoFitness.app */;
@@ -215,7 +209,6 @@
 			mainGroup = F65E61322DFFA78900A2D01C;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				F6EEFA5B2E2ADDDD0062D158 /* XCLocalSwiftPackageReference "UzoFitnessCore" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F65E613C2DFFA78900A2D01C /* Products */;
@@ -588,20 +581,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCLocalSwiftPackageReference section */
-		F6EEFA5B2E2ADDDD0062D158 /* XCLocalSwiftPackageReference "UzoFitnessCore" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = UzoFitnessCore;
-		};
-/* End XCLocalSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		F6EEFA5C2E2ADDDD0062D158 /* UzoFitnessCore */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = UzoFitnessCore;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = F65E61332DFFA78900A2D01C /* Project object */;
 }
