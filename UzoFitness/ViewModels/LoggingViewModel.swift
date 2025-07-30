@@ -84,6 +84,9 @@ class LoggingViewModel: ObservableObject {
     @Published var isWorkoutInProgress: Bool = false
     @Published var hasIncompleteSession: Bool = false
     
+    // MARK: - Watch App Integration
+    private let sharedDataManager: SharedDataManagerProtocol
+    
     // MARK: - Computed Properties
     var canFinishSession: Bool {
         guard let session = session else { return false }
@@ -154,10 +157,26 @@ class LoggingViewModel: ObservableObject {
     private var sessionStartTime: Date?
     
     // MARK: - Initialization
-    init(modelContext: ModelContext, timerFactory: TimerFactory = DefaultTimerFactory()) {
+    init(modelContext: ModelContext, timerFactory: TimerFactory = DefaultTimerFactory(), sharedDataManager: SharedDataManagerProtocol? = nil) {
         self.modelContext = modelContext
         self.timerFactory = timerFactory
-        AppLogger.info("[LoggingViewModel.init] Initialized with dependencies", category: "LoggingViewModel")
+        
+        // Initialize SharedDataManager
+        if let sharedDataManager = sharedDataManager {
+            self.sharedDataManager = sharedDataManager
+        } else {
+            do {
+                self.sharedDataManager = try SharedDataManager()
+            } catch {
+                AppLogger.error("[LoggingViewModel.init] Failed to create SharedDataManager", category: "LoggingViewModel", error: error)
+                self.sharedDataManager = MockSharedDataManager()
+            }
+        }
+        
+        AppLogger.info("[LoggingViewModel.init] Initialized with dependencies including SharedDataManager", category: "LoggingViewModel")
+        
+        // Test App Groups access
+        testAppGroupsAccess()
         
         loadAvailablePlans()
     }
@@ -437,6 +456,8 @@ class LoggingViewModel: ObservableObject {
     
     func startWorkoutSession() {
         AppLogger.info("[LoggingViewModel.startWorkoutSession] Starting workout session manually", category: "LoggingViewModel")
+        AppLogger.info("[LoggingViewModel.startWorkoutSession] Active plan: \(activePlan?.customName ?? "nil")", category: "LoggingViewModel")
+        AppLogger.info("[LoggingViewModel.startWorkoutSession] Selected day: \(selectedDay?.weekday.fullName ?? "nil")", category: "LoggingViewModel")
         
         // Check if there's already an active session in progress
         if let existingSession = session, existingSession.duration == nil {
@@ -540,6 +561,12 @@ class LoggingViewModel: ObservableObject {
             }
             
             updateExercisesUI()
+            
+            // Force sync to watch after session is ready
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                self.syncWorkoutStateToWatch()
+            }
+            
             AppLogger.info("[LoggingViewModel.createOrResumeSession] Session ready", category: "LoggingViewModel")
             
         } catch {
@@ -574,6 +601,12 @@ class LoggingViewModel: ObservableObject {
         createSessionExercises(for: newSession, from: selectedDay)
         
         updateExercisesUI()
+        
+        // Force sync to watch after session is ready
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            self.syncWorkoutStateToWatch()
+        }
+        
         AppLogger.info("[LoggingViewModel.createFreshSession] Fresh session ready", category: "LoggingViewModel")
     }
     
@@ -614,6 +647,12 @@ class LoggingViewModel: ObservableObject {
         }
         
         updateExercisesUI()
+        
+        // Force sync to watch after session is ready
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            self.syncWorkoutStateToWatch()
+        }
+        
         AppLogger.info("[LoggingViewModel.createFreshSessionForSameDay] Fresh session ready", category: "LoggingViewModel")
     }
     
@@ -753,22 +792,43 @@ class LoggingViewModel: ObservableObject {
         updateCurrentExercise()
         
         AppLogger.debug("[LoggingViewModel.updateExercisesUI] Updated UI with \(exercises.count) exercises", category: "LoggingViewModel")
+        AppLogger.debug("[LoggingViewModel.updateExercisesUI] Current exercise index: \(currentExerciseIndex)", category: "LoggingViewModel")
+        AppLogger.debug("[LoggingViewModel.updateExercisesUI] Is workout in progress: \(isWorkoutInProgress)", category: "LoggingViewModel")
+        
+        // Sync to watch app after a longer delay to ensure exercises are fully loaded
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            AppLogger.debug("[LoggingViewModel.updateExercisesUI] Delayed sync starting after 2 seconds", category: "LoggingViewModel")
+            AppLogger.debug("[LoggingViewModel.updateExercisesUI] Current exercise at sync time: \(self.currentExercise?.name ?? "nil")", category: "LoggingViewModel")
+            AppLogger.debug("[LoggingViewModel.updateExercisesUI] Exercises count at sync time: \(self.exercises.count)", category: "LoggingViewModel")
+            self.syncWorkoutStateToWatch()
+        }
     }
     
     // MARK: - Current Exercise Management
     private func updateCurrentExercise() {
+        AppLogger.debug("[LoggingViewModel.updateCurrentExercise] Updating current exercise", category: "LoggingViewModel")
+        AppLogger.debug("[LoggingViewModel.updateCurrentExercise] Exercises count: \(exercises.count)", category: "LoggingViewModel")
+        AppLogger.debug("[LoggingViewModel.updateCurrentExercise] Current exercise index before: \(currentExerciseIndex)", category: "LoggingViewModel")
+        
         guard !exercises.isEmpty else {
+            AppLogger.debug("[LoggingViewModel.updateCurrentExercise] No exercises available, setting index to 0", category: "LoggingViewModel")
             currentExerciseIndex = 0
             return
         }
         
         // Find the first incomplete exercise
         if let firstIncompleteIndex = exercises.firstIndex(where: { !$0.isCompleted }) {
+            AppLogger.debug("[LoggingViewModel.updateCurrentExercise] Found first incomplete exercise at index: \(firstIncompleteIndex)", category: "LoggingViewModel")
             currentExerciseIndex = firstIncompleteIndex
         } else {
             // All exercises completed - keep current index if valid
-            currentExerciseIndex = min(currentExerciseIndex, exercises.count - 1)
+            let newIndex = min(currentExerciseIndex, exercises.count - 1)
+            AppLogger.debug("[LoggingViewModel.updateCurrentExercise] All exercises completed, setting index to: \(newIndex)", category: "LoggingViewModel")
+            currentExerciseIndex = newIndex
         }
+        
+        AppLogger.debug("[LoggingViewModel.updateCurrentExercise] Final current exercise index: \(currentExerciseIndex)", category: "LoggingViewModel")
+        AppLogger.debug("[LoggingViewModel.updateCurrentExercise] Current exercise: \(currentExercise?.name ?? "nil")", category: "LoggingViewModel")
     }
     
     private func advanceToNextExercise() {
@@ -868,7 +928,125 @@ class LoggingViewModel: ObservableObject {
         return selectedDay?.getSupersetNumber(for: supersetID)
     }
     
-    private func editSet(exerciseID: UUID, setIndex: Int, reps: Int, weight: Double) {
+    // MARK: - Watch App Data Sync
+    private func syncWorkoutStateToWatch() {
+        AppLogger.debug("[LoggingViewModel.syncWorkoutStateToWatch] Starting sync to watch", category: "LoggingViewModel")
+        AppLogger.debug("[LoggingViewModel.syncWorkoutStateToWatch] Session: \(session?.id ?? UUID())", category: "LoggingViewModel")
+        AppLogger.debug("[LoggingViewModel.syncWorkoutStateToWatch] Exercises count: \(exercises.count)", category: "LoggingViewModel")
+        AppLogger.debug("[LoggingViewModel.syncWorkoutStateToWatch] Current exercise index: \(currentExerciseIndex)", category: "LoggingViewModel")
+        AppLogger.debug("[LoggingViewModel.syncWorkoutStateToWatch] Current exercise: \(currentExercise?.name ?? "nil")", category: "LoggingViewModel")
+        AppLogger.debug("[LoggingViewModel.syncWorkoutStateToWatch] Is workout in progress: \(isWorkoutInProgress)", category: "LoggingViewModel")
+        
+        Task {
+            do {
+                if let workoutState = createCurrentWorkoutState() {
+                    try await sharedDataManager.saveCurrentWorkoutState(workoutState)
+                    AppLogger.debug("[LoggingViewModel.syncWorkoutStateToWatch] Workout state synced to watch", category: "LoggingViewModel")
+                } else {
+                    try await sharedDataManager.clearCurrentWorkoutState()
+                    AppLogger.debug("[LoggingViewModel.syncWorkoutStateToWatch] Workout state cleared from watch", category: "LoggingViewModel")
+                }
+                
+                if let exerciseData = createCurrentExerciseData() {
+                    try await sharedDataManager.saveCurrentExercise(exerciseData)
+                    AppLogger.debug("[LoggingViewModel.syncWorkoutStateToWatch] Current exercise synced to watch: \(exerciseData.exerciseName)", category: "LoggingViewModel")
+                } else {
+                    AppLogger.debug("[LoggingViewModel.syncWorkoutStateToWatch] No current exercise data to sync", category: "LoggingViewModel")
+                }
+            } catch {
+                AppLogger.error("[LoggingViewModel.syncWorkoutStateToWatch] Failed to sync to watch", category: "LoggingViewModel", error: error)
+            }
+        }
+    }
+    
+    private func createCurrentWorkoutState() -> WorkoutState? {
+        guard let session = session,
+              let selectedDay = selectedDay else { return nil }
+        
+        return WorkoutState(
+            sessionId: session.id,
+            workoutName: selectedDay.weekday.fullName,
+            isActive: isWorkoutInProgress,
+            startTime: session.date,
+            currentExerciseIndex: currentExerciseIndex,
+            totalExercises: exercises.count
+        )
+    }
+    
+        private func createCurrentExerciseData() -> CurrentExerciseData? {
+        AppLogger.debug("[LoggingViewModel.createCurrentExerciseData] Creating current exercise data", category: "LoggingViewModel")
+        AppLogger.debug("[LoggingViewModel.createCurrentExerciseData] Current exercise: \(currentExercise?.name ?? "nil")", category: "LoggingViewModel")
+        AppLogger.debug("[LoggingViewModel.createCurrentExerciseData] Current exercise index: \(currentExerciseIndex)", category: "LoggingViewModel")
+        AppLogger.debug("[LoggingViewModel.createCurrentExerciseData] Exercises count: \(exercises.count)", category: "LoggingViewModel")
+        
+        guard let currentExercise = currentExercise else { 
+            AppLogger.debug("[LoggingViewModel.createCurrentExerciseData] No current exercise available", category: "LoggingViewModel")
+            return nil 
+        }
+        
+        let completedSetsCount = currentExercise.sets.filter { $0.isCompleted }.count
+        AppLogger.debug("[LoggingViewModel.createCurrentExerciseData] Exercise: \(currentExercise.name), Sets: \(currentExercise.sets.count), Completed: \(completedSetsCount)", category: "LoggingViewModel")
+        
+        return CurrentExerciseData(
+            exerciseId: currentExercise.id,
+            exerciseName: currentExercise.name,
+            totalSets: currentExercise.sets.count,
+            completedSets: completedSetsCount,
+            currentSetIndex: completedSetsCount,
+            plannedReps: currentExercise.plannedReps,
+            plannedWeight: currentExercise.plannedWeight,
+            instructions: nil, // SessionExerciseUI doesn't have instructions
+            isSuperset: currentExercise.supersetID != nil,
+            supersetPosition: nil, // Not available in SessionExerciseUI
+            supersetTotal: nil // Not available in SessionExerciseUI
+        )
+    }
+     
+         // MARK: - Watch App Integration Methods
+    func handleSetCompletionFromWatch(exerciseID: UUID, setIndex: Int) {
+        AppLogger.info("[LoggingViewModel.handleSetCompletionFromWatch] Handling set completion from watch for exercise: \(exerciseID), set: \(setIndex)", category: "LoggingViewModel")
+        handleIntent(.toggleSetCompletion(exerciseID: exerciseID, setIndex: setIndex))
+    }
+    
+    // MARK: - Manual Sync for Testing
+    func forceSyncToWatch() {
+        AppLogger.info("[LoggingViewModel.forceSyncToWatch] Manual sync triggered", category: "LoggingViewModel")
+        syncWorkoutStateToWatch()
+    }
+    
+    // MARK: - App Groups Test
+    func testAppGroupsAccess() {
+        AppLogger.info("[LoggingViewModel.testAppGroupsAccess] Testing App Groups access", category: "LoggingViewModel")
+        
+        Task {
+            do {
+                // Test writing a simple value
+                let testValue = "test_\(Date().timeIntervalSince1970)"
+                try await sharedDataManager.saveCurrentExercise(CurrentExerciseData(
+                    exerciseId: UUID(),
+                    exerciseName: testValue,
+                    totalSets: 1,
+                    completedSets: 0,
+                    currentSetIndex: 0
+                ))
+                
+                AppLogger.info("[LoggingViewModel.testAppGroupsAccess] Successfully wrote test value: \(testValue)", category: "LoggingViewModel")
+                
+                // Test reading the value back
+                if let exercise = await sharedDataManager.getCurrentExercise() {
+                    AppLogger.info("[LoggingViewModel.testAppGroupsAccess] Successfully read test value: \(exercise.exerciseName)", category: "LoggingViewModel")
+                } else {
+                    AppLogger.error("[LoggingViewModel.testAppGroupsAccess] Failed to read test value", category: "LoggingViewModel")
+                }
+                
+
+            } catch {
+                AppLogger.error("[LoggingViewModel.testAppGroupsAccess] App Groups test failed: \(error.localizedDescription)", category: "LoggingViewModel", error: error)
+            }
+        }
+    }
+     
+     private func editSet(exerciseID: UUID, setIndex: Int, reps: Int, weight: Double) {
         AppLogger.info("[LoggingViewModel.editSet] Editing set for exercise: \(exerciseID)", category: "LoggingViewModel")
         
         guard let session = session,
@@ -1242,6 +1420,9 @@ class LoggingViewModel: ObservableObject {
             self.currentExerciseIndex = 0
             self.hasIncompleteSession = false
             
+            // Clear watch app data
+            syncWorkoutStateToWatch()
+            
             AppLogger.info("[LoggingViewModel.finishSession] Session completed successfully", category: "LoggingViewModel")
             
         } catch {
@@ -1272,6 +1453,9 @@ class LoggingViewModel: ObservableObject {
         self.sessionStartTime = nil
         self.isWorkoutInProgress = false
         self.currentExerciseIndex = 0
+        
+        // Clear watch app data
+        syncWorkoutStateToWatch()
         
         // Check if we now have an incomplete session (should be true after cancel)
         checkForIncompleteSession()

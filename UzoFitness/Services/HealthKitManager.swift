@@ -17,7 +17,7 @@ import UzoFitnessCore
 
 // MARK: - Protocol Extensions for Real Implementations
 
-extension HKHealthStore: HealthStoreProtocol {}
+extension HKHealthStore: @retroactive HealthStoreProtocol {}
 
 // Real implementation using HKHealthStore
 struct HealthKitQueryExecutor: QueryExecutorProtocol {
