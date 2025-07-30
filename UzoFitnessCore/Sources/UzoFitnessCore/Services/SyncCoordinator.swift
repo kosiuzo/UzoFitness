@@ -86,7 +86,9 @@ public final class SyncCoordinator: SyncCoordinatorProtocol, ObservableObject {
         
         AppLogger.info("[SyncCoordinator] Connection Status - Supported: \(isSessionSupported), Reachable: \(isReachable), App Installed: \(isWatchAppInstalled)", category: "Sync")
         
-        return isSessionSupported && isReachable && isWatchAppInstalled
+        // Simplified: Only require session support and reachability
+        // App installation check can be unreliable during development
+        return isSessionSupported && isReachable
     }
     
     public func sendHeartbeat() {
