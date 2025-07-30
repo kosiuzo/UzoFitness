@@ -4,19 +4,15 @@ import Combine
 import WatchKit
 import UzoFitnessCore
 
-// MARK: - Watch App Tab
+// MARK: - Watch App Tab (Minimalist Design)
 enum WatchTab: String, CaseIterable {
     case workout = "Workout"
     case timer = "Timer"
-    case progress = "Progress"
-    case test = "Test"
     
     var systemImage: String {
         switch self {
         case .workout: return "figure.strengthtraining.traditional"
         case .timer: return "timer"
-        case .progress: return "chart.line.uptrend.xyaxis"
-        case .test: return "gear"
         }
     }
 }
@@ -38,10 +34,9 @@ public final class WatchNavigationViewModel: ObservableObject {
     @Published var isConnectedToPhone: Bool = false
     @Published var lastSyncTime: Date?
     
-    // MARK: - Child ViewModels
+    // MARK: - Child ViewModels (Minimalist Design)
     @Published var workoutViewModel: WatchWorkoutViewModel?
     @Published var timerViewModel: WatchTimerViewModel?
-    @Published var userFlowCoordinator: UserFlowCoordinator?
     
     // MARK: - Dependencies
     private let modelContext: ModelContext
@@ -80,9 +75,7 @@ public final class WatchNavigationViewModel: ObservableObject {
                 initializeChildViewModels()
                 AppLogger.debug("[WatchNavigationViewModel] Child view models initialized", category: "WatchNavigation")
                 
-                // Initialize user flow coordinator
-                initializeUserFlowCoordinator()
-                AppLogger.debug("[WatchNavigationViewModel] User flow coordinator initialized", category: "WatchNavigation")
+                // Removed user flow coordinator for minimalist design
                 
                 // Check initial connectivity (don't wait for this)
                 Task.detached {
@@ -147,15 +140,7 @@ public final class WatchNavigationViewModel: ObservableObject {
         AppLogger.debug("[WatchNavigationViewModel] Child view models initialized", category: "WatchNavigation")
     }
     
-    private func initializeUserFlowCoordinator() {
-        // Initialize user flow coordinator
-        userFlowCoordinator = UserFlowCoordinator(
-            syncCoordinator: SyncCoordinator.shared,
-            navigationViewModel: self
-        )
-        
-        AppLogger.debug("[WatchNavigationViewModel] User flow coordinator initialized", category: "WatchNavigation")
-    }
+    // MARK: - Removed UserFlowCoordinator for minimalist design
     
     // MARK: - Tab Management
     func selectTab(_ tab: WatchTab) {

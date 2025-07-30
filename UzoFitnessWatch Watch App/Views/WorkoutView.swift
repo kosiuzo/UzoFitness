@@ -170,11 +170,8 @@ struct ActiveWorkoutView: View {
                         .foregroundColor(.secondary)
                 }
                 
-                // Navigation Controls
-                WorkoutNavigationControls(viewModel: viewModel)
-                
-                // Quick Actions
-                WorkoutQuickActions(viewModel: viewModel)
+                // Quick Actions Only
+                MinimalWorkoutActions(viewModel: viewModel)
             }
             .padding(.horizontal, 4)
         }
@@ -213,12 +210,12 @@ struct WorkoutProgressView: View {
 
 // MARK: - Current Exercise View
 struct CurrentExerciseView: View {
-    let exercise: SessionExercise
+    let exercise: SharedSessionExercise
     @Binding var showingSetCompletion: Bool
     
     var body: some View {
         VStack(spacing: 6) {
-            Text(exercise.exercise.name)
+            Text(exercise.name)
                 .font(.system(size: 14, weight: .semibold))
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
@@ -295,7 +292,7 @@ struct WorkoutNavigationControls: View {
             
             Spacer()
             
-            Text("\(viewModel.currentExerciseIndex + 1) of \(viewModel.totalExercises ?? 0)")
+            Text("\(viewModel.currentExerciseIndex + 1) of \(viewModel.allExercises.count)")
                 .font(.caption2)
                 .foregroundColor(.secondary)
             
@@ -309,42 +306,32 @@ struct WorkoutNavigationControls: View {
             }
             .buttonStyle(.bordered)
             .controlSize(.mini)
+            .disabled(viewModel.currentExerciseIndex >= viewModel.allExercises.count - 1)
         }
         .padding(.horizontal, 4)
     }
 }
 
-// MARK: - Workout Quick Actions
-struct WorkoutQuickActions: View {
+// MARK: - Minimal Workout Actions
+struct MinimalWorkoutActions: View {
     let viewModel: WatchWorkoutViewModel
     
     var body: some View {
-        VStack(spacing: 6) {
-            HStack(spacing: 8) {
-                Button("Rest") {
-                    viewModel.handle(.startRestTimer(duration: 90, exerciseName: viewModel.currentExercise?.exercise.name))
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.mini)
-                .font(.caption2)
-                
-                Button("Finish") {
-                    viewModel.handle(.completeWorkout)
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.mini)
-                .font(.caption2)
-            }
-            
-            Button("Cancel") {
-                viewModel.handle(.cancelWorkout)
+        HStack(spacing: 12) {
+            Button("Rest 90s") {
+                viewModel.handle(.startRestTimer(duration: 90, exerciseName: viewModel.currentExercise?.name))
             }
             .buttonStyle(.bordered)
-            .controlSize(.mini)
-            .foregroundColor(.red)
-            .font(.caption2)
+            .font(.caption)
+            
+            Button("Next") {
+                viewModel.handle(.nextExercise)
+            }
+            .buttonStyle(.borderedProminent)
+            .font(.caption)
+            .disabled(viewModel.currentExerciseIndex >= viewModel.allExercises.count - 1)
         }
-        .padding(.top, 4)
+        .padding(.top, 8)
     }
 }
 
@@ -430,7 +417,7 @@ struct SetCompletionSheet: View {
                     .font(.system(size: 16, weight: .medium))
                 
                 if let exercise = viewModel.currentExercise {
-                    Text(exercise.exercise.name)
+                    Text(exercise.name)
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .lineLimit(2)
@@ -496,7 +483,7 @@ struct SetCompletionSheet: View {
               let weight = Double(weightInput) else { return }
         
         viewModel.handle(.completeSet(
-            exerciseID: exercise.exercise.id,
+            exerciseID: exercise.exerciseId,
             setIndex: 0, // TODO: Track actual set index
             reps: reps,
             weight: weight
@@ -509,6 +496,83 @@ struct SetCompletionSheet: View {
     private func resetInputs() {
         repsInput = ""
         weightInput = ""
+    }
+}
+
+// MARK: - All Exercises Overview
+struct AllExercisesView: View {
+    let exercises: [SharedSessionExercise]
+    let currentIndex: Int
+    
+    var body: some View {
+        VStack(spacing: 6) {
+            Text("Today's Workout")
+                .font(.caption)
+                .fontWeight(.medium)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(Array(exercises.enumerated()), id: \.element.id) { index, exercise in
+                        ExerciseChipView(
+                            exercise: exercise,
+                            isCurrent: index == currentIndex,
+                            isCompleted: exercise.isCompleted
+                        )
+                    }
+                }
+                .padding(.horizontal, 4)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+// MARK: - Exercise Chip View
+struct ExerciseChipView: View {
+    let exercise: SharedSessionExercise
+    let isCurrent: Bool
+    let isCompleted: Bool
+    
+    var body: some View {
+        VStack(spacing: 2) {
+            Text(exercise.name)
+                .font(.caption2)
+                .fontWeight(isCurrent ? .semibold : .regular)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            
+            Text("\(exercise.completedSets.count)/\(exercise.plannedSets)")
+                .font(.caption2)
+                .foregroundColor(.secondary)
+            
+            if isCompleted {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.caption2)
+                    .foregroundColor(.green)
+            } else if isCurrent {
+                Circle()
+                    .fill(Color.blue)
+                    .frame(width: 4, height: 4)
+            } else {
+                Circle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 4, height: 4)
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(isCurrent ? Color.blue.opacity(0.1) : Color.gray.opacity(0.05))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(
+                    isCompleted ? Color.green : (isCurrent ? Color.blue : Color.clear),
+                    lineWidth: 1
+                )
+        )
     }
 }
 

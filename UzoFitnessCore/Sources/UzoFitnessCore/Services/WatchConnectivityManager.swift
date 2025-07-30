@@ -423,9 +423,20 @@ extension WatchConnectivityManager: WCSessionDelegate {
     }
     
     nonisolated public func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String : Any]) {
+        // Extract data we need synchronously 
+        let keyCount = applicationContext.keys.count
+        let isEmpty = applicationContext.isEmpty
+        
         Task { @MainActor in
-            self.didReceiveApplicationContextUpdate([:]) // TODO: Fix context passing for concurrency
-            AppLogger.debug("[WatchConnectivityManager] Received application context update", category: "WatchConnectivity")
+            // Just log the application context update without processing for now
+            AppLogger.info("[WatchConnectivityManager] Received application context update with \(keyCount) keys", category: "WatchConnectivity")
+            
+            // Log the context data for debugging
+            if isEmpty {
+                AppLogger.warning("[WatchConnectivityManager] Application context data is empty", category: "WatchConnectivity")
+            } else {
+                AppLogger.debug("[WatchConnectivityManager] Application context keys available", category: "WatchConnectivity")
+            }
         }
     }
     

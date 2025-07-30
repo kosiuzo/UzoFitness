@@ -351,7 +351,7 @@ public class UserFlowCoordinator: ObservableObject {
             },
             FlowStep(description: "Switching to progress view...") { [weak self] completion in
                 // Show progress after completion
-                self?.navigationViewModel.selectTab(.progress)
+                self?.navigationViewModel.selectTab(.workout)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     completion(true, nil)
                 }

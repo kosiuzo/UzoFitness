@@ -20,14 +20,58 @@ public struct SharedWorkoutSession: Codable {
     public let duration: TimeInterval?
     public let currentExerciseIndex: Int
     public let totalExercises: Int
+    public let exercises: [SharedSessionExercise]
     
-    public init(id: UUID, title: String, startTime: Date, duration: TimeInterval?, currentExerciseIndex: Int, totalExercises: Int) {
+    public init(id: UUID, title: String, startTime: Date, duration: TimeInterval?, currentExerciseIndex: Int, totalExercises: Int, exercises: [SharedSessionExercise] = []) {
         self.id = id
         self.title = title
         self.startTime = startTime
         self.duration = duration
         self.currentExerciseIndex = currentExerciseIndex
         self.totalExercises = totalExercises
+        self.exercises = exercises
+    }
+}
+
+public struct SharedSessionExercise: Codable {
+    public let id: UUID
+    public let exerciseId: UUID
+    public let name: String
+    public let category: String
+    public let plannedSets: Int
+    public let plannedReps: Int
+    public let plannedWeight: Double?
+    public let position: Double
+    public let currentSet: Int
+    public let isCompleted: Bool
+    public let completedSets: [SharedCompletedSet]
+    
+    public init(id: UUID, exerciseId: UUID, name: String, category: String, plannedSets: Int, plannedReps: Int, plannedWeight: Double?, position: Double, currentSet: Int = 0, isCompleted: Bool = false, completedSets: [SharedCompletedSet] = []) {
+        self.id = id
+        self.exerciseId = exerciseId
+        self.name = name
+        self.category = category
+        self.plannedSets = plannedSets
+        self.plannedReps = plannedReps
+        self.plannedWeight = plannedWeight
+        self.position = position
+        self.currentSet = currentSet
+        self.isCompleted = isCompleted
+        self.completedSets = completedSets
+    }
+}
+
+public struct SharedCompletedSet: Codable {
+    public let id: UUID
+    public let reps: Int
+    public let weight: Double
+    public let timestamp: Date
+    
+    public init(id: UUID = UUID(), reps: Int, weight: Double, timestamp: Date = Date()) {
+        self.id = id
+        self.reps = reps
+        self.weight = weight
+        self.timestamp = timestamp
     }
 }
 

@@ -61,7 +61,6 @@ struct NavigationObservingView: View {
                 WorkoutTabView()
                     .tabItem {
                         Image(systemName: WatchTab.workout.systemImage)
-                        Text(WatchTab.workout.rawValue)
                     }
                     .tag(WatchTab.workout)
                     .environmentObject(navigationViewModel)
@@ -69,25 +68,8 @@ struct NavigationObservingView: View {
                 TimerTabView()
                     .tabItem {
                         Image(systemName: WatchTab.timer.systemImage)
-                        Text(WatchTab.timer.rawValue)
                     }
                     .tag(WatchTab.timer)
-                    .environmentObject(navigationViewModel)
-                
-                ProgressTabView()
-                    .tabItem {
-                        Image(systemName: WatchTab.progress.systemImage)
-                        Text(WatchTab.progress.rawValue)
-                    }
-                    .tag(WatchTab.progress)
-                    .environmentObject(navigationViewModel)
-                
-                TestTabView()
-                    .tabItem {
-                        Image(systemName: WatchTab.test.systemImage)
-                        Text(WatchTab.test.rawValue)
-                    }
-                    .tag(WatchTab.test)
                     .environmentObject(navigationViewModel)
             }
             .tabViewStyle(.page)
@@ -185,23 +167,7 @@ struct TimerTabView: View {
     }
 }
 
-struct ProgressTabView: View {
-    @EnvironmentObject var navigationViewModel: WatchNavigationViewModel
-    
-    var body: some View {
-        WatchProgressView()
-            .environmentObject(navigationViewModel)
-    }
-}
-
-struct TestTabView: View {
-    @EnvironmentObject var navigationViewModel: WatchNavigationViewModel
-    
-    var body: some View {
-        UserFlowTestView()
-            .environmentObject(navigationViewModel)
-    }
-}
+// MARK: - Removed non-essential tabs for minimalist design
 
 // MARK: - Preview Extension for ModelContext
 extension ModelContext {

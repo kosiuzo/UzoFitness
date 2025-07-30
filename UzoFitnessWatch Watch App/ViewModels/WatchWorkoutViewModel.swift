@@ -33,10 +33,10 @@ public final class WatchWorkoutViewModel: ObservableObject {
     
     // MARK: - Published State
     @Published var state: WatchWorkoutState = .idle
-    @Published var currentExercise: SessionExercise?
+    @Published var currentExercise: SharedSessionExercise?
     @Published var currentExerciseIndex: Int = 0
     @Published var totalExercises: Int?
-    @Published var supersetExercises: [SessionExercise] = []
+    @Published var allExercises: [SharedSessionExercise] = []
     @Published var workoutProgress: SharedWorkoutProgress?
     @Published var isRestTimerRunning: Bool = false
     @Published var restTimeRemaining: TimeInterval = 0
@@ -184,29 +184,68 @@ public final class WatchWorkoutViewModel: ObservableObject {
     }
     
     private func completeSet(exerciseID: UUID, setIndex: Int, reps: Int, weight: Double) {
-        guard let _ = currentSession,
-              let exercise = currentExercise,
-              exercise.exercise.id == exerciseID else { return }
+        guard let session = currentSession,
+              let exerciseIndex = session.exercises.firstIndex(where: { $0.exerciseId == exerciseID }) else { return }
         
-        // Create set completion payload
-        let setCompletion = SetCompletionPayload(
-            setId: UUID(), // Generate new set ID
-            sessionExerciseId: exercise.id,
-            reps: reps,
-            weight: weight,
-            isCompleted: true
+        var updatedExercise = session.exercises[exerciseIndex]
+        
+        // Add completed set to the exercise
+        let completedSet = SharedCompletedSet(reps: reps, weight: weight)
+        var updatedCompletedSets = updatedExercise.completedSets
+        updatedCompletedSets.append(completedSet)
+        
+        // Update exercise with new completed set and increment current set
+        let newCurrentSet = min(updatedExercise.currentSet + 1, updatedExercise.plannedSets)
+        let isCompleted = newCurrentSet >= updatedExercise.plannedSets
+        
+        updatedExercise = SharedSessionExercise(
+            id: updatedExercise.id,
+            exerciseId: updatedExercise.exerciseId,
+            name: updatedExercise.name,
+            category: updatedExercise.category,
+            plannedSets: updatedExercise.plannedSets,
+            plannedReps: updatedExercise.plannedReps,
+            plannedWeight: updatedExercise.plannedWeight,
+            position: updatedExercise.position,
+            currentSet: newCurrentSet,
+            isCompleted: isCompleted,
+            completedSets: updatedCompletedSets
         )
         
-        // Sync to iOS app
-        syncCoordinator.syncSetCompletion(setCompletion)
+        // Update the exercises array in the session
+        var updatedExercises = session.exercises
+        updatedExercises[exerciseIndex] = updatedExercise
+        
+        let updatedSession = SharedWorkoutSession(
+            id: session.id,
+            title: session.title,
+            startTime: session.startTime,
+            duration: session.duration,
+            currentExerciseIndex: session.currentExerciseIndex,
+            totalExercises: session.totalExercises,
+            exercises: updatedExercises
+        )
         
         // Update local state
+        currentSession = updatedSession
+        allExercises = updatedExercises
+        currentExercise = updatedExercise
+        
+        // Store updated session
+        do {
+            try sharedData.storeCurrentWorkoutSession(updatedSession)
+            syncCoordinator.syncWorkoutSession(updatedSession)
+        } catch {
+            AppLogger.error("[WatchWorkoutViewModel] Failed to store updated session: \(error.localizedDescription)", category: "WatchWorkout")
+        }
+        
+        // Update progress
         updateWorkoutProgress()
         
         // Haptic feedback
         WKInterfaceDevice.current().play(.success)
         
-        AppLogger.info("[WatchWorkoutViewModel] Completed set: \(reps) reps @ \(weight) lbs", category: "WatchWorkout")
+        AppLogger.info("[WatchWorkoutViewModel] Completed set \(updatedCompletedSets.count)/\(updatedExercise.plannedSets): \(reps) reps @ \(weight) lbs for \(updatedExercise.name)", category: "WatchWorkout")
     }
     
     private func advanceToNextExercise() {
@@ -345,43 +384,53 @@ public final class WatchWorkoutViewModel: ObservableObject {
     
     // MARK: - Helper Methods
     private func loadCurrentExercise() {
-        // Create a placeholder exercise based on the current session
         guard let session = currentSession else {
             currentExercise = nil
+            allExercises = []
             return
         }
         
-        // Create a mock exercise for the current index
-        // In a real implementation, this would fetch from the actual workout plan
-        let exerciseIndex = min(currentExerciseIndex, session.totalExercises - 1)
-        let exerciseName = "Exercise \(exerciseIndex + 1)"
+        // Load all exercises from the session
+        allExercises = session.exercises
+        totalExercises = session.exercises.count
         
-        let mockExercise = Exercise(
-            name: exerciseName,
-            category: .strength,
-            instructions: "Complete the sets and reps as planned"
-        )
+        // Set current exercise based on index
+        if currentExerciseIndex < allExercises.count {
+            currentExercise = allExercises[currentExerciseIndex]
+        } else {
+            currentExercise = nil
+        }
         
-        currentExercise = SessionExercise(
-            exercise: mockExercise,
-            plannedSets: 3,
-            plannedReps: 12,
-            plannedWeight: 0,
-            position: Double(exerciseIndex)
-        )
+        AppLogger.info("[WatchWorkoutViewModel] Loaded \(allExercises.count) exercises, current index: \(currentExerciseIndex)", category: "WatchWorkout")
     }
     
     private func updateWorkoutProgress() {
         guard let session = currentSession else { return }
         
-        // Calculate progress
+        // Calculate completed sets across all exercises
+        let completedSets = session.exercises.reduce(0) { total, exercise in
+            total + exercise.completedSets.count
+        }
+        
+        // Calculate total planned sets across all exercises
+        let totalSets = session.exercises.reduce(0) { total, exercise in
+            total + exercise.plannedSets
+        }
+        
+        // Calculate completed exercises
+        let completedExercises = session.exercises.filter { $0.isCompleted }.count
+        
+        // Estimate time remaining (rough calculation: 2 minutes per remaining set)
+        let remainingSets = totalSets - completedSets
+        let estimatedTimeRemaining: TimeInterval? = remainingSets > 0 ? TimeInterval(remainingSets * 120) : nil
+        
         let progress = SharedWorkoutProgress(
             sessionId: session.id,
-            completedSets: 0, // TODO: Calculate actual completed sets
-            totalSets: 0, // TODO: Calculate total sets
-            completedExercises: currentExerciseIndex,
+            completedSets: completedSets,
+            totalSets: totalSets,
+            completedExercises: completedExercises,
             totalExercises: session.totalExercises,
-            estimatedTimeRemaining: nil
+            estimatedTimeRemaining: estimatedTimeRemaining
         )
         
         workoutProgress = progress
@@ -392,6 +441,8 @@ public final class WatchWorkoutViewModel: ObservableObject {
         } catch {
             AppLogger.error("[WatchWorkoutViewModel] Failed to update workout progress: \(error.localizedDescription)", category: "WatchWorkout")
         }
+        
+        AppLogger.info("[WatchWorkoutViewModel] Progress updated: \\(completedSets)/\\(totalSets) sets, \\(completedExercises)/\\(session.totalExercises) exercises", category: "WatchWorkout")
     }
     
     private func updateSessionProgress() {
@@ -422,14 +473,48 @@ public final class WatchWorkoutViewModel: ObservableObject {
     }
     
     private func createWorkoutSession(from plan: WorkoutPlan) async throws -> SharedWorkoutSession {
-        // TODO: Implement proper session creation
+        // Create sample exercises for today's workout
+        let sampleExercises = [
+            SharedSessionExercise(
+                id: UUID(),
+                exerciseId: UUID(),
+                name: "Push-ups",
+                category: "Chest",
+                plannedSets: 3,
+                plannedReps: 12,
+                plannedWeight: nil,
+                position: 0.0
+            ),
+            SharedSessionExercise(
+                id: UUID(),
+                exerciseId: UUID(),
+                name: "Squats",
+                category: "Legs",
+                plannedSets: 3,
+                plannedReps: 15,
+                plannedWeight: nil,
+                position: 1.0
+            ),
+            SharedSessionExercise(
+                id: UUID(),
+                exerciseId: UUID(),
+                name: "Dumbbell Press",
+                category: "Chest",
+                plannedSets: 3,
+                plannedReps: 10,
+                plannedWeight: 25.0,
+                position: 2.0
+            )
+        ]
+        
         return SharedWorkoutSession(
             id: UUID(),
             title: plan.customName,
             startTime: Date(),
             duration: nil,
             currentExerciseIndex: 0,
-            totalExercises: 1 // TODO: Calculate from plan
+            totalExercises: sampleExercises.count,
+            exercises: sampleExercises
         )
     }
     

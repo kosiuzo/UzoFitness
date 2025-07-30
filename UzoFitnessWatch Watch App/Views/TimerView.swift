@@ -50,75 +50,39 @@ struct IdleTimerView: View {
     @Binding var selectedPresetIndex: Int
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                // Timer Icon
-                Image(systemName: "timer")
-                    .font(.system(size: 40))
-                    .foregroundColor(.orange)
-                
-                Text("Rest Timer")
-                    .font(.headline)
-                
-                // Connection Status
-                ConnectionStatusView(isConnected: viewModel.isConnected)
-                
-                // Preset Selection
-                VStack(spacing: 12) {
-                    Text("Quick Start")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    LazyVGrid(columns: [
-                        GridItem(.flexible()),
-                        GridItem(.flexible())
-                    ], spacing: 8) {
-                        ForEach(Array(viewModel.timerPresets.enumerated()), id: \.offset) { index, duration in
-                            TimerPresetButton(
-                                duration: duration,
-                                label: viewModel.getPresetLabel(for: duration),
-                                isSelected: index == selectedPresetIndex,
-                                action: {
-                                    selectedPresetIndex = index
-                                    viewModel.quickStartTimer(duration: duration)
-                                }
-                            )
-                        }
-                    }
+        VStack(spacing: 20) {
+            Text("Rest Timer")
+                .font(.title2)
+                .fontWeight(.medium)
+            
+            // Quick Timer Buttons - Most Common Times
+            VStack(spacing: 12) {
+                HStack(spacing: 12) {
+                    TimerQuickButton(duration: 60, label: "60s", viewModel: viewModel)
+                    TimerQuickButton(duration: 90, label: "90s", viewModel: viewModel)
                 }
-                
-                // Custom Timer Button
-                Button("Custom Timer") {
-                    // For now, start with selected preset
-                    let duration = viewModel.timerPresets[selectedPresetIndex]
-                    viewModel.quickStartTimer(duration: duration)
+                HStack(spacing: 12) {
+                    TimerQuickButton(duration: 120, label: "2m", viewModel: viewModel)
+                    TimerQuickButton(duration: 180, label: "3m", viewModel: viewModel)
                 }
-                .buttonStyle(.bordered)
-                .font(.caption)
             }
-            .padding()
         }
+        .padding()
     }
 }
 
-// MARK: - Timer Preset Button
-struct TimerPresetButton: View {
+// MARK: - Minimalist Timer Quick Button
+struct TimerQuickButton: View {
     let duration: TimeInterval
     let label: String
-    let isSelected: Bool
-    let action: () -> Void
+    let viewModel: WatchTimerViewModel
     
     var body: some View {
-        Button(action: action) {
-            Text(label)
-                .font(.caption)
-                .fontWeight(.medium)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
+        Button(label) {
+            viewModel.quickStartTimer(duration: duration)
         }
-        .buttonStyle(.bordered)
-        .background(isSelected ? Color.blue.opacity(0.2) : Color.clear)
-        .cornerRadius(8)
+        .buttonStyle(.borderedProminent)
+        .frame(maxWidth: .infinity)
     }
 }
 
@@ -129,61 +93,63 @@ struct RunningTimerView: View {
     let viewModel: WatchTimerViewModel
     
     var body: some View {
-        VStack(spacing: 20) {
-            // Exercise Name (if provided)
-            if let exerciseName = exerciseName {
-                Text(exerciseName)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
-            }
-            
-            // Timer Display
-            TimerDisplayView(
-                timeRemaining: timeRemaining,
-                progress: viewModel.progress,
-                formattedTime: viewModel.formattedTime
-            )
-            
-            // Timer Controls
-            VStack(spacing: 12) {
-                HStack(spacing: 16) {
-                    Button {
-                        viewModel.handle(.pauseTimer)
-                    } label: {
-                        Image(systemName: "pause.fill")
-                            .font(.title2)
-                    }
-                    .buttonStyle(.bordered)
-                    
-                    Button {
-                        viewModel.handle(.stopTimer)
-                    } label: {
-                        Image(systemName: "stop.fill")
-                            .font(.title2)
-                    }
-                    .buttonStyle(.bordered)
-                    .foregroundColor(.red)
+        ScrollView {
+            VStack(spacing: 20) {
+                // Exercise Name (if provided)
+                if let exerciseName = exerciseName {
+                    Text(exerciseName)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
                 }
                 
-                // Quick Adjust Buttons
-                HStack(spacing: 12) {
-                    Button("-30s") {
-                        viewModel.handle(.subtractTime(seconds: 30))
+                // Timer Display
+                TimerDisplayView(
+                    timeRemaining: timeRemaining,
+                    progress: viewModel.progress,
+                    formattedTime: viewModel.formattedTime
+                )
+                
+                // Timer Controls
+                VStack(spacing: 12) {
+                    HStack(spacing: 16) {
+                        Button {
+                            viewModel.handle(.pauseTimer)
+                        } label: {
+                            Image(systemName: "pause.fill")
+                                .font(.title2)
+                        }
+                        .buttonStyle(.bordered)
+                        
+                        Button {
+                            viewModel.handle(.stopTimer)
+                        } label: {
+                            Image(systemName: "stop.fill")
+                                .font(.title2)
+                        }
+                        .buttonStyle(.bordered)
+                        .foregroundColor(.red)
                     }
-                    .buttonStyle(.bordered)
-                    .font(.caption)
                     
-                    Button("+30s") {
-                        viewModel.handle(.addTime(seconds: 30))
+                    // Quick Adjust Buttons
+                    HStack(spacing: 12) {
+                        Button("-30s") {
+                            viewModel.handle(.subtractTime(seconds: 30))
+                        }
+                        .buttonStyle(.bordered)
+                        .font(.caption)
+                        
+                        Button("+30s") {
+                            viewModel.handle(.addTime(seconds: 30))
+                        }
+                        .buttonStyle(.bordered)
+                        .font(.caption)
                     }
-                    .buttonStyle(.bordered)
-                    .font(.caption)
                 }
             }
+            .padding()
         }
-        .padding()
     }
 }
 
@@ -194,65 +160,67 @@ struct PausedTimerView: View {
     let viewModel: WatchTimerViewModel
     
     var body: some View {
-        VStack(spacing: 20) {
-            // Exercise Name (if provided)
-            if let exerciseName = exerciseName {
-                Text(exerciseName)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
-            }
-            
-            // Timer Display
-            TimerDisplayView(
-                timeRemaining: timeRemaining,
-                progress: viewModel.progress,
-                formattedTime: viewModel.formattedTime
-            )
-            
-            Text("Paused")
-                .font(.caption)
-                .foregroundColor(.orange)
-            
-            // Timer Controls
-            VStack(spacing: 12) {
-                HStack(spacing: 16) {
-                    Button {
-                        viewModel.handle(.resumeTimer)
-                    } label: {
-                        Image(systemName: "play.fill")
-                            .font(.title2)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    
-                    Button {
-                        viewModel.handle(.stopTimer)
-                    } label: {
-                        Image(systemName: "stop.fill")
-                            .font(.title2)
-                    }
-                    .buttonStyle(.bordered)
-                    .foregroundColor(.red)
+        ScrollView {
+            VStack(spacing: 20) {
+                // Exercise Name (if provided)
+                if let exerciseName = exerciseName {
+                    Text(exerciseName)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
                 }
                 
-                // Quick Adjust Buttons
-                HStack(spacing: 12) {
-                    Button("-30s") {
-                        viewModel.handle(.subtractTime(seconds: 30))
-                    }
-                    .buttonStyle(.bordered)
+                // Timer Display
+                TimerDisplayView(
+                    timeRemaining: timeRemaining,
+                    progress: viewModel.progress,
+                    formattedTime: viewModel.formattedTime
+                )
+                
+                Text("Paused")
                     .font(.caption)
+                    .foregroundColor(.orange)
+                
+                // Timer Controls
+                VStack(spacing: 12) {
+                    HStack(spacing: 16) {
+                        Button {
+                            viewModel.handle(.resumeTimer)
+                        } label: {
+                            Image(systemName: "play.fill")
+                                .font(.title2)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        
+                        Button {
+                            viewModel.handle(.stopTimer)
+                        } label: {
+                            Image(systemName: "stop.fill")
+                                .font(.title2)
+                        }
+                        .buttonStyle(.bordered)
+                        .foregroundColor(.red)
+                    }
                     
-                    Button("+30s") {
-                        viewModel.handle(.addTime(seconds: 30))
+                    // Quick Adjust Buttons
+                    HStack(spacing: 12) {
+                        Button("-30s") {
+                            viewModel.handle(.subtractTime(seconds: 30))
+                        }
+                        .buttonStyle(.bordered)
+                        .font(.caption)
+                        
+                        Button("+30s") {
+                            viewModel.handle(.addTime(seconds: 30))
+                        }
+                        .buttonStyle(.bordered)
+                        .font(.caption)
                     }
-                    .buttonStyle(.bordered)
-                    .font(.caption)
                 }
             }
+            .padding()
         }
-        .padding()
     }
 }
 
@@ -333,22 +301,7 @@ struct CompletedTimerView: View {
     }
 }
 
-// MARK: - Connection Status View
-struct ConnectionStatusView: View {
-    let isConnected: Bool
-    
-    var body: some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(isConnected ? .green : .red)
-                .frame(width: 6, height: 6)
-            
-            Text(isConnected ? "Connected" : "Disconnected")
-                .font(.caption2)
-                .foregroundColor(.secondary)
-        }
-    }
-}
+// MARK: - Removed connection status for minimalist design
 
 #Preview {
     TimerView(viewModel: WatchTimerViewModel(
