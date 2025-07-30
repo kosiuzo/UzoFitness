@@ -145,6 +145,14 @@ public protocol SharedDataProtocol: AnyObject {
     func removePendingSetCompletion(withId id: UUID)
     func updateLastSyncTimestamp()
     func getLastSyncTimestamp() -> Date?
+    
+    // Exercise-specific convenience methods
+    func getCurrentExercise() -> SharedSessionExercise?
+    func getCurrentExerciseIndex() -> Int?
+    func getAllExercises() -> [SharedSessionExercise]
+    func getTotalExercises() -> Int
+    func getSetsRemaining(for exerciseIndex: Int) -> Int
+    func isExerciseCompleted(at index: Int) -> Bool
 }
 
 // MARK: - Shared Data Manager Implementation
@@ -297,6 +305,78 @@ public final class SharedDataManager: SharedDataProtocol, @unchecked Sendable {
     public func getLastSyncTimestamp() -> Date? {
         let timestamp = userDefaults.double(forKey: SharedDataKey.lastSyncTimestamp.rawValue)
         return timestamp > 0 ? Date(timeIntervalSince1970: timestamp) : nil
+    }
+    
+    // MARK: - Exercise-specific convenience methods
+    public func getCurrentExercise() -> SharedSessionExercise? {
+        guard let session = getCurrentWorkoutSession(),
+              session.currentExerciseIndex >= 0,
+              session.currentExerciseIndex < session.exercises.count else {
+            AppLogger.debug("[SharedDataManager] 🔍 No current exercise available - session: \(getCurrentWorkoutSession() != nil), index: \(getCurrentWorkoutSession()?.currentExerciseIndex ?? -1)", category: "SharedData")
+            return nil
+        }
+        
+        let exercise = session.exercises[session.currentExerciseIndex]
+        AppLogger.debug("[SharedDataManager] 💪 Current exercise: '\(exercise.name)' (index: \(session.currentExerciseIndex))", category: "SharedData")
+        return exercise
+    }
+    
+    public func getCurrentExerciseIndex() -> Int? {
+        guard let session = getCurrentWorkoutSession() else {
+            AppLogger.debug("[SharedDataManager] 🔍 No workout session available for exercise index", category: "SharedData")
+            return nil
+        }
+        
+        AppLogger.debug("[SharedDataManager] 📍 Current exercise index: \(session.currentExerciseIndex)", category: "SharedData")
+        return session.currentExerciseIndex
+    }
+    
+    public func getAllExercises() -> [SharedSessionExercise] {
+        guard let session = getCurrentWorkoutSession() else {
+            AppLogger.debug("[SharedDataManager] 🔍 No workout session available for exercises", category: "SharedData")
+            return []
+        }
+        
+        AppLogger.debug("[SharedDataManager] 📋 Retrieved \(session.exercises.count) exercises from session", category: "SharedData")
+        return session.exercises
+    }
+    
+    public func getTotalExercises() -> Int {
+        guard let session = getCurrentWorkoutSession() else {
+            AppLogger.debug("[SharedDataManager] 🔍 No workout session available for total exercises", category: "SharedData")
+            return 0
+        }
+        
+        AppLogger.debug("[SharedDataManager] 📊 Total exercises in session: \(session.totalExercises)", category: "SharedData")
+        return session.totalExercises
+    }
+    
+    public func getSetsRemaining(for exerciseIndex: Int) -> Int {
+        guard let session = getCurrentWorkoutSession(),
+              exerciseIndex >= 0,
+              exerciseIndex < session.exercises.count else {
+            AppLogger.debug("[SharedDataManager] 🔍 Invalid exercise index \(exerciseIndex) for sets remaining", category: "SharedData")
+            return 0
+        }
+        
+        let exercise = session.exercises[exerciseIndex]
+        let setsRemaining = max(0, exercise.plannedSets - exercise.completedSets.count)
+        AppLogger.debug("[SharedDataManager] 📈 Sets remaining for '\(exercise.name)': \(setsRemaining) (\(exercise.completedSets.count)/\(exercise.plannedSets) completed)", category: "SharedData")
+        return setsRemaining
+    }
+    
+    public func isExerciseCompleted(at index: Int) -> Bool {
+        guard let session = getCurrentWorkoutSession(),
+              index >= 0,
+              index < session.exercises.count else {
+            AppLogger.debug("[SharedDataManager] 🔍 Invalid exercise index \(index) for completion check", category: "SharedData")
+            return false
+        }
+        
+        let exercise = session.exercises[index]
+        let isCompleted = exercise.completedSets.count >= exercise.plannedSets
+        AppLogger.debug("[SharedDataManager] ✅ Exercise '\(exercise.name)' completion status: \(isCompleted)", category: "SharedData")
+        return isCompleted
     }
     
     // MARK: - File-based Storage (for larger data)

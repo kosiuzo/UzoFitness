@@ -8,7 +8,9 @@ import UzoFitnessCore
 enum WatchWorkoutIntent {
     case startTodaysWorkout
     case completeSet(exerciseID: UUID, setIndex: Int, reps: Int, weight: Double)
+    case completeCurrentSet
     case startRestTimer(duration: TimeInterval, exerciseName: String?)
+    case startRestTimerAndNavigate(duration: TimeInterval, exerciseName: String?)
     case stopRestTimer
     case nextExercise
     case previousExercise
@@ -41,6 +43,7 @@ public final class WatchWorkoutViewModel: ObservableObject {
     @Published var isRestTimerRunning: Bool = false
     @Published var restTimeRemaining: TimeInterval = 0
     @Published var connectionStatus: SyncState = .idle
+    @Published var shouldNavigateToTimer: Bool = false
     
     // MARK: - Dependencies
     private let modelContext: ModelContext
@@ -86,17 +89,25 @@ public final class WatchWorkoutViewModel: ObservableObject {
     }
     
     private func loadInitialState() {
-        // Check if there's an ongoing workout session
+        // Check if there's an ongoing workout session in shared data
         if let session = sharedData.getCurrentWorkoutSession() {
+            AppLogger.info("[WatchWorkoutViewModel] 💾 Found existing workout session in shared data: '\(session.title)'", category: "WatchWorkout")
+            
+            // Sync local state with shared data
             currentSession = session
-            currentExerciseIndex = session.currentExerciseIndex
-            totalExercises = session.totalExercises
+            currentExerciseIndex = sharedData.getCurrentExerciseIndex() ?? 0
+            totalExercises = sharedData.getTotalExercises()
+            allExercises = sharedData.getAllExercises()
+            
             state = .workoutInProgress(session)
             loadCurrentExercise()
+            
+            AppLogger.info("[WatchWorkoutViewModel] 🔄 Synchronized with shared data - \(allExercises.count) exercises, current index: \(currentExerciseIndex)", category: "WatchWorkout")
             return
         }
         
-        // Check if today has a workout
+        // No workout session in shared data, check if today has a workout
+        AppLogger.info("[WatchWorkoutViewModel] 📅 No active workout session in shared data, checking today's workout", category: "WatchWorkout")
         checkTodaysWorkout()
     }
     
@@ -109,8 +120,15 @@ public final class WatchWorkoutViewModel: ObservableObject {
         case .completeSet(let exerciseID, let setIndex, let reps, let weight):
             completeSet(exerciseID: exerciseID, setIndex: setIndex, reps: reps, weight: weight)
             
+        case .completeCurrentSet:
+            completeCurrentSetWithDefaults()
+            
         case .startRestTimer(let duration, let exerciseName):
             startRestTimer(duration: duration, exerciseName: exerciseName)
+            
+        case .startRestTimerAndNavigate(let duration, let exerciseName):
+            startRestTimer(duration: duration, exerciseName: exerciseName)
+            shouldNavigateToTimer = true
             
         case .stopRestTimer:
             stopRestTimer()
@@ -248,16 +266,62 @@ public final class WatchWorkoutViewModel: ObservableObject {
         AppLogger.info("[WatchWorkoutViewModel] Completed set \(updatedCompletedSets.count)/\(updatedExercise.plannedSets): \(reps) reps @ \(weight) lbs for \(updatedExercise.name)", category: "WatchWorkout")
     }
     
+    private func completeCurrentSetWithDefaults() {
+        guard let currentExercise = currentExercise else {
+            AppLogger.error("[WatchWorkoutViewModel] ❌ Cannot complete set - no current exercise", category: "WatchWorkout")
+            return
+        }
+        
+        // Use default values from the planned exercise
+        let reps = currentExercise.plannedReps
+        let weight = currentExercise.plannedWeight ?? 0.0
+        let setIndex = currentExercise.completedSets.count
+        let setNumber = setIndex + 1 // Human-readable set number
+        
+        AppLogger.info("[WatchWorkoutViewModel] ✅ Completing Set \(setNumber)/\(currentExercise.plannedSets) for '\(currentExercise.name)'", category: "WatchWorkout")
+        AppLogger.info("[WatchWorkoutViewModel] 📝 Using default values: \(reps) reps @ \(weight > 0 ? "\(Int(weight)) lbs" : "bodyweight")", category: "WatchWorkout")
+        
+        completeSet(exerciseID: currentExercise.exerciseId, setIndex: setIndex, reps: reps, weight: weight)
+        
+        // Auto-advance to next exercise if this exercise is complete
+        let willCompleteExercise = setNumber >= currentExercise.plannedSets
+        if willCompleteExercise {
+            AppLogger.info("[WatchWorkoutViewModel] 🎉 Exercise '\(currentExercise.name)' completed! All \(currentExercise.plannedSets) sets done", category: "WatchWorkout")
+            
+            // Check if there are more exercises
+            if currentExerciseIndex < allExercises.count - 1 {
+                let nextExerciseName = allExercises[currentExerciseIndex + 1].name
+                AppLogger.info("[WatchWorkoutViewModel] ➡️ Auto-advancing to next exercise: '\(nextExerciseName)'", category: "WatchWorkout")
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                    self?.advanceToNextExercise()
+                }
+            } else {
+                AppLogger.info("[WatchWorkoutViewModel] 🏁 Workout completed! No more exercises", category: "WatchWorkout")
+            }
+        } else {
+            let setsRemaining = currentExercise.plannedSets - setNumber
+            AppLogger.info("[WatchWorkoutViewModel] 🔄 \(setsRemaining) sets remaining for '\(currentExercise.name)'", category: "WatchWorkout")
+        }
+    }
+    
     private func advanceToNextExercise() {
-        guard let session = currentSession else { return }
+        guard let session = currentSession else {
+            AppLogger.error("[WatchWorkoutViewModel] Cannot advance - no current session", category: "WatchWorkout")
+            return
+        }
         
         let nextIndex = min(currentExerciseIndex + 1, session.totalExercises - 1)
         if nextIndex != currentExerciseIndex {
+            AppLogger.info("[WatchWorkoutViewModel] 🔄 Advancing from exercise \(currentExerciseIndex + 1) to \(nextIndex + 1)", category: "WatchWorkout")
+            
             currentExerciseIndex = nextIndex
             loadCurrentExercise()
             
             // Update session
             updateSessionProgress()
+        } else {
+            AppLogger.info("[WatchWorkoutViewModel] Already at the last exercise (\(currentExerciseIndex + 1)/\(session.totalExercises))", category: "WatchWorkout")
         }
     }
     
@@ -384,24 +448,48 @@ public final class WatchWorkoutViewModel: ObservableObject {
     
     // MARK: - Helper Methods
     private func loadCurrentExercise() {
-        guard let session = currentSession else {
+        // Use shared data directly instead of local session state
+        guard let session = sharedData.getCurrentWorkoutSession() else {
+            AppLogger.warning("[WatchWorkoutViewModel] No current session in shared data - cannot load exercise", category: "WatchWorkout")
             currentExercise = nil
             allExercises = []
             return
         }
         
-        // Load all exercises from the session
-        allExercises = session.exercises
-        totalExercises = session.exercises.count
+        AppLogger.info("[WatchWorkoutViewModel] 📱 Loading exercises from shared data session: '\(session.title)'", category: "WatchWorkout")
         
-        // Set current exercise based on index
-        if currentExerciseIndex < allExercises.count {
-            currentExercise = allExercises[currentExerciseIndex]
+        // Load all exercises from shared data
+        allExercises = sharedData.getAllExercises()
+        totalExercises = sharedData.getTotalExercises()
+        currentExerciseIndex = sharedData.getCurrentExerciseIndex() ?? 0
+        
+        AppLogger.info("[WatchWorkoutViewModel] 📋 Loaded \(allExercises.count) exercises from shared data", category: "WatchWorkout")
+        
+        // Get current exercise from shared data
+        if let exercise = sharedData.getCurrentExercise() {
+            currentExercise = exercise
+            
+            // Calculate sets progress using shared data functions
+            let completedSets = exercise.completedSets.count
+            let totalSets = exercise.plannedSets
+            let setsRemaining = sharedData.getSetsRemaining(for: currentExerciseIndex)
+            let isCompleted = sharedData.isExerciseCompleted(at: currentExerciseIndex)
+            
+            AppLogger.info("[WatchWorkoutViewModel] 🏋️ Current Exercise from shared data: '\(exercise.name)'", category: "WatchWorkout")
+            AppLogger.info("[WatchWorkoutViewModel] 📊 Sets Progress: \(completedSets)/\(totalSets) completed, \(setsRemaining) remaining", category: "WatchWorkout")
+            AppLogger.info("[WatchWorkoutViewModel] 🎯 Exercise \(currentExerciseIndex + 1) of \(totalExercises)", category: "WatchWorkout")
+            AppLogger.info("[WatchWorkoutViewModel] ✅ Exercise completed: \(isCompleted)", category: "WatchWorkout")
+            
+            if let weight = exercise.plannedWeight, weight > 0 {
+                AppLogger.info("[WatchWorkoutViewModel] 💪 Target: \(exercise.plannedReps) reps @ \(Int(weight)) lbs", category: "WatchWorkout")
+            } else {
+                AppLogger.info("[WatchWorkoutViewModel] 💪 Target: \(exercise.plannedReps) reps (bodyweight)", category: "WatchWorkout")
+            }
+            
         } else {
             currentExercise = nil
+            AppLogger.error("[WatchWorkoutViewModel] ❌ No current exercise available from shared data (index: \(currentExerciseIndex), total: \(totalExercises))", category: "WatchWorkout")
         }
-        
-        AppLogger.info("[WatchWorkoutViewModel] Loaded \(allExercises.count) exercises, current index: \(currentExerciseIndex)", category: "WatchWorkout")
     }
     
     private func updateWorkoutProgress() {
@@ -523,11 +611,22 @@ public final class WatchWorkoutViewModel: ObservableObject {
         switch event.type {
         case .workoutStarted:
             if event.deviceSource == .iPhone {
-                // Workout started on iPhone, sync to watch
+                // Workout started on iPhone, sync to watch using shared data
+                AppLogger.info("[WatchWorkoutViewModel] 📱 iPhone started workout, syncing from shared data", category: "WatchWorkout")
+                
                 if let session = sharedData.getCurrentWorkoutSession() {
+                    // Sync all state from shared data
                     currentSession = session
+                    currentExerciseIndex = sharedData.getCurrentExerciseIndex() ?? 0
+                    totalExercises = sharedData.getTotalExercises()
+                    allExercises = sharedData.getAllExercises()
+                    
                     state = .workoutInProgress(session)
                     loadCurrentExercise()
+                    
+                    AppLogger.info("[WatchWorkoutViewModel] ✅ Successfully synced workout from shared data: '\(session.title)' with \(allExercises.count) exercises", category: "WatchWorkout")
+                } else {
+                    AppLogger.warning("[WatchWorkoutViewModel] ⚠️ iPhone started workout but no session found in shared data", category: "WatchWorkout")
                 }
             }
             

@@ -17,17 +17,16 @@ public enum WatchMessage: String, CaseIterable, Codable {
 }
 
 // MARK: - Message Payloads
-public struct WorkoutSessionPayload: Codable {
-    public let sessionId: UUID
-    public let title: String
-    public let duration: TimeInterval?
-    public let currentExerciseIndex: Int?
+// Lightweight notification payload - just tells the other device that data changed
+public struct DataChangeNotification: Codable {
+    public let dataType: String
+    public let timestamp: Date
+    public let sessionId: UUID?
     
-    public init(sessionId: UUID, title: String, duration: TimeInterval?, currentExerciseIndex: Int?) {
+    public init(dataType: String, sessionId: UUID? = nil) {
+        self.dataType = dataType
+        self.timestamp = Date()
         self.sessionId = sessionId
-        self.title = title
-        self.duration = duration
-        self.currentExerciseIndex = currentExerciseIndex
     }
 }
 
@@ -87,15 +86,6 @@ public struct TestPayload: Codable {
     }
 }
 
-public struct WorkoutCompletionPayload: Codable {
-    public let sessionId: UUID
-    public let completedAt: Date
-    
-    public init(sessionId: UUID, completedAt: Date) {
-        self.sessionId = sessionId
-        self.completedAt = completedAt
-    }
-}
 
 // MARK: - WatchConnectivity Protocol
 @MainActor

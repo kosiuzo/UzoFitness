@@ -8,6 +8,7 @@ struct WorkoutView: View {
     @State private var showingSetCompletion = false
     @State private var repsInput: String = ""
     @State private var weightInput: String = ""
+    @EnvironmentObject var navigationViewModel: WatchNavigationViewModel
     
     var body: some View {
         NavigationStack {
@@ -33,6 +34,7 @@ struct WorkoutView: View {
                         repsInput: $repsInput,
                         weightInput: $weightInput
                     )
+                    .environmentObject(navigationViewModel)
                     
                 case .workoutCompleted:
                     CompletedWorkoutView(viewModel: viewModel)
@@ -151,12 +153,22 @@ struct ActiveWorkoutView: View {
     @Binding var showingSetCompletion: Bool
     @Binding var repsInput: String
     @Binding var weightInput: String
+    @EnvironmentObject var navigationViewModel: WatchNavigationViewModel
     
     var body: some View {
         ScrollView {
             VStack(spacing: 8) {
                 // Workout Progress
                 WorkoutProgressView(session: session, viewModel: viewModel)
+                
+                // Rest Timer Indicator
+                if viewModel.isRestTimerRunning {
+                    Text("REST")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.orange)
+                        .padding(.vertical, 4)
+                }
                 
                 // Current Exercise
                 if let currentExercise = viewModel.currentExercise {
@@ -172,70 +184,53 @@ struct ActiveWorkoutView: View {
                 
                 // Quick Actions Only
                 MinimalWorkoutActions(viewModel: viewModel)
+                    .environmentObject(navigationViewModel)
             }
             .padding(.horizontal, 4)
         }
     }
 }
 
-// MARK: - Workout Progress View
+// MARK: - Exercise Info View
 struct WorkoutProgressView: View {
     let session: SharedWorkoutSession
     let viewModel: WatchWorkoutViewModel
     
-    private var progressPercentage: Double {
-        guard session.totalExercises > 0 else { return 0 }
-        return Double(session.currentExerciseIndex) / Double(session.totalExercises)
-    }
-    
     var body: some View {
         VStack(spacing: 4) {
-            Text(session.title)
-                .font(.caption)
-                .fontWeight(.medium)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-            
-            ProgressView(value: progressPercentage)
-                .progressViewStyle(LinearProgressViewStyle(tint: .blue))
-                .frame(height: 4)
-            
-            Text("\(session.currentExerciseIndex + 1)/\(session.totalExercises)")
-                .font(.caption2)
-                .foregroundColor(.secondary)
+            // Current Exercise Name
+            if let currentExercise = viewModel.currentExercise {
+                Text(currentExercise.name)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+                
+                // Sets Remaining
+                let setsRemaining = max(0, currentExercise.plannedSets - currentExercise.completedSets.count)
+                Text("\(setsRemaining) sets remaining")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            } else {
+                Text("Loading exercise...")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 4)
     }
 }
 
-// MARK: - Current Exercise View
+// MARK: - Current Exercise Details View
 struct CurrentExerciseView: View {
     let exercise: SharedSessionExercise
     @Binding var showingSetCompletion: Bool
     
     var body: some View {
         VStack(spacing: 6) {
-            Text(exercise.name)
-                .font(.system(size: 14, weight: .semibold))
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .minimumScaleFactor(0.8)
-            
             // Compact Set Information
             HStack(spacing: 8) {
-                VStack(spacing: 2) {
-                    Text("\(exercise.plannedSets)")
-                        .font(.caption)
-                        .fontWeight(.medium)
-                    Text("sets")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-                
-                Text("×")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                
                 VStack(spacing: 2) {
                     Text("\(exercise.plannedReps)")
                         .font(.caption)
@@ -260,13 +255,6 @@ struct CurrentExerciseView: View {
                     }
                 }
             }
-            
-            Button("Complete Set") {
-                showingSetCompletion = true
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.small)
-            .font(.caption)
         }
         .padding(8)
         .background(Color.gray.opacity(0.1))
@@ -315,21 +303,24 @@ struct WorkoutNavigationControls: View {
 // MARK: - Minimal Workout Actions
 struct MinimalWorkoutActions: View {
     let viewModel: WatchWorkoutViewModel
+    @EnvironmentObject var navigationViewModel: WatchNavigationViewModel
     
     var body: some View {
         HStack(spacing: 12) {
-            Button("Rest 90s") {
-                viewModel.handle(.startRestTimer(duration: 90, exerciseName: viewModel.currentExercise?.name))
+            Button("REST") {
+                viewModel.handle(.startRestTimerAndNavigate(duration: 90, exerciseName: viewModel.currentExercise?.name))
+                navigationViewModel.selectTab(.timer)
             }
             .buttonStyle(.bordered)
             .font(.caption)
             
-            Button("Next") {
-                viewModel.handle(.nextExercise)
+            Button {
+                viewModel.handle(.completeCurrentSet)
+            } label: {
+                Image(systemName: "checkmark")
+                    .font(.caption)
             }
             .buttonStyle(.borderedProminent)
-            .font(.caption)
-            .disabled(viewModel.currentExerciseIndex >= viewModel.allExercises.count - 1)
         }
         .padding(.top, 8)
     }

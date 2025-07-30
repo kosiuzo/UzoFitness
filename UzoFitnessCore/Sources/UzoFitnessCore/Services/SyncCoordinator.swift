@@ -143,55 +143,50 @@ public final class SyncCoordinator: SyncCoordinatorProtocol, ObservableObject {
     
     // MARK: - Sync Operations
     public func syncWorkoutSession(_ session: SharedWorkoutSession) {
-        let payload = WorkoutSessionPayload(
-            sessionId: session.id,
-            title: session.title,
-            duration: session.duration,
-            currentExerciseIndex: session.currentExerciseIndex
-        )
-        
-        // Determine the correct message type based on the device
-        let message: WatchMessage = .workoutSessionUpdate
-        
-        syncToRemoteDevice(message, payload: payload) {
-            // Store in shared data after successful sync
-            do {
-                try self.sharedData.storeCurrentWorkoutSession(session)
+        // Store in shared container first
+        do {
+            try sharedData.storeCurrentWorkoutSession(session)
+            AppLogger.info("[SyncCoordinator] 💾 Stored workout session in shared container: '\(session.title)' with \(session.exercises.count) exercises", category: "Sync")
+            
+            // Send lightweight notification to other device
+            let notification = DataChangeNotification(dataType: "workoutSession", sessionId: session.id)
+            syncToRemoteDevice(.workoutSessionUpdate, payload: notification) {
                 self.notifyEventHandlers(.init(type: .workoutStarted, deviceSource: self.getCurrentDeviceSource()))
-                AppLogger.info("[SyncCoordinator] Workout session synced and stored locally", category: "Sync")
-            } catch {
-                AppLogger.error("[SyncCoordinator] Failed to store workout session: \(error.localizedDescription)", category: "Sync")
+                AppLogger.info("[SyncCoordinator] ✅ Workout session sync notification sent successfully", category: "Sync")
             }
+        } catch {
+            AppLogger.error("[SyncCoordinator] ❌ Failed to store workout session in shared container: \(error.localizedDescription)", category: "Sync")
         }
     }
     
     public func syncWorkoutStart(_ session: SharedWorkoutSession) {
-        let payload = WorkoutSessionPayload(
-            sessionId: session.id,
-            title: session.title,
-            duration: session.duration,
-            currentExerciseIndex: session.currentExerciseIndex
-        )
-        
-        syncToRemoteDevice(.workoutStarted, payload: payload) {
-            do {
-                try self.sharedData.storeCurrentWorkoutSession(session)
+        // Store in shared container first
+        do {
+            try sharedData.storeCurrentWorkoutSession(session)
+            AppLogger.info("[SyncCoordinator] 🚀 Started workout in shared container: '\(session.title)' with \(session.exercises.count) exercises", category: "Sync")
+            
+            // Send lightweight notification to other device
+            let notification = DataChangeNotification(dataType: "workoutStarted", sessionId: session.id)
+            syncToRemoteDevice(.workoutStarted, payload: notification) {
                 self.notifyEventHandlers(.init(type: .workoutStarted, deviceSource: self.getCurrentDeviceSource()))
-                AppLogger.info("[SyncCoordinator] Workout start synced successfully", category: "Sync")
-            } catch {
-                AppLogger.error("[SyncCoordinator] Failed to store workout start: \(error.localizedDescription)", category: "Sync")
+                AppLogger.info("[SyncCoordinator] ✅ Workout start notification sent successfully", category: "Sync")
             }
+        } catch {
+            AppLogger.error("[SyncCoordinator] ❌ Failed to store workout start in shared container: \(error.localizedDescription)", category: "Sync")
         }
     }
     
     public func syncWorkoutCompletion(sessionId: UUID) {
-        let payload = WorkoutCompletionPayload(sessionId: sessionId, completedAt: Date())
+        // Clear current workout session from shared container first
+        sharedData.remove(forKey: .currentWorkoutSession)
+        sharedData.remove(forKey: .workoutProgress)
+        AppLogger.info("[SyncCoordinator] 🏁 Cleared completed workout from shared container", category: "Sync")
         
-        syncToRemoteDevice(.workoutCompleted, payload: payload) {
-            // Clear current workout session after completion
-            self.sharedData.remove(forKey: .currentWorkoutSession)
+        // Send lightweight notification to other device
+        let notification = DataChangeNotification(dataType: "workoutCompleted", sessionId: sessionId)
+        syncToRemoteDevice(.workoutCompleted, payload: notification) {
             self.notifyEventHandlers(.init(type: .workoutCompleted, deviceSource: self.getCurrentDeviceSource()))
-            AppLogger.info("[SyncCoordinator] Workout completion synced successfully", category: "Sync")
+            AppLogger.info("[SyncCoordinator] ✅ Workout completion notification sent successfully", category: "Sync")
         }
     }
     
@@ -413,7 +408,14 @@ public final class SyncCoordinator: SyncCoordinatorProtocol, ObservableObject {
         switch event.type {
         case .workoutStarted:
             if let session = sharedData.getCurrentWorkoutSession() {
+                AppLogger.info("[SyncCoordinator] 🔄 Processing pending workout start from shared container", category: "Sync")
                 syncWorkoutSession(session)
+            }
+        case .workoutCompleted:
+            // For workout completion, we don't need the session since we're clearing it
+            if let sessionId = UUID(uuidString: "pending") { // This would need to be stored properly
+                AppLogger.info("[SyncCoordinator] 🔄 Processing pending workout completion", category: "Sync")
+                syncWorkoutCompletion(sessionId: sessionId)
             }
         case .setCompleted:
             // Handled by pending set completions
@@ -426,7 +428,7 @@ public final class SyncCoordinator: SyncCoordinatorProtocol, ObservableObject {
             if let progress = sharedData.getWorkoutProgress() {
                 syncWorkoutProgress(progress)
             }
-        case .workoutCompleted, .exerciseChanged, .fullSync:
+        case .exerciseChanged, .fullSync:
             // These require more complex handling
             break
         }
@@ -570,23 +572,25 @@ extension SyncCoordinator: WatchConnectivityDelegate {
     }
     
     private func handleWorkoutSessionUpdate(_ payload: Data?) {
-        guard let payload = payload else { return }
+        guard let payload = payload else { 
+            AppLogger.warning("[SyncCoordinator] Received workout session update with no payload", category: "Sync")
+            return 
+        }
         
         do {
-            let sessionPayload = try JSONDecoder().decode(WorkoutSessionPayload.self, from: payload)
-            let sharedSession = SharedWorkoutSession(
-                id: sessionPayload.sessionId,
-                title: sessionPayload.title,
-                startTime: Date(), // Approximate start time
-                duration: sessionPayload.duration,
-                currentExerciseIndex: sessionPayload.currentExerciseIndex ?? 0,
-                totalExercises: 0 // Will be updated with more data
-            )
+            let notification = try JSONDecoder().decode(DataChangeNotification.self, from: payload)
+            AppLogger.info("[SyncCoordinator] 📨 Received workout session update notification from remote device", category: "Sync")
             
-            try sharedData.storeCurrentWorkoutSession(sharedSession)
-            let deviceSource = getCurrentDeviceSource() == .iPhone ? DeviceSource.appleWatch : DeviceSource.iPhone
-            notifyEventHandlers(.init(type: .workoutStarted, deviceSource: deviceSource))
-            AppLogger.info("[SyncCoordinator] Workout session updated from remote device", category: "Sync")
+            // Read the actual workout session from shared container
+            if let session = sharedData.getCurrentWorkoutSession() {
+                AppLogger.info("[SyncCoordinator] 💾 Successfully read workout session from shared container: '\(session.title)'", category: "Sync")
+                AppLogger.info("[SyncCoordinator] 🏋️ Session contains \(session.exercises.count) exercises: \(session.exercises.map { $0.name }.joined(separator: ", "))", category: "Sync")
+                
+                let deviceSource = getCurrentDeviceSource() == .iPhone ? DeviceSource.appleWatch : DeviceSource.iPhone
+                notifyEventHandlers(.init(type: .workoutStarted, deviceSource: deviceSource))
+            } else {
+                AppLogger.warning("[SyncCoordinator] ⚠️ No workout session found in shared container after notification", category: "Sync")
+            }
             
         } catch {
             AppLogger.error("[SyncCoordinator] Failed to handle workout session update: \(error.localizedDescription)", category: "Sync")
@@ -594,23 +598,25 @@ extension SyncCoordinator: WatchConnectivityDelegate {
     }
     
     private func handleWorkoutStarted(_ payload: Data?) {
-        guard let payload = payload else { return }
+        guard let payload = payload else { 
+            AppLogger.warning("[SyncCoordinator] Received workout started with no payload", category: "Sync")
+            return 
+        }
         
         do {
-            let sessionPayload = try JSONDecoder().decode(WorkoutSessionPayload.self, from: payload)
-            let sharedSession = SharedWorkoutSession(
-                id: sessionPayload.sessionId,
-                title: sessionPayload.title,
-                startTime: Date(),
-                duration: sessionPayload.duration,
-                currentExerciseIndex: sessionPayload.currentExerciseIndex ?? 0,
-                totalExercises: 0
-            )
+            let notification = try JSONDecoder().decode(DataChangeNotification.self, from: payload)
+            AppLogger.info("[SyncCoordinator] 🚀 Received workout started notification from remote device", category: "Sync")
             
-            try sharedData.storeCurrentWorkoutSession(sharedSession)
-            let deviceSource = getCurrentDeviceSource() == .iPhone ? DeviceSource.appleWatch : DeviceSource.iPhone
-            notifyEventHandlers(.init(type: .workoutStarted, deviceSource: deviceSource))
-            AppLogger.info("[SyncCoordinator] Workout started from remote device", category: "Sync")
+            // Read the workout session from shared container
+            if let session = sharedData.getCurrentWorkoutSession() {
+                AppLogger.info("[SyncCoordinator] 💾 Successfully read started workout from shared container: '\(session.title)'", category: "Sync")
+                AppLogger.info("[SyncCoordinator] 🏋️ Workout contains \(session.exercises.count) exercises: \(session.exercises.map { $0.name }.joined(separator: ", "))", category: "Sync")
+                
+                let deviceSource = getCurrentDeviceSource() == .iPhone ? DeviceSource.appleWatch : DeviceSource.iPhone
+                notifyEventHandlers(.init(type: .workoutStarted, deviceSource: deviceSource))
+            } else {
+                AppLogger.warning("[SyncCoordinator] ⚠️ No workout session found in shared container after workout started notification", category: "Sync")
+            }
             
         } catch {
             AppLogger.error("[SyncCoordinator] Failed to handle workout start: \(error.localizedDescription)", category: "Sync")
@@ -618,17 +624,22 @@ extension SyncCoordinator: WatchConnectivityDelegate {
     }
     
     private func handleWorkoutCompleted(_ payload: Data?) {
-        guard let payload = payload else { return }
+        guard let payload = payload else {
+            AppLogger.warning("[SyncCoordinator] Received workout completed with no payload", category: "Sync")
+            return
+        }
         
         do {
-            let completionPayload = try JSONDecoder().decode(WorkoutCompletionPayload.self, from: payload)
+            let notification = try JSONDecoder().decode(DataChangeNotification.self, from: payload)
+            AppLogger.info("[SyncCoordinator] 🏁 Received workout completion notification from remote device", category: "Sync")
             
-            // Clear the current workout session
+            // Clear the current workout session from shared container
             sharedData.remove(forKey: .currentWorkoutSession)
+            sharedData.remove(forKey: .workoutProgress)
+            AppLogger.info("[SyncCoordinator] 💾 Cleared workout session from shared container", category: "Sync")
             
             let deviceSource = getCurrentDeviceSource() == .iPhone ? DeviceSource.appleWatch : DeviceSource.iPhone
             notifyEventHandlers(.init(type: .workoutCompleted, deviceSource: deviceSource))
-            AppLogger.info("[SyncCoordinator] Workout completed from remote device: \(completionPayload.sessionId)", category: "Sync")
             
         } catch {
             AppLogger.error("[SyncCoordinator] Failed to handle workout completion: \(error.localizedDescription)", category: "Sync")
