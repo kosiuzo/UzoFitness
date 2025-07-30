@@ -10,7 +10,7 @@ struct UserFlowTestView: View {
     init() {
         self._flowCoordinator = StateObject(wrappedValue: UserFlowCoordinator(
             syncCoordinator: SyncCoordinator.shared,
-            navigationViewModel: WatchNavigationViewModel(modelContext: ModelContext.previewNavigation)
+            navigationViewModel: WatchNavigationViewModel(modelContext: ModelContext.preview)
         ))
     }
     
@@ -278,5 +278,5 @@ struct QuickActionsSection: View {
 // MARK: - Preview
 #Preview {
     UserFlowTestView()
-        .environmentObject(WatchNavigationViewModel(modelContext: ModelContext.previewNavigation))
+        .environmentObject(WatchNavigationViewModel(modelContext: ModelContext.preview))
 }

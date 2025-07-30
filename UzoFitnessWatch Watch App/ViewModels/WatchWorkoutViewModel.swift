@@ -35,6 +35,7 @@ public final class WatchWorkoutViewModel: ObservableObject {
     @Published var state: WatchWorkoutState = .idle
     @Published var currentExercise: SessionExercise?
     @Published var currentExerciseIndex: Int = 0
+    @Published var totalExercises: Int?
     @Published var supersetExercises: [SessionExercise] = []
     @Published var workoutProgress: SharedWorkoutProgress?
     @Published var isRestTimerRunning: Bool = false
@@ -88,6 +89,8 @@ public final class WatchWorkoutViewModel: ObservableObject {
         // Check if there's an ongoing workout session
         if let session = sharedData.getCurrentWorkoutSession() {
             currentSession = session
+            currentExerciseIndex = session.currentExerciseIndex
+            totalExercises = session.totalExercises
             state = .workoutInProgress(session)
             loadCurrentExercise()
             return
@@ -233,32 +236,35 @@ public final class WatchWorkoutViewModel: ObservableObject {
     private func completeWorkout() {
         guard let session = currentSession else { return }
         
-        // Mark workout as completed
-        let completedSession = SharedWorkoutSession(
-            id: session.id,
-            title: session.title,
-            startTime: session.startTime,
-            duration: Date().timeIntervalSince(session.startTime),
-            currentExerciseIndex: session.totalExercises,
-            totalExercises: session.totalExercises
-        )
+        // Log completion (sync will be handled by iPhone app)
+        AppLogger.info("[WatchWorkoutViewModel] Workout completed: \(session.title)", category: "WatchWorkout")
         
-        // Store and sync
-        do {
-            try sharedData.storeCurrentWorkoutSession(completedSession)
-            syncCoordinator.syncWorkoutSession(completedSession)
-        } catch {
-            AppLogger.error("[WatchWorkoutViewModel] Failed to save completed workout: \(error.localizedDescription)", category: "WatchWorkout")
-        }
-        
-        // Update state
+        // Clear local state immediately
         currentSession = nil
+        currentExercise = nil
+        currentExerciseIndex = 0
+        totalExercises = nil
+        workoutProgress = nil
+        
+        // Clear shared data
+        sharedData.remove(forKey: .currentWorkoutSession)
+        sharedData.remove(forKey: .workoutProgress)
+        
+        // Stop any running timers
+        stopRestTimer()
+        
+        // Update state to completed
         state = .workoutCompleted
         
         // Haptic feedback
         WKInterfaceDevice.current().play(.success)
         
-        AppLogger.info("[WatchWorkoutViewModel] Workout completed", category: "WatchWorkout")
+        // Auto-reset to idle after a delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            self.state = .idle
+        }
+        
+        AppLogger.info("[WatchWorkoutViewModel] Workout completed and state cleared", category: "WatchWorkout")
     }
     
     private func cancelWorkout() {
@@ -339,9 +345,30 @@ public final class WatchWorkoutViewModel: ObservableObject {
     
     // MARK: - Helper Methods
     private func loadCurrentExercise() {
-        // This would typically load from the workout session
-        // For now, we'll create a placeholder
-        // TODO: Implement proper exercise loading from session
+        // Create a placeholder exercise based on the current session
+        guard let session = currentSession else {
+            currentExercise = nil
+            return
+        }
+        
+        // Create a mock exercise for the current index
+        // In a real implementation, this would fetch from the actual workout plan
+        let exerciseIndex = min(currentExerciseIndex, session.totalExercises - 1)
+        let exerciseName = "Exercise \(exerciseIndex + 1)"
+        
+        let mockExercise = Exercise(
+            name: exerciseName,
+            category: .strength,
+            instructions: "Complete the sets and reps as planned"
+        )
+        
+        currentExercise = SessionExercise(
+            exercise: mockExercise,
+            plannedSets: 3,
+            plannedReps: 12,
+            plannedWeight: 0,
+            position: Double(exerciseIndex)
+        )
     }
     
     private func updateWorkoutProgress() {

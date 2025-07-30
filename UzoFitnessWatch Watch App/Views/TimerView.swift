@@ -110,17 +110,11 @@ struct TimerPresetButton: View {
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 4) {
-                Text(label)
-                    .font(.caption)
-                    .fontWeight(.medium)
-                
-                Text("\(Int(duration))s")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
+            Text(label)
+                .font(.caption)
+                .fontWeight(.medium)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
         }
         .buttonStyle(.bordered)
         .background(isSelected ? Color.blue.opacity(0.2) : Color.clear)

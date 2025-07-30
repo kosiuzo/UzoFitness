@@ -379,13 +379,7 @@ public final class WatchTimerViewModel: ObservableObject {
     }
     
     public func getPresetLabel(for duration: TimeInterval) -> String {
-        if duration < 60 {
-            return "\(Int(duration))s"
-        } else {
-            let minutes = Int(duration) / 60
-            let seconds = Int(duration) % 60
-            return seconds == 0 ? "\(minutes)m" : "\(minutes)m \(seconds)s"
-        }
+        return "\(Int(duration))s"
     }
     
     // MARK: - Cleanup

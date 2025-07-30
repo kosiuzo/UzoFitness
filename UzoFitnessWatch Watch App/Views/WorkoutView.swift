@@ -154,7 +154,7 @@ struct ActiveWorkoutView: View {
     
     var body: some View {
         ScrollView {
-            VStack(spacing: 12) {
+            VStack(spacing: 8) {
                 // Workout Progress
                 WorkoutProgressView(session: session, viewModel: viewModel)
                 
@@ -165,8 +165,8 @@ struct ActiveWorkoutView: View {
                         showingSetCompletion: $showingSetCompletion
                     )
                 } else {
-                    Text("Loading exercise...")
-                        .font(.caption)
+                    Text("Loading...")
+                        .font(.caption2)
                         .foregroundColor(.secondary)
                 }
                 
@@ -176,7 +176,7 @@ struct ActiveWorkoutView: View {
                 // Quick Actions
                 WorkoutQuickActions(viewModel: viewModel)
             }
-            .padding(.horizontal, 8)
+            .padding(.horizontal, 4)
         }
     }
 }
@@ -192,19 +192,22 @@ struct WorkoutProgressView: View {
     }
     
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 4) {
             Text(session.title)
-                .font(.headline)
+                .font(.caption)
+                .fontWeight(.medium)
                 .lineLimit(1)
+                .minimumScaleFactor(0.7)
             
             ProgressView(value: progressPercentage)
                 .progressViewStyle(LinearProgressViewStyle(tint: .blue))
+                .frame(height: 4)
             
-            Text("\(session.currentExerciseIndex)/\(session.totalExercises) exercises")
+            Text("\(session.currentExerciseIndex + 1)/\(session.totalExercises)")
                 .font(.caption2)
                 .foregroundColor(.secondary)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 2)
     }
 }
 
@@ -214,31 +217,50 @@ struct CurrentExerciseView: View {
     @Binding var showingSetCompletion: Bool
     
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 6) {
             Text(exercise.exercise.name)
-                .font(.title3)
-                .fontWeight(.semibold)
+                .font(.system(size: 14, weight: .semibold))
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
+                .minimumScaleFactor(0.8)
             
-            if !exercise.exercise.instructions.isEmpty {
-                Text(exercise.exercise.instructions)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(3)
-            }
-            
-            // Set Information
-            VStack(spacing: 4) {
-                Text("Target: \(exercise.plannedSets) sets × \(exercise.plannedReps) reps")
+            // Compact Set Information
+            HStack(spacing: 8) {
+                VStack(spacing: 2) {
+                    Text("\(exercise.plannedSets)")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                    Text("sets")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                
+                Text("×")
                     .font(.caption)
                     .foregroundColor(.secondary)
                 
+                VStack(spacing: 2) {
+                    Text("\(exercise.plannedReps)")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                    Text("reps")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                
                 if let weight = exercise.plannedWeight, weight > 0 {
-                    Text("Weight: \(Int(weight)) lbs")
+                    Text("@")
                         .font(.caption)
                         .foregroundColor(.secondary)
+                    
+                    VStack(spacing: 2) {
+                        Text("\(Int(weight))")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                        Text("lbs")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
             
@@ -246,11 +268,12 @@ struct CurrentExerciseView: View {
                 showingSetCompletion = true
             }
             .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .controlSize(.small)
+            .font(.caption)
         }
-        .padding()
-.background(Color.gray.opacity(0.1))
-        .cornerRadius(12)
+        .padding(8)
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(8)
     }
 }
 
@@ -259,20 +282,21 @@ struct WorkoutNavigationControls: View {
     let viewModel: WatchWorkoutViewModel
     
     var body: some View {
-        HStack(spacing: 20) {
+        HStack(spacing: 12) {
             Button {
                 viewModel.handle(.previousExercise)
             } label: {
                 Image(systemName: "chevron.left")
-                    .font(.title2)
+                    .font(.caption)
             }
             .buttonStyle(.bordered)
+            .controlSize(.mini)
             .disabled(viewModel.currentExerciseIndex == 0)
             
             Spacer()
             
-            Text("Exercise \(viewModel.currentExerciseIndex + 1)")
-                .font(.caption)
+            Text("\(viewModel.currentExerciseIndex + 1) of \(viewModel.totalExercises ?? 0)")
+                .font(.caption2)
                 .foregroundColor(.secondary)
             
             Spacer()
@@ -281,11 +305,12 @@ struct WorkoutNavigationControls: View {
                 viewModel.handle(.nextExercise)
             } label: {
                 Image(systemName: "chevron.right")
-                    .font(.title2)
+                    .font(.caption)
             }
             .buttonStyle(.bordered)
+            .controlSize(.mini)
         }
-        .padding(.horizontal)
+        .padding(.horizontal, 4)
     }
 }
 
@@ -294,29 +319,32 @@ struct WorkoutQuickActions: View {
     let viewModel: WatchWorkoutViewModel
     
     var body: some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 12) {
-                Button("Rest Timer") {
+        VStack(spacing: 6) {
+            HStack(spacing: 8) {
+                Button("Rest") {
                     viewModel.handle(.startRestTimer(duration: 90, exerciseName: viewModel.currentExercise?.exercise.name))
                 }
                 .buttonStyle(.bordered)
-                .font(.caption)
+                .controlSize(.mini)
+                .font(.caption2)
                 
-                Button("Complete") {
+                Button("Finish") {
                     viewModel.handle(.completeWorkout)
                 }
                 .buttonStyle(.borderedProminent)
-                .font(.caption)
+                .controlSize(.mini)
+                .font(.caption2)
             }
             
-            Button("Cancel Workout") {
+            Button("Cancel") {
                 viewModel.handle(.cancelWorkout)
             }
             .buttonStyle(.bordered)
+            .controlSize(.mini)
             .foregroundColor(.red)
-            .font(.caption)
+            .font(.caption2)
         }
-        .padding(.top, 8)
+        .padding(.top, 4)
     }
 }
 
@@ -325,26 +353,37 @@ struct CompletedWorkoutView: View {
     let viewModel: WatchWorkoutViewModel
     
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 50))
+                .font(.system(size: 40))
                 .foregroundColor(.green)
             
-            Text("Workout Complete!")
-                .font(.headline)
+            Text("Complete!")
+                .font(.system(size: 16, weight: .semibold))
             
-            Text("Great job! Your workout has been saved.")
+            Text("Great job! Workout saved.")
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
             
-            Button("New Workout") {
-                // Reset to check for another workout
-                viewModel.handle(.startTodaysWorkout)
+            Button("Done") {
+                // This will be handled by the auto-reset in viewModel
+                // But user can manually trigger it too
+                viewModel.handle(.cancelWorkout)
             }
             .buttonStyle(.borderedProminent)
+            .controlSize(.small)
+            .font(.caption)
         }
-        .padding()
+        .padding(12)
+        .onAppear {
+            // Additional safety: auto-reset after 5 seconds if user doesn't interact
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+                if case .workoutCompleted = viewModel.state {
+                    viewModel.handle(.cancelWorkout)
+                }
+            }
+        }
     }
 }
 
@@ -385,10 +424,10 @@ struct SetCompletionSheet: View {
     @FocusState private var isRepsFieldFocused: Bool
     
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 16) {
+        ScrollView {
+            VStack(spacing: 8) {
                 Text("Complete Set")
-                    .font(.headline)
+                    .font(.system(size: 16, weight: .medium))
                 
                 if let exercise = viewModel.currentExercise {
                     Text(exercise.exercise.name)
@@ -396,42 +435,51 @@ struct SetCompletionSheet: View {
                         .foregroundColor(.secondary)
                         .lineLimit(2)
                         .multilineTextAlignment(.center)
+                        .minimumScaleFactor(0.8)
                     
-                    VStack(spacing: 12) {
-                        HStack {
-                            Text("Reps:")
-                                .font(.caption)
+                    VStack(spacing: 8) {
+                        VStack(spacing: 4) {
+                            Text("Reps")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
                             TextField("12", text: $repsInput)
                                 .focused($isRepsFieldFocused)
+                                .frame(width: 80)
                         }
                         
-                        HStack {
-                            Text("Weight:")
-                                .font(.caption)
+                        VStack(spacing: 4) {
+                            Text("Weight (lbs)")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
                             TextField("0", text: $weightInput)
+                                .frame(width: 80)
                         }
                     }
                     
-                    HStack(spacing: 16) {
+                    HStack(spacing: 12) {
                         Button("Cancel") {
                             isPresented = false
                             resetInputs()
                         }
                         .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .font(.caption)
                         
                         Button("Save") {
                             completeSet()
                         }
                         .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                        .font(.caption)
                         .disabled(repsInput.isEmpty)
                     }
                 }
             }
-            .padding()
-            .onAppear {
-                setupDefaultValues()
-                isRepsFieldFocused = true
-            }
+            .padding(8)
+        }
+        .onAppear {
+            setupDefaultValues()
+            isRepsFieldFocused = true
         }
     }
     
@@ -466,7 +514,7 @@ struct SetCompletionSheet: View {
 
 #Preview {
     WorkoutView(viewModel: WatchWorkoutViewModel(
-        modelContext: ModelContext.previewNavigation,
+        modelContext: ModelContext.preview,
         syncCoordinator: SyncCoordinator.shared,
         sharedData: SharedDataManager.shared,
         calendar: CalendarService()
