@@ -71,65 +71,29 @@ struct PicturesContentView: View {
     
     private var photosContent: some View {
         VStack(spacing: 24) {
-            // Add Photo Buttons
-            addPhotoSection
-            
             // Comparison Section
             if viewModel.canCompare {
                 photoComparisonSection
             }
             
-            // Photo Grid by Angle
+            // Photo Grid by Angle - now with integrated add photo functionality
             ForEach(PhotoAngle.allCases, id: \.self) { angle in
                 ProgressPhotoGrid(
                     angle: angle,
                     photos: viewModel.getPhotosForAngle(angle).filter { dateRange.contains($0.date) },
-                    viewModel: viewModel
+                    viewModel: viewModel,
+                    selectedPickerItems: Binding<[PhotosPickerItem]>(
+                        get: { selectedPickerAngle == angle ? selectedPickerItems : [] },
+                        set: { newItems in
+                            selectedPickerItems = newItems
+                            selectedPickerAngle = angle
+                        }
+                    )
                 )
             }
         }
     }
     
-    private var addPhotoSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Add Progress Photo").font(.headline)
-            
-            HStack(spacing: 12) {
-                ForEach(PhotoAngle.allCases, id: \.self) { angle in
-                    PhotosPicker(
-                        selection: Binding<[PhotosPickerItem]>(
-                            get: { selectedPickerAngle == angle ? selectedPickerItems : [] },
-                            set: { newItems in
-                                selectedPickerItems = newItems
-                                selectedPickerAngle = angle
-                            }
-                        ),
-                        maxSelectionCount: 10,
-                        matching: .images,
-                        photoLibrary: .shared()
-                    ) {
-                        VStack(spacing: 8) {
-                            Image(systemName: "camera.fill").font(.title2)
-                            Text(angle.displayName).font(.caption)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color(.systemGray5))
-                        )
-                        .foregroundColor(.primary)
-                    }
-                }
-            }
-        }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.systemBackground))
-                .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
-        )
-    }
     
     private var photoComparisonSection: some View {
         PhotoCompareView(viewModel: viewModel)

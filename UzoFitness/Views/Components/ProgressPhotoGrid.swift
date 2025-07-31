@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 import UIKit
 
 // This view now correctly uses Application Support for storage, ensuring photos are persistent.
@@ -6,13 +7,14 @@ struct ProgressPhotoGrid: View {
     let angle: PhotoAngle
     let photos: [ProgressPhoto]
     @ObservedObject var viewModel: ProgressViewModel
+    @Binding var selectedPickerItems: [PhotosPickerItem]
     
     @State private var selectedPhoto: ProgressPhoto?
     @State private var photoToEdit: ProgressPhoto?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Section Header
+            // Section Header with Add Button
             HStack {
                 Text("\(angle.displayName) View")
                     .font(.headline)
@@ -22,6 +24,17 @@ struct ProgressPhotoGrid: View {
                 Text("\(photos.count) photos")
                     .font(.caption)
                     .foregroundColor(.secondary)
+                
+                PhotosPicker(
+                    selection: $selectedPickerItems,
+                    maxSelectionCount: 10,
+                    matching: .images,
+                    photoLibrary: .shared()
+                ) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title3)
+                        .foregroundColor(.accentColor)
+                }
             }
             
             if photos.isEmpty {
@@ -215,7 +228,8 @@ struct ProgressPhotoGrid_Previews: PreviewProvider {
                 modelContext: PersistenceController.preview.container.mainContext,
                 photoService: PhotoService(dataPersistenceService: DefaultDataPersistenceService(modelContext: PersistenceController.preview.container.mainContext)),
                 healthKitManager: HealthKitManager()
-            )
+            ),
+            selectedPickerItems: .constant([])
         )
         .padding()
         .background(Color(.systemGroupedBackground))
