@@ -302,11 +302,36 @@ struct DayTemplateView: View {
             } else {
                 VStack(spacing: 12) {
                     if !dayTemplate.exerciseTemplates.isEmpty {
-                        ExerciseListView(
-                            exerciseTemplates: dayTemplate.exerciseTemplates,
-                            onEditExercise: onEditExercise,
-                            onDeleteExercise: onDeleteExercise,
-                            onReorderExercises: onReorderExercises
+                        List {
+                            ForEach(dayTemplate.exerciseTemplates.sorted(by: { $0.position < $1.position })) { exerciseTemplate in
+                                ExerciseTemplateRowView(
+                                    exerciseTemplate: exerciseTemplate,
+                                    onEditExercise: onEditExercise
+                                )
+                                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                                .listRowBackground(Color(.systemBackground))
+                                .listRowSeparator(.hidden)
+                                .onTapGesture {
+                                    onEditExercise(exerciseTemplate)
+                                }
+                            }
+                            .onDelete(perform: { offsets in
+                                for index in offsets {
+                                    let sortedExercises = dayTemplate.exerciseTemplates.sorted(by: { $0.position < $1.position })
+                                    let exerciseTemplate = sortedExercises[index]
+                                    onDeleteExercise(exerciseTemplate)
+                                }
+                            })
+                            .onMove(perform: onReorderExercises)
+                        }
+                        .listStyle(.plain)
+                        .scrollContentBackground(.hidden)
+                        .frame(height: CGFloat(dayTemplate.exerciseTemplates.count * 80))
+                        .background(Color(.systemBackground))
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color(.systemGray4), lineWidth: 1)
                         )
                     }
                     
