@@ -129,7 +129,7 @@ struct StatsContentView: View {
                         Text(metric.displayName)
                             .font(.subheadline)
                     }
-                    .toggleStyle(.checkmark)
+                    .toggleStyle(.switch)
                 }
             }
         }

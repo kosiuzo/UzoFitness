@@ -5,7 +5,7 @@ struct WorkoutPlanRowView: View {
     @ObservedObject var viewModel: LibraryViewModel
     
     var body: some View {
-        NavigationLink(destination: WorkoutPlanEditorView(plan: plan, viewModel: viewModel)) {
+        NavigationLink(destination: Text("Plan Editor - Coming Soon")) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(plan.customName)
