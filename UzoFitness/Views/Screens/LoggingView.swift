@@ -131,47 +131,45 @@ struct LoggingContentView: View {
                 }
             }
             
-            // Day Picker - Modern Rectangular Design
+            // Day Picker - Compact Design
             if !viewModel.availableDays.isEmpty {
                 VStack(alignment: .leading, spacing: 12) {
                     
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 10) {
-                            ForEach(viewModel.availableDays, id: \.id) { day in
-                                Button(action: {
-                                    AppLogger.info("[LoggingView] Day tapped: \(day.weekday)", category: "LoggingView")
-                                    viewModel.handleIntent(.selectDay(day.weekday))
-                                }) {
-                                    VStack(spacing: 4) {
-                                        Text(day.weekday.abbreviation)
-                                            .font(.subheadline)
-                                            .fontWeight(.medium)
-                                            .foregroundColor(isSelected(day) ? .white : .primary)
-                                        
-                                        if day.isRest || day.exerciseTemplates.isEmpty {
-                                            Image(systemName: "bed.double.fill")
-                                                .font(.caption2)
-                                                .foregroundColor(isSelected(day) ? .white.opacity(0.8) : .secondary)
-                                        } else {
-                                            Text("\(day.exerciseTemplates.count)")
-                                                .font(.caption)
-                                                .fontWeight(.semibold)
-                                                .foregroundColor(isSelected(day) ? .white : .blue)
-                                        }
+                    HStack(spacing: 6) {
+                        ForEach(viewModel.availableDays, id: \.id) { day in
+                            Button(action: {
+                                AppLogger.info("[LoggingView] Day tapped: \(day.weekday)", category: "LoggingView")
+                                viewModel.handleIntent(.selectDay(day.weekday))
+                            }) {
+                                VStack(spacing: 2) {
+                                    Text(day.weekday.abbreviation)
+                                        .font(.caption)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(isSelected(day) ? .white : .primary)
+                                    
+                                    if day.isRest || day.exerciseTemplates.isEmpty {
+                                        Image(systemName: "bed.double.fill")
+                                            .font(.caption2)
+                                            .foregroundColor(isSelected(day) ? .white.opacity(0.8) : .secondary)
+                                    } else {
+                                        Text("\(day.exerciseTemplates.count)")
+                                            .font(.caption2)
+                                            .fontWeight(.semibold)
+                                            .foregroundColor(isSelected(day) ? .white : .blue)
                                     }
-                                    .frame(width: 56, height: 56)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .fill(isSelected(day) ? .blue : Color(.systemGray6))
-                                    )
                                 }
-                                .buttonStyle(.plain)
-                                .scaleEffect(isSelected(day) ? 1.05 : 1.0)
-                                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected(day))
+                                .frame(width: 44, height: 44)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .fill(isSelected(day) ? .blue : Color(.systemGray6))
+                                )
                             }
+                            .buttonStyle(.plain)
+                            .scaleEffect(isSelected(day) ? 1.05 : 1.0)
+                            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected(day))
                         }
-                        .padding(.horizontal, 4)
                     }
+                    .padding(.horizontal, 4)
                 }
             }
         }
