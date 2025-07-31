@@ -208,16 +208,6 @@ struct LoggingContentView: View {
             // Scrollable content
             ScrollView {
                 VStack(spacing: 24) {
-                    // Day Summary Header
-                    VStack(spacing: 8) {
-                        if let selectedDay = viewModel.selectedDay {
-                            Text("\(selectedDay.weekday.fullName) - \(selectedDay.exerciseTemplates.count) exercises")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    .padding(.top, 16)
-                    
                     // Exercise Summary List
                     if let selectedDay = viewModel.selectedDay {
                         LazyVStack(spacing: 12) {

@@ -38,8 +38,20 @@ struct ExerciseTemplateEditorView: View {
                         
                         Spacer()
                         
-                        Image(systemName: "dumbbell.fill")
-                            .foregroundStyle(.blue)
+                        HStack(spacing: 8) {
+                            // Show superset badge if exercise is part of a superset
+                            if let supersetID = supersetID,
+                               let dayTemplate = exerciseTemplate.dayTemplate,
+                               let supersetNumber = dayTemplate.getSupersetNumber(for: supersetID) {
+                                SupersetBadgeView(
+                                    supersetNumber: supersetNumber,
+                                    isHead: dayTemplate.exerciseTemplates.filter { $0.supersetID == supersetID }.min(by: { $0.position < $1.position })?.id == exerciseTemplate.id
+                                )
+                            }
+                            
+                            Image(systemName: "dumbbell.fill")
+                                .foregroundStyle(.blue)
+                        }
                     }
                     .padding(.vertical, 4)
                 }

@@ -41,7 +41,13 @@ struct DayDetailView: View {
                     Section("Exercises") {
                         ForEach(dayTemplate.exerciseTemplates.sorted(by: { $0.position < $1.position })) { exerciseTemplate in
                             NavigationLink(destination: ExerciseTemplateEditorView(exerciseTemplate: exerciseTemplate, viewModel: viewModel)) {
-                                ExerciseTemplateRowView(exerciseTemplate: exerciseTemplate)
+                                ExerciseTemplateRowView(
+                                    exerciseTemplate: exerciseTemplate,
+                                    onEditExercise: { _ in
+                                        // NavigationLink handles the navigation, so this is a no-op
+                                        // The actual navigation is handled by the NavigationLink
+                                    }
+                                )
                             }
                         }
                         .onMove(perform: moveExercises)

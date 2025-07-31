@@ -3,32 +3,41 @@ import SwiftUI
 struct ExerciseListView: View {
     let exerciseTemplates: [ExerciseTemplate]
     let onEditExercise: (ExerciseTemplate) -> Void
+    let onDeleteExercise: ((ExerciseTemplate) -> Void)?
+    let onReorderExercises: ((IndexSet, Int) -> Void)?
+    
+    init(
+        exerciseTemplates: [ExerciseTemplate],
+        onEditExercise: @escaping (ExerciseTemplate) -> Void,
+        onDeleteExercise: ((ExerciseTemplate) -> Void)? = nil,
+        onReorderExercises: ((IndexSet, Int) -> Void)? = nil
+    ) {
+        self.exerciseTemplates = exerciseTemplates
+        self.onEditExercise = onEditExercise
+        self.onDeleteExercise = onDeleteExercise
+        self.onReorderExercises = onReorderExercises
+    }
+    
+    private var sortedExercises: [ExerciseTemplate] {
+        exerciseTemplates.sorted(by: { $0.position < $1.position })
+    }
     
     var body: some View {
         VStack(spacing: 0) {
-            ForEach(exerciseTemplates.sorted(by: { $0.position < $1.position })) { exerciseTemplate in
-                HStack(spacing: 0) {
-                    ExerciseTemplateRowView(exerciseTemplate: exerciseTemplate)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    
-                    // Edit button positioned to avoid superset badge overlap
-                    Button(action: { onEditExercise(exerciseTemplate) }) {
-                        Image(systemName: "pencil")
-                            .foregroundStyle(.blue)
-                            .padding(8)
-                            .background(Color(.systemGray6))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                    }
-                    .padding(.trailing, 16)
-                }
+            ForEach(sortedExercises) { exerciseTemplate in
+                ExerciseTemplateRowView(
+                    exerciseTemplate: exerciseTemplate,
+                    onEditExercise: onEditExercise
+                )
                 .background(Color(.systemBackground))
                 .onTapGesture {
                     onEditExercise(exerciseTemplate)
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(Color(.systemBackground))
                 
-                if exerciseTemplate.id != exerciseTemplates.sorted(by: { $0.position < $1.position }).last?.id {
+                if exerciseTemplate != sortedExercises.last {
                     Divider()
                         .padding(.horizontal, 16)
                 }

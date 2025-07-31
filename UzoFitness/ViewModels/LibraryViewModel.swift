@@ -33,7 +33,12 @@ class LibraryViewModel: ObservableObject {
     }
     
     var sortedExercises: [Exercise] {
-        exerciseCatalog.sorted { $0.name < $1.name }
+        // Use cached exercises if available, fallback to exerciseCatalog
+        if _isExercisesLoaded {
+            return _cachedExercises // Already sorted from database query
+        } else {
+            return exerciseCatalog.sorted { $0.name < $1.name }
+        }
     }
     
     // Convenience properties for the UI
@@ -207,7 +212,19 @@ class LibraryViewModel: ObservableObject {
     
     func getExercises() -> [Exercise] {
         ensureExercisesLoaded()
-        return _cachedExercises
+        return exercises // Use the computed property for consistency
+    }
+    
+    // Force refresh exercises for immediate availability (e.g., when sheet is presented)
+    func refreshExercisesForUI() {
+        AppLogger.debug("[LibraryViewModel.refreshExercisesForUI] Forcing exercise refresh for UI", category: "LibraryViewModel")
+        ensureExercisesLoaded()
+        
+        // If exercises are cached but exerciseCatalog is empty, sync them
+        if _isExercisesLoaded && !_cachedExercises.isEmpty && exerciseCatalog.isEmpty {
+            AppLogger.debug("[LibraryViewModel.refreshExercisesForUI] Syncing cached exercises to published property", category: "LibraryViewModel")
+            exerciseCatalog = _cachedExercises
+        }
     }
     
     // MARK: - Exercise Cache Loading
@@ -416,7 +433,7 @@ class LibraryViewModel: ObservableObject {
             // Update cache with new exercise
             _cachedExercises.append(exercise)
             _cachedExercises.sort { $0.name < $1.name }
-            exerciseCatalog = _cachedExercises // Update published property
+            exerciseCatalog = _cachedExercises // Update published property to trigger UI updates
             
             AppLogger.info("[LibraryViewModel.createExercise] Successfully created exercise: \(name) and updated cache", category: "LibraryViewModel")
             
@@ -452,7 +469,7 @@ class LibraryViewModel: ObservableObject {
             
             // Update cache by removing the exercise
             _cachedExercises.removeAll { $0.id == id }
-            exerciseCatalog = _cachedExercises // Update published property
+            exerciseCatalog = _cachedExercises // Update published property to trigger UI updates
             
             AppLogger.info("[LibraryViewModel.deleteExercise] Successfully deleted exercise: \(id) and updated cache", category: "LibraryViewModel")
             
@@ -601,7 +618,7 @@ class LibraryViewModel: ObservableObject {
                         mediaAssetID: exercise.mediaAssetID
                     )
                     modelContext.insert(newExercise)
-                    exerciseCatalog.append(newExercise)
+                    _cachedExercises.append(newExercise)
                     importedCount += 1
                 } else {
                     AppLogger.info("[LibraryViewModel.importExercises] Skipping duplicate exercise: \(exercise.name)", category: "LibraryViewModel")
@@ -609,7 +626,8 @@ class LibraryViewModel: ObservableObject {
             }
             
             try modelContext.save()
-            exerciseCatalog.sort { $0.name < $1.name }
+            _cachedExercises.sort { $0.name < $1.name }
+            exerciseCatalog = _cachedExercises // Update published property to trigger UI updates
             
             AppLogger.info("[LibraryViewModel.importExercises] Successfully imported \(importedCount) exercises (skipped \(exercises.count - importedCount) duplicates)", category: "LibraryViewModel")
             
@@ -668,8 +686,11 @@ class LibraryViewModel: ObservableObject {
         
         modelContext.insert(newExercise)
         try modelContext.save()
-        exerciseCatalog.append(newExercise)
-        exerciseCatalog.sort { $0.name < $1.name }
+        
+        // Update cache with new exercise
+        _cachedExercises.append(newExercise)
+        _cachedExercises.sort { $0.name < $1.name }
+        exerciseCatalog = _cachedExercises // Update published property to trigger UI updates
         AppLogger.info("Successfully created exercise", category: "LibraryViewModel.createExercise")
     }
     
@@ -680,7 +701,10 @@ class LibraryViewModel: ObservableObject {
         exercise.instructions = instructions
         
         try modelContext.save()
-        exerciseCatalog.sort { $0.name < $1.name }
+        
+        // Update cache to reflect changes
+        _cachedExercises.sort { $0.name < $1.name }
+        exerciseCatalog = _cachedExercises // Update published property to trigger UI updates
         AppLogger.info("[LibraryViewModel.updateExercise] Successfully updated exercise", category: "LibraryViewModel")
     }
     
@@ -901,8 +925,8 @@ class LibraryViewModel: ObservableObject {
     private func findOrCreateExercise(name: String) throws -> Exercise {
         AppLogger.debug("Looking for exercise: \(name)", category: "LibraryViewModel.findOrCreateExercise")
         
-        // First, try to find existing exercise
-        if let existingExercise = exerciseCatalog.first(where: { $0.name.lowercased() == name.lowercased() }) {
+        // First, try to find existing exercise from cache
+        if let existingExercise = _cachedExercises.first(where: { $0.name.lowercased() == name.lowercased() }) {
             AppLogger.info("Found existing exercise: \(name)", category: "LibraryViewModel.findOrCreateExercise")
             return existingExercise
         }
@@ -916,8 +940,9 @@ class LibraryViewModel: ObservableObject {
         )
         
         modelContext.insert(newExercise)
-        exerciseCatalog.append(newExercise)
-        exerciseCatalog.sort { $0.name < $1.name }
+        _cachedExercises.append(newExercise)
+        _cachedExercises.sort { $0.name < $1.name }
+        exerciseCatalog = _cachedExercises // Update published property to trigger UI updates
         
         AppLogger.info("Created new exercise: \(name)", category: "LibraryViewModel.findOrCreateExercise")
         return newExercise

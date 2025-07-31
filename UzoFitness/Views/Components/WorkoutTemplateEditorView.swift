@@ -121,6 +121,9 @@ struct WorkoutTemplateEditorView: View {
                     },
                     onDeleteExercise: { exerciseTemplate in
                         deleteExerciseTemplate(exerciseTemplate)
+                    },
+                    onReorderExercises: { source, destination in
+                        reorderExerciseTemplates(in: dayTemplate, from: source, to: destination)
                     }
                 )
             }
@@ -177,6 +180,11 @@ struct WorkoutTemplateEditorView: View {
     private func deleteExerciseTemplate(_ exerciseTemplate: ExerciseTemplate) {
         AppLogger.info("[WorkoutTemplateEditorView.deleteExerciseTemplate] Deleting exercise template", category: "WorkoutTemplateEditor")
         viewModel.deleteExerciseTemplate(exerciseTemplate)
+    }
+    
+    private func reorderExerciseTemplates(in dayTemplate: DayTemplate, from source: IndexSet, to destination: Int) {
+        AppLogger.info("[WorkoutTemplateEditorView.reorderExerciseTemplates] Reordering exercises in \(dayTemplate.weekday)", category: "WorkoutTemplateEditor")
+        viewModel.reorderExerciseTemplates(in: dayTemplate, from: source, to: destination)
     }
     
     private func addNewDay() {
@@ -263,6 +271,7 @@ struct DayTemplateView: View {
     let onAddExercise: () -> Void
     let onEditExercise: (ExerciseTemplate) -> Void
     let onDeleteExercise: (ExerciseTemplate) -> Void
+    let onReorderExercises: (IndexSet, Int) -> Void
     
     var body: some View {
         VStack(spacing: 12) {
@@ -295,7 +304,9 @@ struct DayTemplateView: View {
                     if !dayTemplate.exerciseTemplates.isEmpty {
                         ExerciseListView(
                             exerciseTemplates: dayTemplate.exerciseTemplates,
-                            onEditExercise: onEditExercise
+                            onEditExercise: onEditExercise,
+                            onDeleteExercise: onDeleteExercise,
+                            onReorderExercises: onReorderExercises
                         )
                     }
                     

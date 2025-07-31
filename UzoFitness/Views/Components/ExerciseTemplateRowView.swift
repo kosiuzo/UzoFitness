@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ExerciseTemplateRowView: View {
     let exerciseTemplate: ExerciseTemplate
+    let onEditExercise: (ExerciseTemplate) -> Void
     
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -21,30 +22,32 @@ struct ExerciseTemplateRowView: View {
                             .foregroundStyle(.secondary)
                         
                         if let weight = exerciseTemplate.weight {
-                            Text("\(weight, specifier: "%.1f") lbs")
+                            Text("\(weight, specifier: "%.1f") kg")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
                     }
                 }
                 
-                Spacer(minLength: 8)
+                Spacer(minLength: 12)
                 
-                // Superset badge positioned to avoid overlap with edit button
+                // Superset badge if exercise is part of a superset
                 if let supersetID = exerciseTemplate.supersetID,
                    let dayTemplate = exerciseTemplate.dayTemplate,
                    let supersetNumber = dayTemplate.getSupersetNumber(for: supersetID) {
-                    Text("SS\(supersetNumber)")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(.blue)
-                        .clipShape(Capsule())
+                    SupersetBadgeView(supersetNumber: supersetNumber, isHead: true)
+                }
+                
+                // Edit button
+                Button(action: { onEditExercise(exerciseTemplate) }) {
+                    Image(systemName: "pencil")
+                        .foregroundStyle(.blue)
+                        .padding(8)
+                        .background(Color(.systemGray6))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
             }
         }
-        .padding(.vertical, 2)
+        .frame(height: 60) // Fixed height for consistent row sizing
     }
 } 

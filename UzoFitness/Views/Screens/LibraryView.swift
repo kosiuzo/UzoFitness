@@ -3,13 +3,20 @@ import SwiftData
 // Import extracted components
 
 struct LibraryView: View {
-    @Environment(\.modelContext) private var context
+    @Environment(\.modelContext) private var modelContext
+    
+    var body: some View {
+        LibraryViewContent(modelContext: modelContext)
+    }
+}
+
+struct LibraryViewContent: View {
+    let modelContext: ModelContext
     @StateObject private var viewModel: LibraryViewModel
     
-    init() {
-        // We'll inject the modelContext in the body
-        let context = ModelContext(PersistenceController.shared.container)
-        self._viewModel = StateObject(wrappedValue: LibraryViewModel(modelContext: context))
+    init(modelContext: ModelContext) {
+        self.modelContext = modelContext
+        self._viewModel = StateObject(wrappedValue: LibraryViewModel(modelContext: modelContext))
     }
     
     var body: some View {
