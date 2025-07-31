@@ -303,17 +303,25 @@ struct DayTemplateView: View {
                 VStack(spacing: 12) {
                     if !dayTemplate.exerciseTemplates.isEmpty {
                         List {
-                            ForEach(dayTemplate.exerciseTemplates.sorted(by: { $0.position < $1.position })) { exerciseTemplate in
-                                ExerciseTemplateRowView(
-                                    exerciseTemplate: exerciseTemplate,
-                                    onEditExercise: onEditExercise
-                                )
+                            ForEach(Array(dayTemplate.exerciseTemplates.sorted(by: { $0.position < $1.position }).enumerated()), id: \.element.id) { index, exerciseTemplate in
+                                VStack(spacing: 0) {
+                                    ExerciseTemplateRowView(
+                                        exerciseTemplate: exerciseTemplate,
+                                        onEditExercise: onEditExercise
+                                    )
+                                    .onTapGesture {
+                                        onEditExercise(exerciseTemplate)
+                                    }
+                                    
+                                    // Add divider if not the last item
+                                    if index < dayTemplate.exerciseTemplates.count - 1 {
+                                        Divider()
+                                            .padding(.horizontal, 16)
+                                    }
+                                }
                                 .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                                 .listRowBackground(Color(.systemBackground))
                                 .listRowSeparator(.hidden)
-                                .onTapGesture {
-                                    onEditExercise(exerciseTemplate)
-                                }
                             }
                             .onDelete(perform: { offsets in
                                 for index in offsets {

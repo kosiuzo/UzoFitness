@@ -3,9 +3,12 @@ import SwiftUI
 struct WorkoutPlanRowView: View {
     let plan: WorkoutPlan
     @ObservedObject var viewModel: LibraryViewModel
+    @State private var showingPlanEditor = false
     
     var body: some View {
-        NavigationLink(destination: Text("Plan Editor - Coming Soon")) {
+        Button {
+            showingPlanEditor = true
+        } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(plan.customName)
@@ -21,6 +24,12 @@ struct WorkoutPlanRowView: View {
                         Text("\(plan.durationWeeks) weeks")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                        
+                        if plan.completionPercentage > 0 {
+                            Text("\(Int(plan.completionPercentage))% complete")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
                 
@@ -41,5 +50,8 @@ struct WorkoutPlanRowView: View {
             }
         }
         .buttonStyle(.plain)
+        .sheet(isPresented: $showingPlanEditor) {
+            WorkoutPlanEditorView(plan: plan, viewModel: viewModel)
+        }
     }
 } 

@@ -9,6 +9,8 @@ final class WorkoutPlan: Identified, Timestamped {
     @Attribute var startedAt: Date
     @Attribute var durationWeeks: Int
     @Attribute var createdAt: Date
+    @Attribute var notes: String
+    @Attribute var endedAt: Date?
     
     @Relationship var template: WorkoutTemplate?
 
@@ -19,7 +21,9 @@ final class WorkoutPlan: Identified, Timestamped {
         startedAt: Date = .now,
         durationWeeks: Int = 8,
         template: WorkoutTemplate? = nil,
-        createdAt: Date = .now
+        createdAt: Date = .now,
+        notes: String = "",
+        endedAt: Date? = nil
     ) {
         self.id = id
         self.customName = customName
@@ -28,5 +32,7 @@ final class WorkoutPlan: Identified, Timestamped {
         self.durationWeeks = max(durationWeeks, 1)
         self.template = template
         self.createdAt = createdAt
+        self.notes = notes
+        self.endedAt = endedAt
     }
 }

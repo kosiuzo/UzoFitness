@@ -761,7 +761,7 @@ class LibraryViewModel: ObservableObject {
     }
     
     // MARK: - Workout Plan Editing Methods
-    func updateWorkoutPlan(_ plan: WorkoutPlan, customName: String, durationWeeks: Int, isActive: Bool) throws {
+    func updateWorkoutPlan(_ plan: WorkoutPlan, customName: String, durationWeeks: Int, isActive: Bool, notes: String = "") throws {
         AppLogger.debug("[LibraryViewModel.updateWorkoutPlan] Updating plan: \(plan.customName)", category: "LibraryViewModel")
         
         // If setting this plan to active, deactivate all other plans first
@@ -786,10 +786,44 @@ class LibraryViewModel: ObservableObject {
         plan.customName = customName.trimmingCharacters(in: .whitespacesAndNewlines)
         plan.durationWeeks = max(durationWeeks, 1) // Ensure minimum 1 week
         plan.isActive = isActive
+        plan.notes = notes
+        
+        // Set endedAt when plan becomes inactive, clear when reactivated
+        if !isActive && plan.endedAt == nil {
+            plan.endedAt = Date()
+        } else if isActive {
+            plan.endedAt = nil
+        }
         
         try modelContext.save()
         AppLogger.info("[LibraryViewModel.updateWorkoutPlan] Successfully updated plan", category: "LibraryViewModel")
-        AppLogger.info("[LibraryViewModel] Plan updated: \(plan.customName) - Active: \(plan.isActive) - Duration: \(plan.durationWeeks) weeks", category: "LibraryViewModel")
+        AppLogger.info("[LibraryViewModel] Plan updated: \(plan.customName) - Active: \(plan.isActive) - Duration: \(plan.durationWeeks) weeks - Completion: \(plan.completionPercentage)%", category: "LibraryViewModel")
+    }
+    
+    // Convenience method for the plan editor
+    func savePlan(_ plan: WorkoutPlan) {
+        do {
+            try updateWorkoutPlan(
+                plan,
+                customName: plan.customName,
+                durationWeeks: plan.durationWeeks,
+                isActive: plan.isActive,
+                notes: plan.notes
+            )
+        } catch {
+            AppLogger.error("[LibraryViewModel.savePlan] Error saving plan: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
+            self.error = error
+        }
+    }
+    
+    // Convenience method for the plan editor
+    func deletePlan(_ plan: WorkoutPlan) {
+        do {
+            try deleteWorkoutPlan(plan)
+        } catch {
+            AppLogger.error("[LibraryViewModel.deletePlan] Error deleting plan: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
+            self.error = error
+        }
     }
     
     func deleteWorkoutPlan(_ plan: WorkoutPlan) throws {
