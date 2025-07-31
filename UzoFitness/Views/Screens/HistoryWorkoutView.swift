@@ -18,8 +18,8 @@ struct HistoryWorkoutView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                // Workout Header (now minimalist, no title here)
-                WorkoutHeaderView(
+                // Workout Session Header
+                WorkoutSessionHeaderView(
                     date: session.date,
                     duration: session.duration,
                     totalVolume: session.totalVolume,

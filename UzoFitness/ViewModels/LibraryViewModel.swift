@@ -49,6 +49,10 @@ class LibraryViewModel: ObservableObject {
     private let modelContext: ModelContext
     private var cancellables = Set<AnyCancellable>()
     
+    // MARK: - Exercise Caching
+    private var _cachedExercises: [Exercise] = []
+    private var _isExercisesLoaded = false
+    
     // MARK: - Public Methods for View Access
     func deleteExerciseTemplate(_ exerciseTemplate: ExerciseTemplate) {
         AppLogger.debug("[LibraryViewModel.deleteExerciseTemplate] Deleting exercise template for \(exerciseTemplate.exercise.name)", category: "LibraryViewModel")
@@ -93,6 +97,11 @@ class LibraryViewModel: ObservableObject {
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
         AppLogger.debug("[LibraryViewModel.init] Initialized with ModelContext", category: "LibraryViewModel")
+        
+        // Load exercise cache immediately for instant access
+        loadExerciseCache()
+        
+        // Load other data
         loadData()
     }
     
@@ -174,17 +183,51 @@ class LibraryViewModel: ObservableObject {
     }
     
     private func loadExercises() throws {
-        let descriptor = FetchDescriptor<Exercise>(
-            sortBy: [SortDescriptor(\.name)]
-        )
+        // Only load if not already cached
+        if _isExercisesLoaded {
+            AppLogger.debug("[LibraryViewModel.loadExercises] Exercises already cached, skipping load", category: "LibraryViewModel")
+            return
+        }
+        
+        // Use the dedicated cache loading method
+        loadExerciseCache()
+    }
+    
+    // MARK: - Exercise Cache Management
+    private func ensureExercisesLoaded() {
+        if !_isExercisesLoaded {
+            AppLogger.debug("[LibraryViewModel.ensureExercisesLoaded] Loading exercises into cache", category: "LibraryViewModel")
+            do {
+                try loadExercises()
+            } catch {
+                AppLogger.error("[LibraryViewModel.ensureExercisesLoaded] Error loading exercises: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
+            }
+        }
+    }
+    
+    func getExercises() -> [Exercise] {
+        ensureExercisesLoaded()
+        return _cachedExercises
+    }
+    
+    // MARK: - Exercise Cache Loading
+    private func loadExerciseCache() {
+        AppLogger.debug("[LibraryViewModel.loadExerciseCache] Loading exercise cache", category: "LibraryViewModel")
         
         do {
-            exerciseCatalog = try modelContext.fetch(descriptor)
-            AppLogger.debug("[LibraryViewModel.loadExercises] Loaded \(exerciseCatalog.count) exercises", category: "LibraryViewModel")
+            let descriptor = FetchDescriptor<Exercise>(
+                sortBy: [SortDescriptor(\.name)]
+            )
+            
+            _cachedExercises = try modelContext.fetch(descriptor)
+            exerciseCatalog = _cachedExercises // Update published property
+            _isExercisesLoaded = true
+            
+            AppLogger.info("[LibraryViewModel.loadExerciseCache] Successfully loaded \(_cachedExercises.count) exercises into cache", category: "LibraryViewModel")
         } catch {
-            AppLogger.error("[LibraryViewModel.loadExercises] Error: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
+            AppLogger.error("[LibraryViewModel.loadExerciseCache] Error loading exercise cache: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
+            _cachedExercises = []
             exerciseCatalog = []
-            throw error
         }
     }
     
@@ -370,10 +413,12 @@ class LibraryViewModel: ObservableObject {
             modelContext.insert(exercise)
             try modelContext.save()
             
-            exerciseCatalog.append(exercise)
-            exerciseCatalog.sort { $0.name < $1.name }
+            // Update cache with new exercise
+            _cachedExercises.append(exercise)
+            _cachedExercises.sort { $0.name < $1.name }
+            exerciseCatalog = _cachedExercises // Update published property
             
-            AppLogger.info("[LibraryViewModel.createExercise] Successfully created exercise: \(name)", category: "LibraryViewModel")
+            AppLogger.info("[LibraryViewModel.createExercise] Successfully created exercise: \(name) and updated cache", category: "LibraryViewModel")
             
         } catch {
             AppLogger.error("[LibraryViewModel.createExercise] Error: \(error.localizedDescription)", category: "LibraryViewModel", error: error)
@@ -405,9 +450,11 @@ class LibraryViewModel: ObservableObject {
             modelContext.delete(exercise)
             try modelContext.save()
             
-            exerciseCatalog.removeAll { $0.id == id }
+            // Update cache by removing the exercise
+            _cachedExercises.removeAll { $0.id == id }
+            exerciseCatalog = _cachedExercises // Update published property
             
-            AppLogger.info("[LibraryViewModel.deleteExercise] Successfully deleted exercise: \(id)", category: "LibraryViewModel")
+            AppLogger.info("[LibraryViewModel.deleteExercise] Successfully deleted exercise: \(id) and updated cache", category: "LibraryViewModel")
             
         } catch {
             AppLogger.error("[LibraryViewModel.deleteExercise] Error: \(error.localizedDescription)", category: "LibraryViewModel", error: error)

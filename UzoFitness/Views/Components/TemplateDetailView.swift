@@ -5,17 +5,8 @@ struct TemplateDetailView: View {
     @ObservedObject var viewModel: LibraryViewModel
     @Environment(\.dismiss) private var dismiss
     
-    @State private var name: String
-    @State private var summary: String
     @State private var showingDeleteConfirmation = false
-    @State private var isEditing = false
-    
-    init(template: WorkoutTemplate, viewModel: LibraryViewModel) {
-        self.template = template
-        self.viewModel = viewModel
-        self._name = State(initialValue: template.name)
-        self._summary = State(initialValue: template.summary)
-    }
+    @State private var showingTemplateEditor = false
     
     private var orderedWeekdays: [Weekday] {
         [.monday, .tuesday, .wednesday, .thursday, .friday, .saturday, .sunday]
@@ -26,25 +17,13 @@ struct TemplateDetailView: View {
             // Template Info Section
             Section("Workout Info") {
                 VStack(alignment: .leading, spacing: 12) {
-                    if isEditing {
-                        TextField("Workout Name", text: $name)
-                            .font(.headline)
-                            .autocapitalization(.words)
-                            .textFieldStyle(.roundedBorder)
-                        
-                        TextField("Summary", text: $summary, axis: .vertical)
+                    Text(template.name)
+                        .font(.headline)
+                    
+                    if !template.summary.isEmpty {
+                        Text(template.summary)
                             .font(.body)
-                            .lineLimit(3...6)
-                            .textFieldStyle(.roundedBorder)
-                    } else {
-                        Text(template.name)
-                            .font(.headline)
-                        
-                        if !template.summary.isEmpty {
-                            Text(template.summary)
-                                .font(.body)
-                                .foregroundStyle(.secondary)
-                        }
+                            .foregroundStyle(.secondary)
                     }
                     
                     Text("Created: \(template.createdAt.formatted(date: .abbreviated, time: .omitted))")
@@ -73,31 +52,17 @@ struct TemplateDetailView: View {
                 .frame(maxWidth: .infinity)
             }
         }
-        .navigationTitle(isEditing ? "Edit Workout" : template.name)
+        .navigationTitle(template.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                if isEditing {
-                    HStack {
-                        Button("Cancel") {
-                            // Reset values
-                            name = template.name
-                            summary = template.summary
-                            isEditing = false
-                        }
-                        
-                        Button("Save") {
-                            saveTemplate()
-                        }
-                        .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                        .fontWeight(.semibold)
-                    }
-                } else {
-                    Button("Edit") {
-                        isEditing = true
-                    }
+                Button("Edit") {
+                    showingTemplateEditor = true
                 }
             }
+        }
+        .sheet(isPresented: $showingTemplateEditor) {
+            WorkoutTemplateEditorView(template: template, viewModel: viewModel)
         }
         .alert("Delete Workout", isPresented: $showingDeleteConfirmation) {
             Button("Delete", role: .destructive) {
@@ -116,23 +81,6 @@ struct TemplateDetailView: View {
             if let error = viewModel.error {
                 Text(error.localizedDescription)
             }
-        }
-    }
-    
-    private func saveTemplate() {
-        AppLogger.info("[TemplateDetailView.saveTemplate] Saving template changes", category: "LibraryView")
-        
-        do {
-            try viewModel.updateTemplate(
-                template,
-                name: name.trimmingCharacters(in: .whitespacesAndNewlines),
-                summary: summary.trimmingCharacters(in: .whitespacesAndNewlines)
-            )
-            AppLogger.info("[TemplateDetailView.saveTemplate] Successfully saved template", category: "LibraryView")
-            isEditing = false
-        } catch {
-            AppLogger.error("[TemplateDetailView.saveTemplate] Error saving template", category: "LibraryView", error: error)
-            viewModel.error = error
         }
     }
 } 

@@ -2,10 +2,11 @@ import SwiftUI
 
 struct WorkoutsTabView: View {
     @ObservedObject var viewModel: LibraryViewModel
-    @State private var showingTemplateCreator = false
+    @State private var showingTemplateEditor = false
     @State private var showingPlanCreator = false
     @State private var showingJSONImport = false
     @State private var navigationPath = NavigationPath()
+    @State private var templateToEdit: WorkoutTemplate?
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -28,7 +29,7 @@ struct WorkoutsTabView: View {
                         )
                         
                         Button("Create Workout") {
-                            createNewWorkout() // Streamlined workout creation
+                            createNewWorkout() // New streamlined workout creation
                         }
                         .buttonStyle(.borderedProminent)
                         
@@ -70,7 +71,7 @@ struct WorkoutsTabView: View {
                                 }
                                 
                                 Button("Add Workout") {
-                                    createNewWorkout() // Streamlined workout creation
+                                    createNewWorkout() // New streamlined workout creation
                                 }
                                 .foregroundStyle(.blue)
                             }
@@ -97,22 +98,19 @@ struct WorkoutsTabView: View {
                 }
             }
             .navigationDestination(for: WorkoutTemplate.self) { template in
-                TemplateDetailView(template: template, viewModel: viewModel)
+                WorkoutTemplateEditorView(template: template, viewModel: viewModel)
             }
             .navigationDestination(for: String.self) { identifier in
                 if identifier == "new_workout" {
-                    // Navigate directly to the newly created workout's detail view
+                    // Navigate directly to the newly created workout's editor view
                     if let latestTemplate = viewModel.workoutTemplates.first {
-                        TemplateDetailView(template: latestTemplate, viewModel: viewModel)
+                        WorkoutTemplateEditorView(template: latestTemplate, viewModel: viewModel)
                     }
                 }
             }
         }
-        // Streamlined template creation with immediate navigation
-        .alert("Create Workout", isPresented: $showingTemplateCreator) {
-            StreamlinedTemplateNameInputView { name in
-                createWorkoutAndNavigate(name: name)
-            }
+        .sheet(isPresented: $showingTemplateEditor) {
+            WorkoutTemplateEditorView(template: templateToEdit, viewModel: viewModel)
         }
         .actionSheet(isPresented: $showingPlanCreator) {
             ActionSheet(
@@ -140,19 +138,7 @@ struct WorkoutsTabView: View {
     
     // MARK: - Helper Methods
     private func createNewWorkout() {
-        showingTemplateCreator = true
-    }
-    
-    // Create workout and immediately navigate to weekly schedule
-    private func createWorkoutAndNavigate(name: String) {
-        // Create the workout template
-        viewModel.createWorkoutTemplate(name: name)
-        
-        // Navigate directly to the newly created workout's detail view
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            if let newTemplate = viewModel.workoutTemplates.first(where: { $0.name == name }) {
-                navigationPath.append(newTemplate)
-            }
-        }
+        templateToEdit = nil // Create new template
+        showingTemplateEditor = true
     }
 } 

@@ -1,69 +1,29 @@
 import SwiftUI
 
 struct WorkoutHeaderView: View {
-    let date: Date
-    let duration: TimeInterval?
-    let totalVolume: Double
-    let exerciseCount: Int
-    let totalSets: Int
+    @Binding var workoutName: String
+    @Binding var description: String
     
     var body: some View {
-        VStack(spacing: 12) {
-            // Date and Duration (stacked vertically)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(DateFormatter.fullDate.string(from: date))
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                
-                if let duration = duration {
-                    Text("Duration: \(formatDuration(duration))")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+        VStack(spacing: 0) {
+            TextField("Workout Name", text: $workoutName)
+                .font(.headline)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
             
-            // Stats Row
-            HStack(spacing: 24) {
-                StatView(
-                    title: "Total Volume",
-                    value: formatVolume(totalVolume),
-                    color: .blue
-                )
-                StatView(
-                    title: "Exercises",
-                    value: "\(exerciseCount)",
-                    color: .green
-                )
-                if exerciseCount > 0 {
-                    StatView(
-                        title: "Sets",
-                        value: "\(totalSets)",
-                        color: .orange
-                    )
-                }
-            }
+            Divider()
+                .padding(.horizontal, 16)
+            
+            TextField("Description", text: $description)
+                .font(.body)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
         }
-        .padding(16)
-        .background(Color(.systemGray6))
+        .background(Color(.systemBackground))
         .cornerRadius(12)
-    }
-    
-    private func formatVolume(_ volume: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        return (formatter.string(from: NSNumber(value: volume)) ?? "0") + " lbs"
-    }
-    
-    private func formatDuration(_ duration: TimeInterval) -> String {
-        let hours = Int(duration) / 3600
-        let minutes = Int(duration) % 3600 / 60
-        
-        if hours > 0 {
-            return "\(hours)h \(minutes)m"
-        } else {
-            return "\(minutes)m"
-        }
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color(.systemGray4), lineWidth: 1)
+        )
     }
 } 
