@@ -13,11 +13,9 @@ struct WorkoutTemplateEditorView: View {
     @State private var workoutName: String = ""
     @State private var description: String = ""
     @State private var dayTemplates: [DayTemplate] = []
-    @State private var showingExercisePicker = false
-    @State private var selectedDayForExercisePicker: DayTemplate?
+    @State private var exercisePickerDay: DayTemplate?
     @State private var showingRestDayConfirmation = false
     @State private var dayForRestConfirmation: DayTemplate?
-    @State private var showingExerciseEditor = false
     @State private var exerciseTemplateToEdit: ExerciseTemplate?
     
     init(template: WorkoutTemplate? = nil, viewModel: LibraryViewModel) {
@@ -79,17 +77,16 @@ struct WorkoutTemplateEditorView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingExercisePicker) {
-            if let selectedDay = selectedDayForExercisePicker {
-                ExercisePickerView(viewModel: viewModel) { selectedExercises in
-                    addExercisesToDay(selectedExercises, to: selectedDay)
-                }
+        .sheet(item: $exercisePickerDay) { selectedDay in
+            ExercisePickerView(viewModel: viewModel) { selectedExercises in
+                addExercisesToDay(selectedExercises, to: selectedDay)
+            }
+            .task {
+                viewModel.refreshExercisesForUI()
             }
         }
-        .sheet(isPresented: $showingExerciseEditor) {
-            if let exerciseTemplate = exerciseTemplateToEdit {
-                ExerciseTemplateEditorView(exerciseTemplate: exerciseTemplate, viewModel: viewModel)
-            }
+        .sheet(item: $exerciseTemplateToEdit) { exerciseTemplate in
+            ExerciseTemplateEditorView(exerciseTemplate: exerciseTemplate, viewModel: viewModel)
         }
         .alert("Mark as Rest Day?", isPresented: $showingRestDayConfirmation) {
             Button("Continue") {
@@ -117,7 +114,6 @@ struct WorkoutTemplateEditorView: View {
                     onAddExercise: { showExercisePicker(for: dayTemplate) },
                     onEditExercise: { exerciseTemplate in
                         exerciseTemplateToEdit = exerciseTemplate
-                        showingExerciseEditor = true
                     },
                     onDeleteExercise: { exerciseTemplate in
                         deleteExerciseTemplate(exerciseTemplate)
@@ -147,8 +143,7 @@ struct WorkoutTemplateEditorView: View {
     }
     
     private func showExercisePicker(for dayTemplate: DayTemplate) {
-        selectedDayForExercisePicker = dayTemplate
-        showingExercisePicker = true
+        exercisePickerDay = dayTemplate
     }
     
     private func addExercisesToDay(_ exercises: [Exercise], to dayTemplate: DayTemplate) {
