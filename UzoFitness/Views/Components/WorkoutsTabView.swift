@@ -69,6 +69,14 @@ struct WorkoutsTabView: View {
                                         }
                                     }
                                 }
+                                .onDelete { indexSet in
+                                    AppLogger.info("[WorkoutsTabView] Swipe to delete triggered for \(indexSet.count) templates", category: "WorkoutsTabView")
+                                    for index in indexSet {
+                                        let template = viewModel.workoutTemplates[index]
+                                        AppLogger.info("[WorkoutsTabView] Deleting template: \(template.name)", category: "WorkoutsTabView")
+                                        viewModel.deleteTemplate(template)
+                                    }
+                                }
                                 
                                 Button("Add Workout") {
                                     createNewWorkout() // New streamlined workout creation
@@ -85,6 +93,18 @@ struct WorkoutsTabView: View {
                                 } else {
                                     ForEach(viewModel.workoutPlans) { plan in
                                         WorkoutPlanRowView(plan: plan, viewModel: viewModel)
+                                    }
+                                    .onDelete { indexSet in
+                                        AppLogger.info("[WorkoutsTabView] Swipe to delete triggered for \(indexSet.count) plans", category: "WorkoutsTabView")
+                                        for index in indexSet {
+                                            let plan = viewModel.workoutPlans[index]
+                                            AppLogger.info("[WorkoutsTabView] Deleting plan: \(plan.customName)", category: "WorkoutsTabView")
+                                            do {
+                                                try viewModel.deleteWorkoutPlan(plan)
+                                            } catch {
+                                                AppLogger.error("[WorkoutsTabView] Error deleting plan: \(error.localizedDescription)", category: "WorkoutsTabView", error: error)
+                                            }
+                                        }
                                     }
                                 }
                                 
