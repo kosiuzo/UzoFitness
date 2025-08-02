@@ -7,6 +7,7 @@ import UIKit
 struct SessionExerciseUI: Identifiable, Hashable {
     let id: UUID
     let name: String
+    let exercise: Exercise
     let sets: [CompletedSet]
     let plannedSets: Int
     let plannedReps: Int
@@ -21,6 +22,7 @@ struct SessionExerciseUI: Identifiable, Hashable {
     init(from sessionExercise: SessionExercise) {
         self.id = sessionExercise.id
         self.name = sessionExercise.exercise.name
+        self.exercise = sessionExercise.exercise
         self.sets = sessionExercise.completedSets.sorted(by: { $0.position < $1.position }) // Sort sets by position
         self.plannedSets = sessionExercise.plannedSets
         self.plannedReps = sessionExercise.plannedReps

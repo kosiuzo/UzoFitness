@@ -16,6 +16,7 @@ struct LoggingExerciseRowView: View {
     @State private var tempWeight: String = ""
     @State private var isExpanded: Bool = true
     @State private var showingBulkEdit: Bool = false
+    @State private var showingExerciseInfo: Bool = false
     @State private var bulkReps: String = ""
     @State private var bulkWeight: String = ""
     
@@ -43,6 +44,16 @@ struct LoggingExerciseRowView: View {
                             Text(exercise.name)
                                 .font(.headline)
                                 .foregroundColor(.primary)
+                            
+                            // Info button
+                            Button {
+                                showingExerciseInfo = true
+                            } label: {
+                                Image(systemName: "info.circle")
+                                    .font(.title3)
+                                    .foregroundColor(.blue)
+                            }
+                            .buttonStyle(.plain)
                         }
                         
                         Text("\(exercise.plannedSets) sets × \(exercise.plannedReps) reps")
@@ -214,6 +225,9 @@ struct LoggingExerciseRowView: View {
             }
         } message: {
             Text("This will update the reps and weight for all sets in this exercise.")
+        }
+        .sheet(isPresented: $showingExerciseInfo) {
+            ExerciseInfoSheet(exercise: exercise.exercise)
         }
     }
     
