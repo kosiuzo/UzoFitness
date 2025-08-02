@@ -112,9 +112,12 @@ struct ExerciseImportDTO: Codable {
     let reps: Int
     let weight: Double?
     let supersetGroup: Int?
+    let instructions: String?
+    let category: ExerciseCategory?
+    let mediaAssetID: String?
     
     enum CodingKeys: String, CodingKey {
-        case name, sets, reps, weight, supersetGroup
+        case name, sets, reps, weight, supersetGroup, instructions, category, mediaAssetID
     }
     
     /// Validates the imported exercise data
@@ -141,6 +144,13 @@ struct ExerciseImportDTO: Codable {
             throw ImportError.invalidSupersetGroup(supersetGroup)
         }
         
+        // Validate category if provided
+        if let category = category {
+            guard ExerciseCategory.allCases.contains(category) else {
+                throw ImportError.invalidExerciseCategory(category.rawValue)
+            }
+        }
+        
         AppLogger.info("[ExerciseImportDTO.validate] Validation successful for exercise: \(name)", category: "WorkoutTemplateImport")
     }
 }
@@ -161,6 +171,7 @@ enum ImportError: Error, LocalizedError {
     case invalidReps(Int)
     case invalidWeight(Double)
     case invalidSupersetGroup(Int)
+    case invalidExerciseCategory(String)
     case dayValidationFailed(dayIndex: Int, underlyingError: Error)
     case exerciseValidationFailed(exerciseIndex: Int, underlyingError: Error)
     case jsonDecodingFailed(Error)
@@ -194,6 +205,8 @@ enum ImportError: Error, LocalizedError {
             return "Weight cannot be negative, got \(weight)"
         case .invalidSupersetGroup(let group):
             return "Superset group must be greater than 0, got \(group)"
+        case .invalidExerciseCategory(let category):
+            return "Invalid exercise category '\(category)'. Valid categories are: \(ExerciseCategory.allCases.map { $0.rawValue }.joined(separator: ", "))"
         case .dayValidationFailed(let dayIndex, let underlyingError):
             return "Day \(dayIndex + 1) validation failed: \(underlyingError.localizedDescription)"
         case .exerciseValidationFailed(let exerciseIndex, let underlyingError):

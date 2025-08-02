@@ -892,8 +892,13 @@ class LibraryViewModel: ObservableObject {
             for (index, exerciseDTO) in dayDTO.exercises.enumerated() {
                 AppLogger.debug("[LibraryViewModel.importWorkoutTemplate] Processing exercise: \(exerciseDTO.name)", category: "LibraryViewModel")
                 
-                // Find or create the exercise
-                let exercise = try findOrCreateExercise(name: exerciseDTO.name)
+                // Find or create the exercise with full details from DTO
+                let exercise = try findOrCreateExercise(
+                    name: exerciseDTO.name,
+                    category: exerciseDTO.category,
+                    instructions: exerciseDTO.instructions,
+                    mediaAssetID: exerciseDTO.mediaAssetID
+                )
                 
                 // Handle superset grouping - create or reuse UUID for each superset group
                 var supersetID: UUID? = nil
@@ -956,21 +961,44 @@ class LibraryViewModel: ObservableObject {
         return 1
     }
     
-    private func findOrCreateExercise(name: String) throws -> Exercise {
+    private func findOrCreateExercise(
+        name: String,
+        category: ExerciseCategory? = nil,
+        instructions: String? = nil,
+        mediaAssetID: String? = nil
+    ) throws -> Exercise {
         AppLogger.debug("Looking for exercise: \(name)", category: "LibraryViewModel.findOrCreateExercise")
         
         // First, try to find existing exercise from cache
         if let existingExercise = _cachedExercises.first(where: { $0.name.lowercased() == name.lowercased() }) {
             AppLogger.info("Found existing exercise: \(name)", category: "LibraryViewModel.findOrCreateExercise")
+            
+            // Update existing exercise with new information if provided
+            if let instructions = instructions, !instructions.isEmpty {
+                existingExercise.instructions = instructions
+                AppLogger.debug("Updated instructions for existing exercise: \(name)", category: "LibraryViewModel.findOrCreateExercise")
+            }
+            
+            if let category = category {
+                existingExercise.category = category
+                AppLogger.debug("Updated category for existing exercise: \(name)", category: "LibraryViewModel.findOrCreateExercise")
+            }
+            
+            if let mediaAssetID = mediaAssetID {
+                existingExercise.mediaAssetID = mediaAssetID
+                AppLogger.debug("Updated mediaAssetID for existing exercise: \(name)", category: "LibraryViewModel.findOrCreateExercise")
+            }
+            
             return existingExercise
         }
         
-        // Create new exercise with default category
+        // Create new exercise with provided details or defaults
         AppLogger.debug("Creating new exercise: \(name)", category: "LibraryViewModel.findOrCreateExercise")
         let newExercise = Exercise(
             name: name,
-            category: .strength, // Default category
-            instructions: "Exercise imported from JSON template"
+            category: category ?? .strength, // Use provided category or default
+            instructions: instructions ?? "Exercise imported from JSON template",
+            mediaAssetID: mediaAssetID
         )
         
         modelContext.insert(newExercise)
