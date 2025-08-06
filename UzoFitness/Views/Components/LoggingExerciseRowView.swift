@@ -30,6 +30,18 @@ struct LoggingExerciseRowView: View {
         return false
     }
     
+    private func getDefaultBulkEditValues() -> (reps: String, weight: String) {
+        let completedSets = exercise.sets.filter { $0.isCompleted }
+        
+        if let firstCompletedSet = completedSets.first {
+            return ("\(firstCompletedSet.reps)", "\(Int(firstCompletedSet.weight))")
+        } else if let lastCompletedSet = completedSets.last {
+            return ("\(lastCompletedSet.reps)", "\(Int(lastCompletedSet.weight))")
+        } else {
+            return ("\(exercise.plannedReps)", "\(Int(exercise.plannedWeight ?? 0))")
+        }
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
             // Exercise Header (Always visible and tappable)
@@ -62,8 +74,9 @@ struct LoggingExerciseRowView: View {
                         
                         if !exercise.isCompleted && exercise.sets.count > 1 {
                             Button("Edit All Sets") {
-                                bulkReps = "\(exercise.plannedReps)"
-                                bulkWeight = "\(Int(exercise.plannedWeight ?? 0))"
+                                let defaults = getDefaultBulkEditValues()
+                                bulkReps = defaults.reps
+                                bulkWeight = defaults.weight
                                 showingBulkEdit = true
                             }
                             .font(.caption)

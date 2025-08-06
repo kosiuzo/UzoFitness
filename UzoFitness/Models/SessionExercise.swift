@@ -75,12 +75,26 @@ final class SessionExercise: Identified, Timestamped {
         // Auto-populate from exercise's cached values if requested
         if autoPopulateFromLastSession {
             let suggestedValues = exercise.suggestedStartingValues
-            self.plannedReps = plannedReps ?? suggestedValues.reps ?? 10 // Default to 10 if no history
-            self.plannedWeight = plannedWeight ?? suggestedValues.weight
+            
+            // Priority logic: cached values first, then template values, then defaults
+            // If exercise has been done before (has cached values), use those
+            // If first time doing exercise (no cached values), use template values
+            if suggestedValues.reps != nil || suggestedValues.weight != nil {
+                // Exercise has cached values from previous sessions - prioritize those
+                self.plannedReps = suggestedValues.reps ?? plannedReps ?? 10
+                self.plannedWeight = suggestedValues.weight ?? plannedWeight
+                AppLogger.debug("[SessionExercise.init] Using cached values for experienced exercise: \(exercise.name)", category: "SessionExercise")
+            } else {
+                // Exercise has no cached values - prioritize template values
+                self.plannedReps = plannedReps ?? 10
+                self.plannedWeight = plannedWeight
+                AppLogger.debug("[SessionExercise.init] Using template values for new exercise: \(exercise.name)", category: "SessionExercise")
+            }
+            
+            // Keep the caching logic intact for individual exercise suggestions
             self.previousTotalVolume = suggestedValues.totalVolume
             self.previousSessionDate = exercise.lastUsedDate
             
-            AppLogger.debug("[SessionExercise.init] Auto-populated from exercise: \(exercise.name)", category: "SessionExercise")
             AppLogger.debug("[SessionExercise.init] Suggested weight: \(suggestedValues.weight ?? 0), reps: \(suggestedValues.reps ?? 0)", category: "SessionExercise")
         } else {
             self.plannedReps = plannedReps ?? 10

@@ -2,6 +2,7 @@ import Foundation
 import SwiftData
 import Combine
 import UIKit
+import UserNotifications
 
 // MARK: - SessionExerciseUI Helper Struct
 struct SessionExerciseUI: Identifiable, Hashable {
@@ -128,6 +129,14 @@ class LoggingViewModel: ObservableObject {
     @Published var currentExerciseIndex: Int = 0
     @Published var isWorkoutInProgress: Bool = false
     @Published var hasIncompleteSession: Bool = false
+    
+    // MARK: - Workout Timer State
+    @Published var workoutElapsedTime: TimeInterval = 0
+    private var workoutTimer: Timer?
+    
+    // MARK: - Global Rest Timer State
+    @Published var globalRestTimer: TimeInterval?
+    @Published var globalRestTimerActive: Bool = false
     
     // MARK: - Computed Properties
     var canFinishSession: Bool {
@@ -571,6 +580,7 @@ class LoggingViewModel: ObservableObject {
                 modelContext.insert(newSession)
                 session = newSession
                 sessionStartTime = Date()
+                startWorkoutTimer()
                 
                 AppLogger.debug("[LoggingViewModel.createOrResumeSession] New session created with ID: \(newSession.id)", category: "LoggingViewModel")
                 AppLogger.debug("[LoggingViewModel.createOrResumeSession] Session title: '\(newSession.title)'", category: "LoggingViewModel")
@@ -617,6 +627,7 @@ class LoggingViewModel: ObservableObject {
         modelContext.insert(newSession)
         session = newSession
         sessionStartTime = Date()
+        startWorkoutTimer()
         
         // Create session exercises from day template
         createSessionExercises(for: newSession, from: selectedDay)
@@ -649,6 +660,7 @@ class LoggingViewModel: ObservableObject {
         modelContext.insert(newSession)
         session = newSession
         sessionStartTime = Date()
+        startWorkoutTimer()
         
         // Create session exercises from day template
         createSessionExercises(for: newSession, from: selectedDay)
@@ -672,26 +684,26 @@ class LoggingViewModel: ObservableObject {
             let sessionExercise = SessionExercise(
                 exercise: exerciseTemplate.exercise,
                 plannedSets: exerciseTemplate.setCount,
-                plannedReps: exerciseTemplate.reps,
-                plannedWeight: exerciseTemplate.weight,
+                plannedReps: exerciseTemplate.reps, // Pass template reps
+                plannedWeight: exerciseTemplate.weight, // Pass template weight
                 position: exerciseTemplate.position,
                 supersetID: exerciseTemplate.supersetID,
                 currentSet: 0,
-                isCompleted: false, // Explicitly set to false for new sessions
+                isCompleted: false,
                 session: session,
-                autoPopulateFromLastSession: true // Enable auto-population from last used values
+                autoPopulateFromLastSession: true
             )
             
             modelContext.insert(sessionExercise)
             session.sessionExercises.append(sessionExercise)
             
-            // Create planned sets as real sets that need to be completed
+            // Create planned sets using template values
             for setIndex in 0..<exerciseTemplate.setCount {
                 let plannedSet = CompletedSet(
-                    reps: exerciseTemplate.reps,
-                    weight: exerciseTemplate.weight ?? 0,
-                    isCompleted: false, // Mark as not completed initially
-                    position: setIndex, // Set proper position for ordering
+                    reps: exerciseTemplate.reps, // Use template reps
+                    weight: exerciseTemplate.weight ?? 0, // Use template weight
+                    isCompleted: false,
+                    position: setIndex,
                     sessionExercise: sessionExercise
                 )
                 modelContext.insert(plannedSet)
@@ -724,6 +736,7 @@ class LoggingViewModel: ObservableObject {
         modelContext.insert(newSession)
         session = newSession
         sessionStartTime = Date()
+        startWorkoutTimer()
         
         AppLogger.debug("[LoggingViewModel.createFreshSessionWithAutoPopulation] New session created with ID: \(newSession.id)", category: "LoggingViewModel")
         
@@ -749,8 +762,8 @@ class LoggingViewModel: ObservableObject {
             let sessionExercise = SessionExercise(
                 exercise: exerciseTemplate.exercise,
                 plannedSets: exerciseTemplate.setCount,
-                plannedReps: nil, // Don't override, let auto-population handle it
-                plannedWeight: nil, // Don't override, let auto-population handle it
+                plannedReps: exerciseTemplate.reps, // Pass template reps to prioritize them
+                plannedWeight: exerciseTemplate.weight, // Pass template weight to prioritize them
                 position: exerciseTemplate.position,
                 supersetID: exerciseTemplate.supersetID,
                 currentSet: 0,
@@ -1242,6 +1255,8 @@ class LoggingViewModel: ObservableObject {
     private func finishSession() {
         AppLogger.info("[LoggingViewModel.finishSession] Finishing session", category: "LoggingViewModel")
         
+        stopWorkoutTimer()
+        
         guard let session = session else {
             AppLogger.error("[LoggingViewModel.finishSession] No session to finish", category: "LoggingViewModel")
             error = LoggingError.sessionNotFound
@@ -1298,6 +1313,118 @@ class LoggingViewModel: ObservableObject {
         }
     }
     
+    // MARK: - Workout Timer Methods
+    private func startWorkoutTimer() {
+        AppLogger.info("[LoggingViewModel.startWorkoutTimer] Starting workout timer", category: "LoggingViewModel")
+        
+        guard sessionStartTime != nil else {
+            AppLogger.error("[LoggingViewModel.startWorkoutTimer] No session start time", category: "LoggingViewModel")
+            return
+        }
+        
+        workoutTimer = timerFactory.createTimer(interval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.updateWorkoutElapsedTime()
+            }
+        }
+        
+        AppLogger.debug("[LoggingViewModel.startWorkoutTimer] Workout timer started", category: "LoggingViewModel")
+    }
+
+    private func updateWorkoutElapsedTime() {
+        guard let startTime = sessionStartTime else { return }
+        workoutElapsedTime = Date().timeIntervalSince(startTime)
+    }
+
+    private func stopWorkoutTimer() {
+        AppLogger.info("[LoggingViewModel.stopWorkoutTimer] Stopping workout timer", category: "LoggingViewModel")
+        workoutTimer?.invalidate()
+        workoutTimer = nil
+    }
+    
+    // MARK: - Global Rest Timer Methods
+    private func startGlobalRestTimer(seconds: TimeInterval) {
+        AppLogger.info("[LoggingViewModel.startGlobalRestTimer] Starting global rest timer: \(seconds)s", category: "LoggingViewModel")
+        
+        globalRestTimer = seconds
+        globalRestTimerActive = true
+        
+        // Trigger haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.impactOccurred()
+        
+        // Schedule local notification
+        scheduleRestTimerNotification(seconds: seconds)
+        
+        // Start timer
+        restTimer = timerFactory.createTimer(interval: 1.0, repeats: true) { [weak self] timer in
+            Task { @MainActor in
+                self?.tickGlobalRestTimer()
+            }
+        }
+        
+        AppLogger.debug("[LoggingViewModel.startGlobalRestTimer] Global rest timer started", category: "LoggingViewModel")
+    }
+
+    private func tickGlobalRestTimer() {
+        guard let currentTimer = globalRestTimer, currentTimer > 0 else {
+            return
+        }
+        
+        globalRestTimer = currentTimer - 1
+        
+        if globalRestTimer! <= 0 {
+            AppLogger.info("[LoggingViewModel.tickGlobalRestTimer] Global rest timer completed", category: "LoggingViewModel")
+            cancelGlobalRestTimer()
+            
+            // Trigger haptic feedback
+            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+            impactFeedback.impactOccurred()
+        }
+    }
+
+    private func cancelGlobalRestTimer() {
+        AppLogger.info("[LoggingViewModel.cancelGlobalRestTimer] Cancelling global rest timer", category: "LoggingViewModel")
+        
+        restTimer?.invalidate()
+        restTimer = nil
+        globalRestTimer = nil
+        globalRestTimerActive = false
+        
+        // Cancel any pending notifications
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["restTimer"])
+        
+        AppLogger.debug("[LoggingViewModel.cancelGlobalRestTimer] Global rest timer cancelled", category: "LoggingViewModel")
+    }
+
+    private func scheduleRestTimerNotification(seconds: TimeInterval) {
+        let content = UNMutableNotificationContent()
+        content.title = "Rest Timer Complete"
+        content.body = "Time to start your next set!"
+        content.sound = .default
+        
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: seconds, repeats: false)
+        let request = UNNotificationRequest(identifier: "restTimer", content: content, trigger: trigger)
+        
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                AppLogger.error("[LoggingViewModel.scheduleRestTimerNotification] Failed to schedule notification", category: "LoggingViewModel", error: error)
+            } else {
+                AppLogger.debug("[LoggingViewModel.scheduleRestTimerNotification] Rest timer notification scheduled", category: "LoggingViewModel")
+            }
+        }
+    }
+    
+    func startGlobalRest(seconds: TimeInterval) {
+        AppLogger.info("[LoggingViewModel.startGlobalRest] Starting global rest timer", category: "LoggingViewModel")
+        startGlobalRestTimer(seconds: seconds)
+    }
+
+    func cancelGlobalRest() {
+        AppLogger.info("[LoggingViewModel.cancelGlobalRest] Cancelling global rest timer", category: "LoggingViewModel")
+        cancelGlobalRestTimer()
+    }
+    
     private func cancelSession() {
         AppLogger.info("[LoggingViewModel.cancelSession] Cancelling current session", category: "LoggingViewModel")
         
@@ -1315,6 +1442,7 @@ class LoggingViewModel: ObservableObject {
         }
         
         // Reset UI state but keep session available for resuming
+        stopWorkoutTimer()
         self.session = nil
         self.exercises = []
         self.sessionStartTime = nil
@@ -1330,6 +1458,7 @@ class LoggingViewModel: ObservableObject {
     // MARK: - Cleanup
     deinit {
         restTimer?.invalidate()
+        workoutTimer?.invalidate()
         AppLogger.info("[LoggingViewModel.deinit] Cleaned up resources", category: "LoggingViewModel")
     }
 } 

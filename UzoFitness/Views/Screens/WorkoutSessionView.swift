@@ -24,16 +24,33 @@ struct WorkoutSessionView: View {
     @ViewBuilder
     private var contentView: some View {
         VStack(spacing: 0) {
+            // Add this section at the top
+            if viewModel.isWorkoutInProgress {
+                WorkoutStopwatchView(elapsedTime: viewModel.workoutElapsedTime)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+            }
+            
             if !viewModel.exercises.isEmpty {
                 // Exercise List
                 ScrollView {
                     exerciseListSection
                 }
                 
-                // Complete Workout Button (only show when all sets are completed)
-                if viewModel.canFinishSession {
-                    completeWorkoutButton
+                // Rest Timer Button (always visible during workout)
+                VStack(spacing: 0) {
+                    Divider()
+                    
+                    RestTimerButton(viewModel: viewModel)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                    
+                    // Complete Workout Button (only show when all sets are completed)
+                    if viewModel.canFinishSession {
+                        completeWorkoutButton
+                    }
                 }
+                .background(.background)
             } else {
                 // Loading or no exercises
                 VStack(spacing: 24) {
@@ -139,26 +156,20 @@ struct WorkoutSessionView: View {
     
     // MARK: - Complete Workout Button
     private var completeWorkoutButton: some View {
-        VStack(spacing: 0) {
-            Divider()
-            
-            Button {
-                AppLogger.info("[WorkoutSessionView] Complete Workout button tapped", category: "WorkoutSessionView")
-                viewModel.handleIntent(.finishSession)
-                isPresented = false
-            } label: {
-                Text("Complete Workout")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(viewModel.canFinishSession ? Color.blue : Color.gray)
-                    .cornerRadius(12)
-            }
-            .disabled(!viewModel.canFinishSession)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(.background)
+        Button {
+            AppLogger.info("[WorkoutSessionView] Complete Workout button tapped", category: "WorkoutSessionView")
+            viewModel.handleIntent(.finishSession)
+            isPresented = false
+        } label: {
+            Text("Complete Workout")
+                .font(.headline)
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(Color.blue)
+                .cornerRadius(12)
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
     }
 }
