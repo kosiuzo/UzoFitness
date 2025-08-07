@@ -3,6 +3,7 @@ import SwiftData
 import Combine
 import UIKit
 import UserNotifications
+import AudioToolbox
 
 // MARK: - SessionExerciseUI Helper Struct
 struct SessionExerciseUI: Identifiable, Hashable {
@@ -1349,13 +1350,6 @@ class LoggingViewModel: ObservableObject {
         globalRestTimer = seconds
         globalRestTimerActive = true
         
-        // Trigger haptic feedback
-        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-        impactFeedback.impactOccurred()
-        
-        // Schedule local notification
-        scheduleRestTimerNotification(seconds: seconds)
-        
         // Start timer
         restTimer = timerFactory.createTimer(interval: 1.0, repeats: true) { [weak self] timer in
             Task { @MainActor in
@@ -1377,9 +1371,8 @@ class LoggingViewModel: ObservableObject {
             AppLogger.info("[LoggingViewModel.tickGlobalRestTimer] Global rest timer completed", category: "LoggingViewModel")
             cancelGlobalRestTimer()
             
-            // Trigger haptic feedback
-            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-            impactFeedback.impactOccurred()
+            // Play system sound
+            AudioServicesPlaySystemSound(1005) // System sound for notification
         }
     }
 
@@ -1391,29 +1384,10 @@ class LoggingViewModel: ObservableObject {
         globalRestTimer = nil
         globalRestTimerActive = false
         
-        // Cancel any pending notifications
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["restTimer"])
-        
         AppLogger.debug("[LoggingViewModel.cancelGlobalRestTimer] Global rest timer cancelled", category: "LoggingViewModel")
     }
 
-    private func scheduleRestTimerNotification(seconds: TimeInterval) {
-        let content = UNMutableNotificationContent()
-        content.title = "Rest Timer Complete"
-        content.body = "Time to start your next set!"
-        content.sound = .default
-        
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: seconds, repeats: false)
-        let request = UNNotificationRequest(identifier: "restTimer", content: content, trigger: trigger)
-        
-        UNUserNotificationCenter.current().add(request) { error in
-            if let error = error {
-                AppLogger.error("[LoggingViewModel.scheduleRestTimerNotification] Failed to schedule notification", category: "LoggingViewModel", error: error)
-            } else {
-                AppLogger.debug("[LoggingViewModel.scheduleRestTimerNotification] Rest timer notification scheduled", category: "LoggingViewModel")
-            }
-        }
-    }
+
     
     func startGlobalRest(seconds: TimeInterval) {
         AppLogger.info("[LoggingViewModel.startGlobalRest] Starting global rest timer", category: "LoggingViewModel")
