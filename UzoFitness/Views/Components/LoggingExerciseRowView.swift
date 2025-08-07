@@ -68,9 +68,18 @@ struct LoggingExerciseRowView: View {
                             .buttonStyle(.plain)
                         }
                         
-                        Text("\(exercise.plannedSets) sets × \(exercise.plannedReps) reps")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        // Show cached values if available and different from planned values
+                        if let lastReps = exercise.exercise.lastUsedReps,
+                           let lastWeight = exercise.exercise.lastUsedWeight,
+                           (lastReps != exercise.plannedReps || lastWeight != (exercise.plannedWeight ?? 0)) {
+                            Text("\(exercise.plannedSets) sets × \(lastReps) reps @ \(Int(lastWeight)) lbs")
+                                .font(.caption)
+                                .foregroundColor(.blue)
+                        } else {
+                            Text("\(exercise.plannedSets) sets × \(exercise.plannedReps) reps")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
                         
                         if !exercise.isCompleted && exercise.sets.count > 1 {
                             Button("Edit All Sets") {

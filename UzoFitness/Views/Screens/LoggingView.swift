@@ -249,18 +249,22 @@ struct LoggingContentView: View {
     private func exerciseSummaryRow(_ exerciseTemplate: ExerciseTemplate) -> some View {
         VStack(spacing: 0) {
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 6) {
                     Text(exerciseTemplate.exercise.name)
                         .font(.body)
                         .fontWeight(.medium)
                         .foregroundColor(.primary)
                     
-                    Text("\(exerciseTemplate.setCount) sets × \(exerciseTemplate.reps) reps")
+                    // Planned values row
+                    Text("Plan: \(exerciseTemplate.setCount) sets × \(exerciseTemplate.reps) reps" + (exerciseTemplate.weight != nil && exerciseTemplate.weight! > 0 ? " @ \(Int(exerciseTemplate.weight!)) lbs" : ""))
                         .font(.caption)
                         .foregroundColor(.secondary)
                     
-                    if let weight = exerciseTemplate.weight, weight > 0 {
-                        Text("\(Int(weight)) lbs")
+                    // Last Set (cached) values row if available
+                    if let lastReps = exerciseTemplate.exercise.lastUsedReps,
+                       let lastWeight = exerciseTemplate.exercise.lastUsedWeight,
+                       (lastReps != exerciseTemplate.reps || lastWeight != (exerciseTemplate.weight ?? 0)) {
+                        Text("Last Set: \(lastReps) reps @ \(Int(lastWeight)) lbs")
                             .font(.caption)
                             .foregroundColor(.blue)
                     }
